@@ -33,11 +33,14 @@ Initial stack:
 - React
 - TypeScript
 - Vite
+- Tailwind CSS
 
 Reason:
 - fast MVP development
 - large ecosystem
 - good AI tooling support
+- Tailwind CSS: utility-first, no design system dependency, fast to iterate in MVP
+- shadcn/ui and a full component library are deferred; plain Tailwind is sufficient for MVP
 
 ---
 
@@ -58,7 +61,52 @@ Reason:
 
 ---
 
-## Storage
+## Package Manager
+
+### pnpm
+
+Status:
+- accepted
+
+Reason:
+- efficient disk usage via symlinked node_modules
+- native monorepo workspace support (`pnpm workspaces`)
+- faster installs than npm
+- stricter dependency resolution (avoids phantom dependencies)
+
+---
+
+## Monorepo Tool
+
+### pnpm Workspaces
+
+Status:
+- accepted
+
+Reason:
+- sufficient for MVP without extra tooling overhead
+- native to pnpm; no additional dependency required
+- Turborepo can be added later if build orchestration becomes a bottleneck
+
+---
+
+## Deployment
+
+MVP deployment targets:
+
+| App       | Platform      | Notes                             |
+| --------- | ------------- | --------------------------------- |
+| `apps/web` | Vercel        | static/SSR React, free tier       |
+| `apps/api` | Railway       | Node.js Docker deploy, free tier  |
+| Database  | SQLite file   | stored on the api host filesystem |
+
+Notes:
+- no Kubernetes, no Redis, no managed DB in MVP
+- migration to managed PostgreSQL (e.g. Neon or Railway Postgres) after MVP if needed
+
+---
+
+
 
 ### SQLite + Prisma
 

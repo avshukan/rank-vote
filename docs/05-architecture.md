@@ -2,7 +2,7 @@
 
 ## Monorepo
 
-The project uses a monorepo structure.
+The project uses a monorepo structure managed with **pnpm workspaces**.
 
 Goals:
 - keep frontend and backend together
@@ -27,6 +27,7 @@ Tech (initial):
 - React
 - TypeScript
 - Vite
+- Tailwind CSS
 
 ---
 
