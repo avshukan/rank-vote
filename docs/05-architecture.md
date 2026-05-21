@@ -43,6 +43,8 @@ Responsibilities:
 Tech (initial):
 - Node.js
 - TypeScript
+- NestJS
+- Prisma
 
 ---
 
@@ -90,9 +92,10 @@ apps/web/src/
 ## Initial Storage
 
 MVP storage:
-- SQLite or PostgreSQL
+- SQLite (via Prisma)
 
-Decision deferred until implementation phase.
+Migration to PostgreSQL planned after MVP.
+See `docs/10-storage.md` for schema and rationale.
 
 ---
 

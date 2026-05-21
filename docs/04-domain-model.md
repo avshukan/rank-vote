@@ -41,9 +41,8 @@ Fields:
 
 Notes:
 - anonymous
-- supports strict ranking
-- supports ties
-- supports partial ranking
+- MVP supports strict ranking only (STRICT_RANKING)
+- future: supports ties, partial ranking
 
 ---
 

@@ -46,15 +46,51 @@ Reason:
 Initial stack:
 - Node.js
 - TypeScript
+- NestJS
+- Prisma
 
 Reason:
 - existing experience
 - shared language across frontend/backend
 - good ecosystem
+- NestJS provides structured architecture aligned with layered backend design
+- Prisma provides type-safe database access and easy migrations
 
 ---
 
-## Product Scope
+## Storage
+
+### SQLite + Prisma
+
+Status:
+- accepted
+
+Reason:
+- zero-ops setup for MVP
+- full TypeScript type safety via Prisma
+- easy migration to PostgreSQL in the future
+
+See `docs/10-storage.md` for schema details.
+
+---
+
+## Duplicate Vote Protection
+
+### localStorage
+
+Status:
+- accepted
+
+Reason:
+- client-side only, no server state required
+- simpler than cookies
+- acceptable soft protection for anonymous MVP
+
+Implementation: store voted poll IDs in `localStorage` key `voted_poll_ids`.
+
+---
+
+
 
 MVP principles:
 - minimal feature set
