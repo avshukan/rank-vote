@@ -2,7 +2,7 @@
 
 ## Monorepo
 
-The project uses a monorepo structure.
+The project uses a monorepo structure managed with **pnpm workspaces**.
 
 Goals:
 - keep frontend and backend together
@@ -27,6 +27,7 @@ Tech (initial):
 - React
 - TypeScript
 - Vite
+- Tailwind CSS
 
 ---
 
@@ -43,6 +44,8 @@ Responsibilities:
 Tech (initial):
 - Node.js
 - TypeScript
+- NestJS
+- Prisma
 
 ---
 
@@ -90,9 +93,10 @@ apps/web/src/
 ## Initial Storage
 
 MVP storage:
-- SQLite or PostgreSQL
+- SQLite (via Prisma)
 
-Decision deferred until implementation phase.
+Migration to PostgreSQL planned after MVP.
+See `docs/10-storage.md` for schema and rationale.
 
 ---
 

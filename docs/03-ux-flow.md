@@ -6,7 +6,7 @@ User opens the app
 
 → enters:
 - question
-- options (3–10)
+- options (2–10)
 
 → clicks "Create"
 
