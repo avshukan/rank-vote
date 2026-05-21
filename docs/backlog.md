@@ -1,0 +1,45 @@
+# Backlog
+
+## Legend
+
+### Type
+
+| Type      | Description                            |
+| --------- | -------------------------------------- |
+| Value     | User-facing functionality              |
+| Quality   | UX, reliability, performance, safety   |
+| Refactor  | Internal code or architecture cleanup  |
+
+---
+
+### Priority
+
+| Priority | Description                     |
+| -------- | ------------------------------- |
+| High     | Required for MVP                |
+| Medium   | Important after MVP             |
+| Low      | Nice-to-have or future work     |
+
+---
+
+## Todo
+
+|  ID | Title                           | Type    | Priority | Notes                                      |
+| --: | ------------------------------- | ------- | -------- | ------------------------------------------ |
+| === | =============================== | ======= | ======== | ========================================== |
+|   1 | Create poll                     | Value   | High     | Create poll with title and options         |
+|   2 | Share poll link                 | Value   | High     | Generate public shareable link             |
+|   3 | Submit ballot                   | Value   | High     | Drag & drop full ranking                   |
+|   4 | Calculate Borda result          | Value   | High     | Initial counting method                    |
+|   5 | Show results                    | Value   | High     | Winner and score table                     |
+|   6 | Mobile responsive layout        | Quality | Medium   | Basic responsive UI                        |
+|   7 | Prevent duplicate voting        | Quality | Medium   | Soft protection using browser storage      |
+|   8 | Add IRV counting                | Value   | Medium   | Instant-runoff voting                      |
+|   9 | Add Condorcet counting          | Value   | Medium   | Pairwise comparison winner                 |
+|  10 | Compare counting methods        | Value   | Medium   | Show different winners for same ballots    |
+|  11 | Add PWA support                 | Quality | Low      | Installable web app                        |
+|  12 | Add poll editing                | Value   | Low      | Edit poll after creation                   |
+|  13 | Add poll expiration             | Value   | Low      | Closing date/time                          |
+|  14 | Add ranking with ties           | Value   | Low      | Multiple options can share same rank       |
+|  15 | Add partial ranking             | Value   | Low      | Allow ranking only subset of options       |
+|  16 | Add real-time updates           | Quality | Low      | Live result updates                        |
