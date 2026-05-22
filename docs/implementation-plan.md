@@ -6,20 +6,7 @@ Build a monorepo web app that lets small groups create a ranked-choice poll, vot
 
 See `docs/01-mvp-scope.md` for scope constraints and `docs/07-process.md` for process rules.
 
----
-
-## Iteration Map
-
-| Iteration | Scope | Backlog IDs |
-| --------- | ----- | ----------- |
-| iter-01   | Monorepo scaffold + shared package | — |
-| iter-02   | Backend: create poll + get poll | #1, #2 |
-| iter-03   | Backend: submit ballot + Borda results | #3, #4, #5 |
-| iter-04   | Frontend: create poll page | #1, #2 |
-| iter-05   | Frontend: vote page (drag & drop) | #3 |
-| iter-06   | Frontend: results page | #5 |
-| iter-07   | Duplicate vote protection | #7 |
-| iter-08   | Mobile responsive polish + deployment | #6 |
+Iteration planning is done flexibly per Agile principles. Current priorities are tracked in `docs/backlog.md`.
 
 ---
 
