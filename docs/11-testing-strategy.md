@@ -57,6 +57,8 @@ What to test:
 
 Framework: Vitest (built-in with Vite)
 
+> **Note:** `vitest` and `@testing-library/react` are not yet installed. Add them to `apps/web` devDependencies in Phase 3.
+
 Location: co-located with source files (`*.test.ts`)
 
 ---
