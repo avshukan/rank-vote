@@ -134,3 +134,20 @@ Response `404 Not Found` if poll does not exist.
 - Counting method is Borda in MVP
 - No authentication required
 - All endpoints are public
+
+---
+
+## Error Response Format
+
+All error responses follow NestJS default shape:
+
+```json
+{
+  "statusCode": 400,
+  "message": ["title should not be empty"],
+  "error": "Bad Request"
+}
+```
+
+- `message` is a string for simple errors; an array of strings when `ValidationPipe` rejects input
+- `statusCode` mirrors the HTTP status code

@@ -44,8 +44,6 @@ Read these files to understand the project before making changes:
 
 ## Development Commands
 
-> Commands will be added here once the monorepo scaffold is in place.
-
 ```bash
 # Install dependencies
 pnpm install
@@ -62,6 +60,17 @@ pnpm test
 # Lint all packages
 pnpm lint
 ```
+
+## Environment Variables
+
+Copy `.env.example` to `.env` in each app before running locally.
+
+| Variable | App | Description |
+|---|---|---|
+| `DATABASE_URL` | `apps/api` | SQLite path, e.g. `file:./dev.db` |
+| `PORT` | `apps/api` | API listen port (default `3000`) |
+| `CORS_ORIGIN` | `apps/api` | Allowed frontend origin |
+| `VITE_API_URL` | `apps/web` | Backend API base URL |
 
 ---
 

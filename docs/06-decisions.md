@@ -106,7 +106,7 @@ Notes:
 
 ---
 
-
+## Storage
 
 ### SQLite + Prisma
 
@@ -138,9 +138,8 @@ Implementation: store voted poll IDs in `localStorage` key `voted_poll_ids`.
 
 ---
 
+## MVP Principles
 
-
-MVP principles:
 - minimal feature set
 - fast delivery
 - anonymous usage
@@ -192,3 +191,31 @@ Initial strategy:
 - possible PWA support later
 
 Native mobile app is deferred.
+
+---
+
+## Frontend Routing
+
+### react-router-dom
+
+Status:
+- accepted
+
+Reason:
+- de-facto standard for React SPAs
+- v7 supports file-based routing for future upgrade path
+- required for `/`, `/poll/:id`, `/poll/:id/results` routes
+
+---
+
+## Drag-and-Drop
+
+### @dnd-kit/core
+
+Status:
+- accepted
+
+Reason:
+- lightweight, accessible, React-native
+- no jQuery or external DOM dependency
+- required for the ranked-ballot UI (drag & drop ranking)

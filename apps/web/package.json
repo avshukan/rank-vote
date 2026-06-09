@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "@rank-vote/web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,8 +11,11 @@
     "test": "echo 'No tests configured yet' && exit 0"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@rank-vote/shared": "workspace:*",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "react-router-dom": "^7.17.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
