@@ -141,3 +141,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Generated AI prompt bundle (scripts/make-prompt.mjs)
+prompt.txt
