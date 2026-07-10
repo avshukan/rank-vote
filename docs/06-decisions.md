@@ -213,3 +213,48 @@ Initial strategy:
 - possible PWA support later
 
 Native mobile app is deferred.
+
+---
+
+## Agent Instructions
+
+### Single canonical AGENTS.md
+
+Status:
+
+- accepted
+
+Chosen:
+
+- one canonical `AGENTS.md` at the repo root (open standard; read natively by
+  Codex, Copilot coding agent, and Copilot code review)
+- `CLAUDE.md` is a one-line `@AGENTS.md` import shim for Claude Code
+
+Rejected:
+
+- per-tool instruction files (`.github/copilot-instructions.md`, standalone
+  `CLAUDE.md`) — duplicated content drifts
+- symlink instead of import shim — poor Windows/portability story
+
+See `docs/12-ai-first.md` for the wider AI-first strategy.
+
+---
+
+## Backlog
+
+### Backlog-as-code
+
+Status:
+
+- accepted
+
+Chosen:
+
+- `docs/backlog.md` is the single source of truth for work items
+- GitHub Issues are an ephemeral surface for launching agents, not a store
+- a PR completing an item updates `docs/backlog.md` in the same PR (part of DoD)
+
+Rejected:
+
+- GitHub Issues/Projects as the backlog store — moves the source of truth out
+  of the repository and drifts from the docs
