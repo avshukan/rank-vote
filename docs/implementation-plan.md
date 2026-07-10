@@ -139,11 +139,11 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 ## Phase 5 — Deployment
 
-| App | Platform | Notes |
-| --- | -------- | ----- |
-| `apps/web` | Vercel | Set `VITE_API_URL` env var; SPA routing fallback |
-| `apps/api` | Railway | Set `DATABASE_URL`, `CORS_ORIGIN`; Dockerfile |
-| Database | SQLite on Railway host | Path defined in `DATABASE_URL` |
+| App        | Platform               | Notes                                            |
+| ---------- | ---------------------- | ------------------------------------------------ |
+| `apps/web` | Vercel                 | Set `VITE_API_URL` env var; SPA routing fallback |
+| `apps/api` | Railway                | Set `DATABASE_URL`, `CORS_ORIGIN`; Dockerfile    |
+| Database   | SQLite on Railway host | Path defined in `DATABASE_URL`                   |
 
 - Add `Dockerfile` for `apps/api` (multi-stage Node.js build)
 - Add `vercel.json` for `apps/web` (SPA fallback route)

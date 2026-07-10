@@ -9,6 +9,7 @@ Deliver a minimal product that allows small groups to create a poll, rank option
 ## Core Features
 
 ### Create poll
+
 - question (text)
 - 2–10 options
 - generate unique link
@@ -16,6 +17,7 @@ Deliver a minimal product that allows small groups to create a poll, rank option
 ---
 
 ### Vote
+
 - drag & drop ranking
 - full ranking required
 - anonymous
@@ -23,6 +25,7 @@ Deliver a minimal product that allows small groups to create a poll, rank option
 ---
 
 ### Results
+
 - show winner (Borda count)
 - show score table
 

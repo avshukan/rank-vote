@@ -18,12 +18,12 @@ pnpm dev
 
 ## Environment Variables
 
-| Variable | App | Default | Description |
-|---|---|---|---|
-| `DATABASE_URL` | api | `file:./dev.db` | SQLite path (or PostgreSQL URL in production) |
-| `PORT` | api | `3000` | API listen port |
-| `CORS_ORIGIN` | api | `http://localhost:5173` | Allowed frontend origin |
-| `VITE_API_URL` | web | `http://localhost:3000/api/v1` | Backend API base URL |
+| Variable       | App | Default                        | Description                                   |
+| -------------- | --- | ------------------------------ | --------------------------------------------- |
+| `DATABASE_URL` | api | `file:./dev.db`                | SQLite path (or PostgreSQL URL in production) |
+| `PORT`         | api | `3000`                         | API listen port                               |
+| `CORS_ORIGIN`  | api | `http://localhost:5173`        | Allowed frontend origin                       |
+| `VITE_API_URL` | web | `http://localhost:3000/api/v1` | Backend API base URL                          |
 
 ## Docs
 
