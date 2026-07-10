@@ -1,6 +1,8 @@
 # AGENTS.md
 
-Instructions for AI agents working in this repository.
+Instructions for AI agents working in this repository. This is the canonical
+instruction file for all agents (Claude Code, Codex, GitHub Copilot);
+tool-specific files must only point here, never duplicate content.
 
 ---
 
@@ -8,80 +10,97 @@ Instructions for AI agents working in this repository.
 
 **rank-vote** is a monorepo web app for group decisions using ranked voting (Borda count).
 
-Structure (planned):
 ```
 apps/
   web/        # React + Vite + TypeScript + Tailwind CSS
-  api/        # NestJS + TypeScript + Prisma + SQLite
+  api/        # NestJS + TypeScript (+ Prisma + SQLite from Phase 2)
 packages/
   shared/     # Shared types, DTOs, enums, validation constants
 docs/         # All project documentation
 ```
 
-Package manager: **pnpm** with workspaces.
-
 ---
 
-## Key Documentation
+## Toolchain & Commands
 
-Read these files to understand the project before making changes:
-
-| File | What it covers |
-| ---- | -------------- |
-| `docs/00-product.md` | Product vision and use cases |
-| `docs/01-mvp-scope.md` | MVP features, constraints, out-of-scope |
-| `docs/04-domain-model.md` | Core domain entities and enums |
-| `docs/05-architecture.md` | Monorepo structure, tech stack, folder layout |
-| `docs/06-decisions.md` | All architecture and technology decisions (ADRs) |
-| `docs/09-api-design.md` | API endpoints, request/response shapes, constraints |
-| `docs/10-storage.md` | Prisma schema, SQLite setup, duplicate vote protection |
-| `docs/11-testing-strategy.md` | What to test, frameworks, coverage expectations |
-| `docs/implementation-plan.md` | Phased implementation plan with all deliverables |
-| `docs/backlog.md` | Prioritized backlog items |
-| `docs/glossary.md` | Domain terminology |
-
----
-
-## Development Commands
+Node 22 (`.nvmrc`), pnpm pinned via `packageManager` in the root `package.json`.
 
 ```bash
-# Install dependencies
-pnpm install
-
-# Run all apps in dev mode
-pnpm dev
-
-# Build all packages
-pnpm build
-
-# Run all tests
-pnpm test
-
-# Lint all packages
-pnpm lint
+pnpm install          # install all workspace deps (also installs the pre-commit hook)
+pnpm dev              # run all apps in dev mode
+pnpm build            # build all packages
+pnpm test             # run all tests (Jest in api, Vitest in web/shared)
+pnpm lint             # ESLint, check only (use lint:fix in a package to auto-fix)
+pnpm typecheck        # per-package tsc
+pnpm format           # Prettier write; format:check for CI-style check
 ```
+
+Target one package with `pnpm --filter <name>`, e.g. `pnpm --filter @rank-vote/api test`,
+`pnpm --filter @rank-vote/shared build`.
+
+Pre-commit hook (Prettier via lint-staged) is managed by `simple-git-hooks`;
+after changing its config in `package.json`, re-run `pnpm simple-git-hooks`.
+
+---
 
 ## Environment Variables
 
 Copy `.env.example` to `.env` in each app before running locally.
 
-| Variable | App | Description |
-|---|---|---|
+| Variable       | App        | Description                       |
+| -------------- | ---------- | --------------------------------- |
 | `DATABASE_URL` | `apps/api` | SQLite path, e.g. `file:./dev.db` |
-| `PORT` | `apps/api` | API listen port (default `3000`) |
-| `CORS_ORIGIN` | `apps/api` | Allowed frontend origin |
-| `VITE_API_URL` | `apps/web` | Backend API base URL |
+| `PORT`         | `apps/api` | API listen port (default `3000`)  |
+| `CORS_ORIGIN`  | `apps/api` | Allowed frontend origin           |
+| `VITE_API_URL` | `apps/web` | Backend API base URL              |
+
+---
+
+## Verification First
+
+Before declaring any task complete, run:
+
+```bash
+pnpm lint && pnpm typecheck && pnpm test && pnpm build
+```
+
+and report the results. A change without a passing verification run is not
+done. New behavior requires new tests.
+
+---
+
+## Definition of Done
+
+- `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass locally
+- Tests added/updated for changed behavior
+- Relevant `docs/` files updated (or none affected)
+- Manually verified end-to-end
+- CI is green before merge
+
+---
+
+## Skills
+
+- Recurring procedures live in `.claude/skills/` — read them before inventing
+  your own approach.
+- If you performed a multi-step procedure this session that will clearly recur,
+  or noticed an existing skill or instruction is wrong, propose creating or
+  fixing it at the end of the session (do not create or change skills silently).
 
 ---
 
 ## Process Rules
 
-- Follow **trunk-based development**: short-lived branches, squash merge to `main`
-- Branch naming: `feat/<name>`, `fix/<name>`
-- Each merged PR must be production-ready
-- Iteration plans are flexible (Agile); see `docs/backlog.md` for current priorities
-- Documentation is part of the Definition of Done — update relevant `docs/` files alongside code changes
-- See `docs/07-process.md` for the full process definition
+- Follow **trunk-based development**: short-lived branches merged to `main` via PR
+- Branch naming: `feat/<name>`, `fix/<name>`, `chore/<name>`, `docs/<name>`
+  (GitHub Copilot agent branches are `copilot/*`)
+- CI must be green before merge; each merged PR must be production-ready
+- Slice work vertically, sized to fit one agent session
+- The backlog source of truth is `docs/backlog.md`; see current priorities there
+- Documentation is part of the Definition of Done — update relevant `docs/`
+  files alongside code changes
+- See `docs/07-process.md` for the full process, `docs/12-ai-first.md` for the
+  AI-first strategy and roadmap
 
 ---
 
@@ -103,3 +122,24 @@ Copy `.env.example` to `.env` in each app before running locally.
 - All IDs are UUIDs; timestamps are ISO 8601 UTC
 - Borda formula: option at rank `r` out of `N` options → `N − r` points
 - Duplicate vote protection: client-side only via `localStorage` key `voted_poll_ids`
+
+---
+
+## Key Documentation
+
+Read these files to understand the project before making changes:
+
+| File                          | What it covers                                         |
+| ----------------------------- | ------------------------------------------------------ |
+| `docs/00-product.md`          | Product vision and use cases                           |
+| `docs/01-mvp-scope.md`        | MVP features, constraints, out-of-scope                |
+| `docs/04-domain-model.md`     | Core domain entities and enums                         |
+| `docs/05-architecture.md`     | Monorepo structure, tech stack, folder layout          |
+| `docs/06-decisions.md`        | All architecture and technology decisions (ADRs)       |
+| `docs/09-api-design.md`       | API endpoints, request/response shapes, constraints    |
+| `docs/10-storage.md`          | Prisma schema, SQLite setup, duplicate vote protection |
+| `docs/11-testing-strategy.md` | What to test, frameworks, coverage expectations        |
+| `docs/12-ai-first.md`         | AI-first strategy, tooling roadmap                     |
+| `docs/implementation-plan.md` | Phased implementation plan with all deliverables       |
+| `docs/backlog.md`             | Prioritized backlog items                              |
+| `docs/glossary.md`            | Domain terminology                                     |

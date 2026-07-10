@@ -4,21 +4,21 @@
 
 ### Type
 
-| Type      | Description                            |
-| --------- | -------------------------------------- |
-| Value     | User-facing functionality              |
-| Quality   | UX, reliability, performance, safety   |
-| Refactor  | Internal code or architecture cleanup  |
+| Type     | Description                           |
+| -------- | ------------------------------------- |
+| Value    | User-facing functionality             |
+| Quality  | UX, reliability, performance, safety  |
+| Refactor | Internal code or architecture cleanup |
 
 ---
 
 ### Priority
 
-| Priority | Description                     |
-| -------- | ------------------------------- |
-| High     | Required for MVP                |
-| Medium   | Important after MVP             |
-| Low      | Nice-to-have or future work     |
+| Priority | Description                 |
+| -------- | --------------------------- |
+| High     | Required for MVP            |
+| Medium   | Important after MVP         |
+| Low      | Nice-to-have or future work |
 
 ---
 
