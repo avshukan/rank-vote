@@ -49,11 +49,11 @@ Versioning follows SemVer.
 
 ## How We Work
 
-1. Maintain a single backlog in `docs/backlog.md`
-2. Before implementation, create an iteration plan in `docs/iterations/`
+1. Maintain a single backlog in `docs/backlog.md` — it is the source of truth
+2. Pick the next item(s) from the backlog and agree scope in the PR/issue description
 3. Pick a small stable scope for the iteration
-4. Implement features as vertical slices
-5. Merge changes to `main` via PR
+4. Implement features as vertical slices, sized to fit one agent session
+5. Merge changes to `main` via PR; the PR updates `docs/backlog.md` for the items it completes
 6. Each merge should be production-ready
 7. Finish iteration with a release
 
@@ -64,9 +64,10 @@ Versioning follows SemVer.
 A task or iteration is considered done when:
 
 - implementation is merged to `main`
-- application builds successfully
+- CI is green (format, lint, typecheck, tests, build)
+- tests are added/updated for changed behavior
 - manual testing is completed
-- related documentation is updated
+- related documentation is updated (including `docs/backlog.md`)
 - deployment works correctly
 
 ---
@@ -116,14 +117,13 @@ Examples:
 
 ## AI Usage
 
-AI tools are part of the workflow.
+AI agents are a primary part of the workflow: **Claude Code**, **OpenAI
+Codex**, and **GitHub Copilot** (coding agent).
 
-Examples:
-
-- brainstorming
-- scaffolding
-- refactoring
-- test generation
-- documentation support
+- `AGENTS.md` is the canonical instruction file for all agents; tool-specific
+  files only point to it
+- Agents follow the same Definition of Done and verification-first rule as
+  humans; CI gates their work like anyone else's
+- See `docs/12-ai-first.md` for the full AI-first strategy and tooling roadmap
 
 Human review is required for important decisions.
