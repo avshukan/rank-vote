@@ -5,6 +5,7 @@
 The project uses a monorepo structure managed with **pnpm workspaces**.
 
 Goals:
+
 - keep frontend and backend together
 - simplify development
 - share types and contracts
@@ -19,11 +20,13 @@ Goals:
 Frontend application.
 
 Responsibilities:
+
 - poll creation UI
 - voting UI
 - results UI
 
 Tech (initial):
+
 - React
 - TypeScript
 - Vite
@@ -36,12 +39,14 @@ Tech (initial):
 Backend application.
 
 Responsibilities:
+
 - store polls
 - store ballots
 - calculate results
 - expose HTTP API
 
 Tech (initial):
+
 - Node.js
 - TypeScript
 - NestJS
@@ -56,6 +61,7 @@ Tech (initial):
 Shared types and contracts.
 
 Examples:
+
 - DTOs
 - enums
 - validation schemas
@@ -93,6 +99,7 @@ apps/web/src/
 ## Initial Storage
 
 MVP storage:
+
 - SQLite (via Prisma)
 
 Migration to PostgreSQL planned after MVP.
@@ -103,6 +110,7 @@ See `docs/10-storage.md` for schema and rationale.
 ## Future Extensions
 
 Possible future additions:
+
 - PWA
 - native mobile app
 - multiple counting engines

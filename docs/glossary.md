@@ -34,12 +34,12 @@ Links an option to its assigned rank.
 
 Defines how participants express their preferences.
 
-| Value              | Description                                      |
-| ------------------ | ------------------------------------------------ |
-| STRICT_RANKING     | All options must be ranked, no ties (MVP)        |
-| RANKING_WITH_TIES  | Options can share the same rank                  |
-| PARTIAL_RANKING    | Only a subset of options needs to be ranked      |
-| PAIRWISE           | Preferences expressed as option-to-option pairs  |
+| Value             | Description                                     |
+| ----------------- | ----------------------------------------------- |
+| STRICT_RANKING    | All options must be ranked, no ties (MVP)       |
+| RANKING_WITH_TIES | Options can share the same rank                 |
+| PARTIAL_RANKING   | Only a subset of options needs to be ranked     |
+| PAIRWISE          | Preferences expressed as option-to-option pairs |
 
 MVP supports `STRICT_RANKING` only.
 
@@ -49,13 +49,13 @@ MVP supports `STRICT_RANKING` only.
 
 Defines the algorithm used to calculate the winner from submitted ballots.
 
-| Value        | Description                                                   |
-| ------------ | ------------------------------------------------------------- |
-| BORDA        | Points assigned by rank; highest total wins (MVP)             |
-| IRV          | Instant-runoff: lowest option eliminated in rounds            |
-| CONDORCET    | Winner beats all others in pairwise comparisons               |
-| SCHULZE      | Graph-based method using strongest pairwise paths             |
-| RANKED_PAIRS | Ranks pairwise wins by margin, avoids cycles                  |
+| Value        | Description                                        |
+| ------------ | -------------------------------------------------- |
+| BORDA        | Points assigned by rank; highest total wins (MVP)  |
+| IRV          | Instant-runoff: lowest option eliminated in rounds |
+| CONDORCET    | Winner beats all others in pairwise comparisons    |
+| SCHULZE      | Graph-based method using strongest pairwise paths  |
+| RANKED_PAIRS | Ranks pairwise wins by margin, avoids cycles       |
 
 MVP supports `BORDA` only.
 
@@ -66,6 +66,7 @@ MVP supports `BORDA` only.
 The default counting method for MVP.
 
 How it works:
+
 - for N options, the top-ranked option receives N−1 points
 - the second-ranked option receives N−2 points
 - and so on, down to 0 points for the last-ranked option

@@ -9,6 +9,7 @@ Instructions for AI agents working in this repository.
 **rank-vote** is a monorepo web app for group decisions using ranked voting (Borda count).
 
 Structure (planned):
+
 ```
 apps/
   web/        # React + Vite + TypeScript + Tailwind CSS
@@ -26,19 +27,19 @@ Package manager: **pnpm** with workspaces.
 
 Read these files to understand the project before making changes:
 
-| File | What it covers |
-| ---- | -------------- |
-| `docs/00-product.md` | Product vision and use cases |
-| `docs/01-mvp-scope.md` | MVP features, constraints, out-of-scope |
-| `docs/04-domain-model.md` | Core domain entities and enums |
-| `docs/05-architecture.md` | Monorepo structure, tech stack, folder layout |
-| `docs/06-decisions.md` | All architecture and technology decisions (ADRs) |
-| `docs/09-api-design.md` | API endpoints, request/response shapes, constraints |
-| `docs/10-storage.md` | Prisma schema, SQLite setup, duplicate vote protection |
-| `docs/11-testing-strategy.md` | What to test, frameworks, coverage expectations |
-| `docs/implementation-plan.md` | Phased implementation plan with all deliverables |
-| `docs/backlog.md` | Prioritized backlog items |
-| `docs/glossary.md` | Domain terminology |
+| File                          | What it covers                                         |
+| ----------------------------- | ------------------------------------------------------ |
+| `docs/00-product.md`          | Product vision and use cases                           |
+| `docs/01-mvp-scope.md`        | MVP features, constraints, out-of-scope                |
+| `docs/04-domain-model.md`     | Core domain entities and enums                         |
+| `docs/05-architecture.md`     | Monorepo structure, tech stack, folder layout          |
+| `docs/06-decisions.md`        | All architecture and technology decisions (ADRs)       |
+| `docs/09-api-design.md`       | API endpoints, request/response shapes, constraints    |
+| `docs/10-storage.md`          | Prisma schema, SQLite setup, duplicate vote protection |
+| `docs/11-testing-strategy.md` | What to test, frameworks, coverage expectations        |
+| `docs/implementation-plan.md` | Phased implementation plan with all deliverables       |
+| `docs/backlog.md`             | Prioritized backlog items                              |
+| `docs/glossary.md`            | Domain terminology                                     |
 
 ---
 

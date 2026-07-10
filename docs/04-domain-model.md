@@ -5,6 +5,7 @@
 Represents a voting session.
 
 Fields:
+
 - id: string
 - title: string
 - ballotFormat: BallotFormat
@@ -12,6 +13,7 @@ Fields:
 - createdAt: datetime
 
 Notes:
+
 - one poll can support multiple counting methods
 - ballot format defines how preferences are collected
 
@@ -22,6 +24,7 @@ Notes:
 Represents a selectable option in a poll.
 
 Fields:
+
 - id: string
 - pollId: string
 - text: string
@@ -34,12 +37,14 @@ Fields:
 Represents a participant's preferences.
 
 Fields:
+
 - id: string
 - pollId: string
 - entries: BallotEntry[]
 - createdAt: datetime
 
 Notes:
+
 - anonymous
 - MVP supports strict ranking only (STRICT_RANKING)
 - future: supports ties, partial ranking
@@ -51,22 +56,26 @@ Notes:
 Represents a ranked option inside a ballot.
 
 Fields:
+
 - optionId: string
 - rank: number
 
 Examples:
 
 Strict ranking:
+
 - A → 1
 - B → 2
 - C → 3
 
 Ranking with ties:
+
 - A → 1
 - B → 2
 - C → 2
 
 Partial ranking:
+
 - A → 1
 - B → 2
 
@@ -77,6 +86,7 @@ Partial ranking:
 Represents a calculated result for a specific counting method.
 
 Fields:
+
 - pollId: string
 - countingMethod: CountingMethod
 - winnerOptionId: string
@@ -89,6 +99,7 @@ Fields:
 Defines how preferences are collected.
 
 Values:
+
 - STRICT_RANKING
 - RANKING_WITH_TIES
 - PARTIAL_RANKING
@@ -101,6 +112,7 @@ Values:
 Defines how results are calculated.
 
 Values:
+
 - BORDA
 - IRV
 - CONDORCET

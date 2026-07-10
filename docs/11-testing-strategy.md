@@ -16,6 +16,7 @@
 Target: domain and application layer logic.
 
 What to test:
+
 - Borda count calculation
 - ballot validation (strict ranking, all options present)
 - domain entities and value objects
@@ -31,6 +32,7 @@ Location: co-located with source files (`*.spec.ts`)
 Target: HTTP API endpoints.
 
 What to test:
+
 - create poll: valid and invalid inputs
 - submit ballot: valid and invalid inputs
 - get results: with and without ballots
@@ -40,6 +42,7 @@ Framework: Jest + Supertest (NestJS testing utilities)
 Location: `apps/api/test/`
 
 Notes:
+
 - use in-memory SQLite for test database
 - no external services required
 
@@ -52,6 +55,7 @@ Notes:
 Target: utility functions and counting display logic.
 
 What to test:
+
 - score formatting
 - rank sorting helpers
 
@@ -66,6 +70,7 @@ Location: co-located with source files (`*.test.ts`)
 MVP: minimal component testing.
 
 Focus:
+
 - ranking form renders options correctly
 - submit button is disabled until all options are ranked
 

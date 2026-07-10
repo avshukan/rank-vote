@@ -17,6 +17,7 @@ POST /polls
 ```
 
 Request body:
+
 ```json
 {
   "title": "string",
@@ -25,17 +26,17 @@ Request body:
 ```
 
 Constraints:
+
 - `title` is required, non-empty string
 - `options` is an array of 2–10 non-empty strings
 
 Response `201 Created`:
+
 ```json
 {
   "id": "string",
   "title": "string",
-  "options": [
-    { "id": "string", "text": "string", "order": 0 }
-  ],
+  "options": [{ "id": "string", "text": "string", "order": 0 }],
   "createdAt": "ISO8601"
 }
 ```
@@ -49,13 +50,12 @@ GET /polls/:id
 ```
 
 Response `200 OK`:
+
 ```json
 {
   "id": "string",
   "title": "string",
-  "options": [
-    { "id": "string", "text": "string", "order": 0 }
-  ],
+  "options": [{ "id": "string", "text": "string", "order": 0 }],
   "createdAt": "ISO8601"
 }
 ```
@@ -71,6 +71,7 @@ POST /polls/:id/ballots
 ```
 
 Request body:
+
 ```json
 {
   "entries": [
@@ -82,11 +83,13 @@ Request body:
 ```
 
 Constraints:
+
 - `entries` must include all poll options
 - each `rank` is unique (strict full ranking)
 - ranks are consecutive integers starting from 1
 
 Response `201 Created`:
+
 ```json
 {
   "id": "string",
@@ -107,6 +110,7 @@ GET /polls/:id/results
 ```
 
 Response `200 OK`:
+
 ```json
 {
   "pollId": "string",
@@ -115,9 +119,7 @@ Response `200 OK`:
     "id": "string",
     "text": "string"
   },
-  "scores": [
-    { "optionId": "string", "text": "string", "score": 0 }
-  ],
+  "scores": [{ "optionId": "string", "text": "string", "score": 0 }],
   "totalBallots": 0
 }
 ```

@@ -15,6 +15,7 @@ A short time-box (usually 1–2 weeks) with a fixed scope.
 ### Vertical Slice
 
 One end-to-end feature that includes:
+
 - domain logic
 - backend
 - frontend
@@ -28,6 +29,7 @@ and is usable by the user.
 ### Release
 
 A deployed increment with:
+
 - git tag
 - changelog update
 
@@ -74,11 +76,13 @@ A task or iteration is considered done when:
 We use trunk-based development.
 
 Rules:
+
 - short-lived branches
 - squash merge preferred
 - no release branches
 
 Examples:
+
 - feat/create-poll
 - feat/borda-count
 - fix/mobile-layout
@@ -103,6 +107,7 @@ SemVer:
 - `v0.x.(y+1)` — fixes and small improvements
 
 Examples:
+
 - v0.1.0
 - v0.2.0
 - v0.2.1
@@ -114,6 +119,7 @@ Examples:
 AI tools are part of the workflow.
 
 Examples:
+
 - brainstorming
 - scaffolding
 - refactoring

@@ -5,6 +5,7 @@
 User opens the app
 
 → enters:
+
 - question
 - options (2–10)
 
@@ -35,6 +36,7 @@ Participant opens the link
 ## 4. Results
 
 Participant sees:
+
 - winner
 - score table
 
