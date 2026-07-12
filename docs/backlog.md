@@ -27,8 +27,6 @@
 |  ID | Title                           | Type    | Priority | Notes                                      |
 | --: | ------------------------------- | ------- | -------- | ------------------------------------------ |
 | === | =============================== | ======= | ======== | ========================================== |
-|   1 | Create poll                     | Value   | High     | Create poll with title and options         |
-|   2 | Share poll link                 | Value   | High     | Generate public shareable link             |
 |   3 | Submit ballot                   | Value   | High     | Drag & drop full ranking                   |
 |   4 | Calculate Borda result          | Value   | High     | Initial counting method                    |
 |   5 | Show results                    | Value   | High     | Winner and score table                     |
@@ -43,3 +41,12 @@
 |  14 | Add ranking with ties           | Value   | Low      | Multiple options can share same rank       |
 |  15 | Add partial ranking             | Value   | Low      | Allow ranking only subset of options       |
 |  16 | Add real-time updates           | Quality | Low      | Live result updates                        |
+
+---
+
+## Done
+
+|  ID | Title           | Type  | Notes                                                                                           |
+| --: | --------------- | ----- | ----------------------------------------------------------------------------------------------- |
+|   1 | Create poll     | Value | `POST`/`GET /api/v1/polls` + create page — full vertical slice through all layers (golden path) |
+|   2 | Share poll link | Value | Shareable `/poll/:id` link with copy button, shown after creation                               |

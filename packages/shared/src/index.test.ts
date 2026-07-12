@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import * as shared from './index.js';
+import { BallotFormat, CountingMethod, MAX_OPTIONS, MIN_OPTIONS } from './index.js';
 
 describe('@rank-vote/shared', () => {
-  // Smoke test proving the runner is wired; replace with domain tests in Phase 1.
-  it('exposes a module surface', () => {
-    expect(shared).toBeTypeOf('object');
+  it('exposes the MVP option-count bounds', () => {
+    expect(MIN_OPTIONS).toBe(2);
+    expect(MAX_OPTIONS).toBe(10);
+    expect(MIN_OPTIONS).toBeLessThan(MAX_OPTIONS);
+  });
+
+  it('exposes the MVP ballot format and counting method', () => {
+    expect(BallotFormat.STRICT_RANKING).toBe('STRICT_RANKING');
+    expect(CountingMethod.BORDA).toBe('BORDA');
   });
 });
