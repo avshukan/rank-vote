@@ -63,17 +63,18 @@ Copy `.env.example` to `.env` in each app before running locally.
 Before declaring any task complete, run:
 
 ```bash
-pnpm lint && pnpm typecheck && pnpm test && pnpm build
+pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
-and report the results. A change without a passing verification run is not
-done. New behavior requires new tests.
+and report the results. This mirrors the CI job exactly (same steps, same
+order), so a green local run means a green CI. A change without a passing
+verification run is not done. New behavior requires new tests.
 
 ---
 
 ## Definition of Done
 
-- `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass locally
+- `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass locally
 - Tests added/updated for changed behavior
 - Relevant `docs/` files updated (or none affected)
 - Manually verified end-to-end
