@@ -4,3 +4,6 @@ dist
 coverage
 pnpm-lock.yaml
 prompt.txt
+
+# Prisma generated client (regenerated via `prisma generate`)
+apps/api/src/generated

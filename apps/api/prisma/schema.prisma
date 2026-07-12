@@ -1,0 +1,51 @@
+// rank-vote data model. See docs/10-storage.md and docs/04-domain-model.md.
+// SQLite for the MVP; the datasource URL is supplied via prisma.config.ts.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  runtime      = "nodejs"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Poll {
+  id        String   @id @default(uuid())
+  title     String
+  createdAt DateTime @default(now())
+
+  options PollOption[]
+  ballots Ballot[]
+}
+
+model PollOption {
+  id     String @id @default(uuid())
+  pollId String
+  text   String
+  order  Int
+
+  poll    Poll          @relation(fields: [pollId], references: [id])
+  entries BallotEntry[]
+}
+
+model Ballot {
+  id        String   @id @default(uuid())
+  pollId    String
+  createdAt DateTime @default(now())
+
+  poll    Poll          @relation(fields: [pollId], references: [id])
+  entries BallotEntry[]
+}
+
+model BallotEntry {
+  id       String @id @default(uuid())
+  ballotId String
+  optionId String
+  rank     Int
+
+  ballot Ballot     @relation(fields: [ballotId], references: [id])
+  option PollOption @relation(fields: [optionId], references: [id])
+}
