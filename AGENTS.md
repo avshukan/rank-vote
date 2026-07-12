@@ -24,6 +24,8 @@ docs/         # All project documentation
 ## Toolchain & Commands
 
 Node 22 (`.nvmrc`), pnpm pinned via `packageManager` in the root `package.json`.
+On a fresh machine, if `pnpm` is not on PATH, run `corepack enable` (ships with
+Node) — it provides the pinned pnpm version automatically.
 
 ```bash
 pnpm install          # install all workspace deps (also installs the pre-commit hook)
@@ -86,6 +88,25 @@ done. New behavior requires new tests.
 - If you performed a multi-step procedure this session that will clearly recur,
   or noticed an existing skill or instruction is wrong, propose creating or
   fixing it at the end of the session (do not create or change skills silently).
+
+---
+
+## Session Handoff
+
+- **At session start**: if `.agents/HANDOFF.md` exists, read it before anything
+  else — it is state handed off by a previous session (possibly from a
+  different tool or device). Delete it once the work is picked up; a stale
+  handoff is worse than none.
+- **To hand off unfinished work**: write `.agents/HANDOFF.md` with: goal of the
+  interrupted slice; state (done vs in progress, branch/PR, result of the last
+  gate run); uncommitted files and their condition; gotchas and decisions made;
+  the single concrete next step. Under ~40 lines; include only what cannot be
+  recovered from AGENTS.md, docs/, or git history.
+- The note is committed, but **only on work branches**: to hand off across
+  devices, commit it (together with WIP code) and push the branch. The PR that
+  finishes the slice must delete the note — it never reaches `main`.
+- In Claude Code, `/handoff` runs this procedure; in other tools, ask the agent
+  to "write a handoff per AGENTS.md".
 
 ---
 
