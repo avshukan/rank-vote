@@ -30,6 +30,39 @@ Migration path:
 
 ---
 
+## Backup & Migration
+
+### Where the database lives
+
+- Single SQLite file: `apps/api/dev.db`.
+- The path comes from `DATABASE_URL` in `apps/api/.env` (`file:./dev.db`, resolved
+  relative to `apps/api/`) and is wired into Prisma via `apps/api/prisma.config.ts`.
+- The file is **not** committed (`*.db` is git-ignored), so it exists only on the
+  machine that ran the app. The **schema** is versioned separately under
+  `apps/api/prisma/migrations/` and can be reproduced anywhere.
+
+### Backup / dump
+
+Run from `apps/api/`:
+
+```bash
+sqlite3 dev.db .dump > backup.sql      # portable SQL dump
+sqlite3 dev.db ".backup backup.db"     # safe hot copy (works while the app runs)
+cp dev.db dev.db.bak                   # plain copy (app stopped)
+```
+
+### Move to another machine or server
+
+- **Schema only** (fresh, empty DB): copy `prisma/`, set `DATABASE_URL`, then run
+  `pnpm --filter @rank-vote/api db:deploy` (`prisma migrate deploy`).
+- **Schema + data**: copy the `dev.db` file directly, or restore a dump with
+  `sqlite3 new.db < backup.sql`.
+
+For the eventual PostgreSQL target see [Future](#future) above — swap the provider
+and `DATABASE_URL`, then `db:deploy`; no application code changes.
+
+---
+
 ## Schema
 
 ```prisma
