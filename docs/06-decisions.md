@@ -212,33 +212,6 @@ Rejected:
 
 ---
 
-## Architecture Check (previous vs current)
-
-Compared variants:
-
-- previous: `Vercel + Railway + SQLite (file on api host)` with Postgres migration
-  later
-- current: `Dockerized web/api + PostgreSQL (Neon in prod, local Postgres in dev)`
-
-Why the current variant is better for this roadmap:
-
-- **Scalability target:** current wins. SQLite file storage blocks safe multi-replica
-  `api`; networked Postgres supports independent horizontal scaling.
-- **Migration risk/timing:** current wins. Migrating now (before first deploy, no
-  production data) is materially cheaper and lower-risk than a later live-data
-  migration.
-- **Operational complexity for MVP:** previous is simpler short-term; current adds
-  Docker + managed Postgres now, but avoids a second architecture transition
-  shortly after launch.
-- **Cost profile:** both can stay near free-tier for MVP; Neon keeps DB operations
-  managed while avoiding unused BaaS surface.
-
-Conclusion: for an MVP that already targets independent web/api scaling, the
-current variant is more consistent and lower total risk than keeping SQLite until
-after first deploy.
-
----
-
 ## Duplicate Vote Protection
 
 ### localStorage
