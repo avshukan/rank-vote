@@ -2,31 +2,32 @@
 
 ## Decision
 
-### MVP Storage
+### Storage
 
-- **Database**: SQLite
+- **Database**: PostgreSQL (hosted on Neon in production, local container in dev)
 - **ORM**: Prisma
 
-Status: accepted
+Status: accepted (migrated from SQLite; see `docs/06-decisions.md`)
 
 Reason:
 
-- zero infrastructure: no separate service required
-- fast local development setup
-- Prisma provides full TypeScript type safety
-- easy migration to PostgreSQL in the future (one line config change)
+- a networked DB is required for independent `api` scaling — SQLite is
+  single-writer and cannot back multiple replicas
+- migrated while there is **no production data**, the cheapest moment to switch
+- Prisma provides full TypeScript type safety and keeps the swap small
+
+> **Implementation note:** the migration is a pending slice. Until it lands, the
+> running code still uses SQLite as documented under
+> [Backup & Migration](#backup--migration) below.
 
 ---
 
-## Future
+## Migration path (SQLite → PostgreSQL)
 
-PostgreSQL is the target production database.
-
-Migration path:
-
-- replace `sqlite` with `postgresql` in `DATABASE_URL`
-- run `prisma migrate deploy`
-- no application code changes required
+- change the Prisma `provider` to `postgresql` and point `DATABASE_URL` at the
+  Postgres instance (Neon in prod, the `docker-compose` Postgres locally)
+- regenerate the migration history for Postgres, then `prisma migrate deploy`
+- no application/business-logic code changes required
 
 ---
 
@@ -58,8 +59,9 @@ cp dev.db dev.db.bak                   # plain copy (app stopped)
 - **Schema + data**: copy the `dev.db` file directly, or restore a dump with
   `sqlite3 new.db < backup.sql`.
 
-For the eventual PostgreSQL target see [Future](#future) above — swap the provider
-and `DATABASE_URL`, then `db:deploy`; no application code changes.
+For the move to PostgreSQL see [Migration path](#migration-path-sqlite--postgresql)
+above — swap the provider and `DATABASE_URL`, then `db:deploy`; no application
+code changes.
 
 ---
 
