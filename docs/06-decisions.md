@@ -106,34 +106,109 @@ Reason:
 
 MVP deployment targets:
 
-| App        | Platform    | Notes                             |
-| ---------- | ----------- | --------------------------------- |
-| `apps/web` | Vercel      | static/SSR React, free tier       |
-| `apps/api` | Railway     | Node.js Docker deploy, free tier  |
-| Database   | SQLite file | stored on the api host filesystem |
+| App        | Platform                     | Notes                 |
+| ---------- | ---------------------------- | --------------------- |
+| `apps/web` | Docker image (nginx, static) | separately scalable   |
+| `apps/api` | Docker image (Node.js)       | separately scalable   |
+| Database   | Neon (managed PostgreSQL)    | serverless, free tier |
 
 Notes:
 
-- no Kubernetes, no Redis, no managed DB in MVP
-- migration to managed PostgreSQL (e.g. Neon or Railway Postgres) after MVP if needed
+- no Kubernetes, no Redis in MVP
 
 ---
 
-## Storage
+## Containerization
 
-### SQLite + Prisma
+### Docker, separate images per app
 
 Status:
 
 - accepted
 
+Chosen:
+
+- one image per app (`web`: nginx serving the static build; `api`: Node.js),
+  orchestrated with `docker-compose`
+- introduced **just before the first deploy**, not during early development
+
 Reason:
 
-- zero-ops setup for MVP
+- separate images give **independent scaling** of web and api
+- for this stack `pnpm dev` is enough locally, so early containers only slow
+  iteration; dockerizing a settled structure is cheaper and less churn
+- `docker-compose` also runs Postgres locally → dev/prod parity for free
+
+Rejected:
+
+- single combined image (api also serving the frontend) — simpler to operate but
+  couples web and api scaling, which contradicts the scaling goal
+
+---
+
+## Storage
+
+### PostgreSQL + Prisma
+
+Status:
+
+- accepted (supersedes the earlier SQLite decision below)
+
+Chosen:
+
+- PostgreSQL as the database, accessed via Prisma
+- migrate **now**, before the first deploy while there is no production data
+
+Reason:
+
+- SQLite is a single-writer file → it cannot back multiple `api` replicas, which
+  breaks the independent-scaling goal (see Containerization / Deployment)
+- the cheapest moment to migrate a stateful DB is with **zero data**; migrating
+  later under live data is a separate, risky project
+- Prisma keeps the swap small: change `provider`, regenerate migrations
+
+### SQLite + Prisma (superseded)
+
+Status:
+
+- superseded by PostgreSQL
+
+Reason (historical):
+
+- zero-ops setup for the initial MVP
 - full TypeScript type safety via Prisma
-- easy migration to PostgreSQL in the future
+- was chosen for easy future migration to PostgreSQL — that future is now
 
 See `docs/10-storage.md` for schema details.
+
+---
+
+## Database Hosting
+
+### Neon (managed PostgreSQL)
+
+Status:
+
+- accepted
+
+Chosen:
+
+- Neon serverless Postgres for production; local Postgres container for dev
+
+Reason:
+
+- MVP has **no authentication** (see MVP Principles), so a BaaS platform's
+  batteries (auth/realtime/storage) add no value — a plain Postgres is the fit,
+  and Neon is exactly that with no platform baggage
+- scale-to-zero that **auto-resumes** on the first query (no manual un-pausing),
+  which suits a low-traffic hobby app
+- DB branching gives cheap dev/preview parity
+
+Rejected:
+
+- Supabase — great product, but its value is the BaaS layer we do not use; its
+  free tier also pauses after ~1 week idle and needs manual waking
+- self-hosted Postgres — full control, but volume/backups become our problem
 
 ---
 
