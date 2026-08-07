@@ -115,16 +115,17 @@ Response `200 OK`:
 {
   "pollId": "string",
   "method": "BORDA",
-  "winner": {
-    "id": "string",
-    "text": "string"
-  },
+  "winners": [{ "id": "string", "text": "string" }],
   "scores": [{ "optionId": "string", "text": "string", "score": 0 }],
   "totalBallots": 0
 }
 ```
 
-Response `200 OK` with `winner: null` and empty `scores` if no ballots submitted yet.
+Notes:
+
+- `winners` contains all options with the maximum score; typically one element, multiple on tie
+- When no ballots have been submitted: `winners: []`, `scores` contains all options with `score: 0`, `totalBallots: 0`
+
 Response `404 Not Found` if poll does not exist.
 
 ---

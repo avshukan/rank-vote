@@ -89,8 +89,12 @@ Fields:
 
 - pollId: string
 - countingMethod: CountingMethod
-- winnerOptionId: string
+- winnerOptionIds: string[]
 - metadata: unknown
+
+Notes:
+
+- winnerOptionIds contains all options tied for the highest score (tie support)
 
 ---
 

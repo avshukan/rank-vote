@@ -26,7 +26,7 @@ Deliver a minimal product that allows small groups to create a poll, rank option
 
 ### Results
 
-- show winner (Borda count)
+- show winner(s) (Borda count) — supports tie (multiple winners)
 - show score table
 
 ---
