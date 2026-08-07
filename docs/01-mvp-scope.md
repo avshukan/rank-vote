@@ -21,6 +21,9 @@ Deliver a minimal product that allows small groups to create a poll, rank option
 - drag & drop ranking
 - full ranking required
 - anonymous
+- after submit: redirect to results page, show toast confirmation
+- on network error: show inline error, retry button, preserve form state
+- duplicate vote protection: client-side via localStorage (poll_id stored after submit)
 
 ---
 
