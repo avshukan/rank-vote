@@ -94,7 +94,7 @@ Fields:
 
 Notes:
 
-- winnerOptionIds contains all options tied for the highest score (tie support)
+- winnerOptionIds contains all options tied for the highest score (empty when there are 0 ballots)
 
 ---
 

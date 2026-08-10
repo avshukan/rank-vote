@@ -16,9 +16,9 @@
 
 - [ ] Drag & drop interface for ranking all options
 - [ ] Reorder buttons (↑/↓) for touch devices
-- [ ] After successful submit (`201`): save poll_id to localStorage, redirect to results page, show toast "Vote submitted"
+- [ ] After successful submit (`201`): add poll ID to `localStorage` key `voted_poll_ids`, redirect to results page, show toast "Vote submitted"
 - [ ] On network error / 5xx: show inline error message, show retry button, do NOT clear form state
-- [ ] If poll_id already in localStorage (`voted_poll_ids`): redirect to results page, skip voting form entirely
+- [ ] If poll ID already in `localStorage` key `voted_poll_ids`: redirect to results page, skip voting form entirely
 
 ### Edge Cases
 
@@ -38,7 +38,7 @@
 - [ ] Borda formula: option at rank `r` out of N options gets `N − r` points
 - [ ] `scores` always contains ALL poll options, even when 0 ballots
 - [ ] `scores` sorted by `score` DESC, then by `option.order` ASC
-- [ ] `winners` — array of all options with the maximum score (1+ elements)
+- [ ] `winners` — array of all options with the maximum score (0+ elements; empty when `totalBallots: 0`)
 - [ ] On tie: all tied leaders included in `winners`
 - [ ] 0 ballots: `winners: []`, all options in `scores` with `score: 0`, `totalBallots: 0`
 - [ ] Non-existent poll → `404`

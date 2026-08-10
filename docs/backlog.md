@@ -31,7 +31,7 @@
 |   4 | Calculate Borda result          | Value   | High     | Initial counting method; supports tie (multiple winners)                                     |
 |   5 | Show results                    | Value   | High     | Winner(s) and score table                                                                    |
 |   6 | Mobile responsive layout        | Quality | Medium   | Basic responsive UI                                                                          |
-|   7 | Prevent duplicate voting        | Quality | Medium   | If poll_id in localStorage — redirect to results, skip voting form                           |
+|   7 | Prevent duplicate voting        | Quality | Medium   | If poll ID in `localStorage` key `voted_poll_ids` — redirect to results, skip voting form     |
 |   8 | Add IRV counting                | Value   | Medium   | Instant-runoff voting                                                                        |
 |   9 | Add Condorcet counting          | Value   | Medium   | Pairwise comparison winner                                                                   |
 |  10 | Compare counting methods        | Value   | Medium   | Show different winners for same ballots                                                      |
