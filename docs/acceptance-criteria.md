@@ -18,8 +18,8 @@
 - [x] Reorder buttons (↑/↓) for touch devices
 - [x] After successful submit (`201`): add poll ID to `localStorage` key `voted_poll_ids`, redirect to results page, show toast "Vote submitted"
 - [x] On network error / 5xx: show inline error message, show retry button, do NOT clear form state
-- [ ] If poll ID already in `localStorage` key `voted_poll_ids`: redirect to results page, skip voting form entirely
-      — **belongs to backlog item #7**; #3 only writes the key, `readVotedPollIds()` is already in place for it
+- [x] If poll ID already in `localStorage` key `voted_poll_ids`: redirect to results page, skip voting form entirely
+      — guarded in `VotePage` before the poll is fetched; this also completes backlog item #7
 
 ### Edge Cases
 
