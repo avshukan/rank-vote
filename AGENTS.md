@@ -10,7 +10,7 @@ tool-specific files must only point here, never duplicate content.
 
 **rank-vote** is a monorepo web app for group decisions using ranked voting (Borda count).
 
-```
+```text
 apps/
   web/        # React + Vite + TypeScript + Tailwind CSS
   api/        # NestJS + TypeScript (+ Prisma + SQLite from Phase 2)

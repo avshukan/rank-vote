@@ -24,29 +24,30 @@
 
 ## Todo
 
-|  ID | Title                           | Type    | Priority | Notes                                      |
-| --: | ------------------------------- | ------- | -------- | ------------------------------------------ |
-| === | =============================== | ======= | ======== | ========================================== |
-|   3 | Submit ballot                   | Value   | High     | Drag & drop full ranking                   |
-|   4 | Calculate Borda result          | Value   | High     | Initial counting method                    |
-|   5 | Show results                    | Value   | High     | Winner and score table                     |
-|   6 | Mobile responsive layout        | Quality | Medium   | Basic responsive UI                        |
-|   7 | Prevent duplicate voting        | Quality | Medium   | Soft protection using browser storage      |
-|   8 | Add IRV counting                | Value   | Medium   | Instant-runoff voting                      |
-|   9 | Add Condorcet counting          | Value   | Medium   | Pairwise comparison winner                 |
-|  10 | Compare counting methods        | Value   | Medium   | Show different winners for same ballots    |
-|  11 | Add PWA support                 | Quality | Low      | Installable web app                        |
-|  12 | Add poll editing                | Value   | Low      | Edit poll after creation                   |
-|  13 | Add poll expiration             | Value   | Low      | Closing date/time                          |
-|  14 | Add ranking with ties           | Value   | Low      | Multiple options can share same rank       |
-|  15 | Add partial ranking             | Value   | Low      | Allow ranking only subset of options       |
-|  16 | Add real-time updates           | Quality | Low      | Live result updates                        |
+| ID  | Title                           | Type    | Priority | Notes                                                                           |
+| --- | ------------------------------- | ------- | -------- | ------------------------------------------------------------------------------- |
+| === | =============================== | ======= | ======== | =============================================================================== |
+| 3   | Submit ballot                   | Value   | High     | Drag-and-drop full ranking; submit → results; client-side duplicate-vote guard  |
+| 4   | Calculate Borda result          | Value   | High     | Initial counting method; supports tie (multiple winners)                        |
+| 5   | Show results                    | Value   | High     | Winner(s) and score table                                                       |
+| 6   | Mobile responsive layout        | Quality | Medium   | Basic responsive UI                                                             |
+| 7   | Prevent duplicate voting        | Quality | Medium   | Poll ID in localStorage.voted_poll_ids → skip form and redirect to results      |
+| 8   | Add IRV counting                | Value   | Medium   | Instant-runoff voting                                                           |
+| 9   | Add Condorcet counting          | Value   | Medium   | Pairwise comparison winner                                                      |
+| 10  | Compare counting methods        | Value   | Medium   | Show different winners for same ballots                                         |
+| 11  | Add PWA support                 | Quality | Low      | Installable web app                                                             |
+| 12  | Add poll editing                | Value   | Low      | Edit poll after creation                                                        |
+| 13  | Add poll expiration             | Value   | Low      | Closing date/time                                                               |
+| 14  | Add ranking with ties           | Value   | Low      | Multiple options can share same rank                                            |
+| 15  | Add partial ranking             | Value   | Low      | Allow ranking only subset of options                                            |
+| 16  | Add real-time updates           | Quality | Low      | Live result updates                                                             |
 
 ---
 
 ## Done
 
-|  ID | Title           | Type  | Notes                                                                                           |
-| --: | --------------- | ----- | ----------------------------------------------------------------------------------------------- |
-|   1 | Create poll     | Value | `POST`/`GET /api/v1/polls` + create page — full vertical slice through all layers (golden path) |
-|   2 | Share poll link | Value | Shareable `/poll/:id` link with copy button, shown after creation                               |
+|  ID | Title                           | Type    | Priority | Notes                                                                           |
+| --: | ------------------------------- | ------- | -------- | ------------------------------------------------------------------------------- |
+| === | =============================== | ======= | ======== | =============================================================================== |
+|   1 | Create poll                     | Value   | High     | `POST`/`GET /api/v1/polls` + create page — golden-path slice across all layers  |
+|   2 | Share poll link                 | Value   | High     | Shareable `/poll/:id` link with copy button, shown after creation               |

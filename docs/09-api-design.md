@@ -84,9 +84,10 @@ Request body:
 
 Constraints:
 
-- `entries` must include all poll options
-- each `rank` is unique (strict full ranking)
-- ranks are consecutive integers starting from 1
+- `entries` is required; array length must equal the number of poll options (N)
+- each `optionId` must belong to this poll — otherwise `400`
+- duplicate `optionId` values are not allowed — otherwise `400`
+- each `rank` is unique; ranks must be consecutive integers 1..N — otherwise `400`
 
 Response `201 Created`:
 
@@ -115,16 +116,19 @@ Response `200 OK`:
 {
   "pollId": "string",
   "method": "BORDA",
-  "winner": {
-    "id": "string",
-    "text": "string"
-  },
+  "winners": [{ "id": "string", "text": "string" }],
   "scores": [{ "optionId": "string", "text": "string", "score": 0 }],
   "totalBallots": 0
 }
 ```
 
-Response `200 OK` with `winner: null` and empty `scores` if no ballots submitted yet.
+Notes:
+
+- `winners` contains all options with the maximum score; typically one element, multiple on tie
+- `scores` always contains ALL poll options, sorted by `score` DESC, then by `option.order` ASC
+- When no ballots have been submitted: `winners: []`, `scores` contains all options with `score: 0`, `totalBallots: 0`
+- Results are calculated on the fly (no caching)
+
 Response `404 Not Found` if poll does not exist.
 
 ---
