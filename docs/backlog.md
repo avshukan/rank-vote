@@ -27,11 +27,9 @@
 | ID  | Title                           | Type    | Priority | Notes                                                                           |
 | --- | ------------------------------- | ------- | -------- | ------------------------------------------------------------------------------- |
 | === | =============================== | ======= | ======== | =============================================================================== |
-| 3   | Submit ballot                   | Value   | High     | Drag-and-drop full ranking; submit → results; client-side duplicate-vote guard  |
 | 4   | Calculate Borda result          | Value   | High     | Initial counting method; supports tie (multiple winners)                        |
 | 5   | Show results                    | Value   | High     | Winner(s) and score table                                                       |
 | 6   | Mobile responsive layout        | Quality | Medium   | Basic responsive UI                                                             |
-| 7   | Prevent duplicate voting        | Quality | Medium   | Poll ID in localStorage.voted_poll_ids → skip form and redirect to results      |
 | 8   | Add IRV counting                | Value   | Medium   | Instant-runoff voting                                                           |
 | 9   | Add Condorcet counting          | Value   | Medium   | Pairwise comparison winner                                                      |
 | 10  | Compare counting methods        | Value   | Medium   | Show different winners for same ballots                                         |
@@ -51,3 +49,5 @@
 | === | =============================== | ======= | ======== | =============================================================================== |
 |   1 | Create poll                     | Value   | High     | `POST`/`GET /api/v1/polls` + create page — golden-path slice across all layers  |
 |   2 | Share poll link                 | Value   | High     | Shareable `/poll/:id` link with copy button, shown after creation               |
+|   3 | Submit ballot                   | Value   | High     | `POST /polls/:id/ballots` + drag-and-drop vote page                             |
+|   7 | Prevent duplicate voting        | Quality | Medium   | `voted_poll_ids` written on submit, checked in `VotePage` — delivered with #3   |

@@ -4,29 +4,30 @@
 
 ### API
 
-- [ ] `POST /polls/:id/ballots` accepts `{ entries: [{optionId, rank}] }`
-- [ ] `entries` is required; array length must equal number of poll options (N) — otherwise `400`
-- [ ] Each `optionId` must belong to the target poll — otherwise `400`
-- [ ] Duplicate `optionId` values → `400`
-- [ ] `rank` values must be unique consecutive integers 1..N — otherwise `400`
-- [ ] Non-existent poll → `404`
-- [ ] Response `201` contains `{ id, pollId, createdAt }`
+- [x] `POST /polls/:id/ballots` accepts `{ entries: [{optionId, rank}] }`
+- [x] `entries` is required; array length must equal number of poll options (N) — otherwise `400`
+- [x] Each `optionId` must belong to the target poll — otherwise `400`
+- [x] Duplicate `optionId` values → `400`
+- [x] `rank` values must be unique consecutive integers 1..N — otherwise `400`
+- [x] Non-existent poll → `404`
+- [x] Response `201` contains `{ id, pollId, createdAt }`
 
 ### Frontend UX
 
-- [ ] Drag & drop interface for ranking all options
-- [ ] Reorder buttons (↑/↓) for touch devices
-- [ ] After successful submit (`201`): add poll ID to `localStorage` key `voted_poll_ids`, redirect to results page, show toast "Vote submitted"
-- [ ] On network error / 5xx: show inline error message, show retry button, do NOT clear form state
-- [ ] If poll ID already in `localStorage` key `voted_poll_ids`: redirect to results page, skip voting form entirely
+- [x] Drag & drop interface for ranking all options
+- [x] Reorder buttons (↑/↓) for touch devices
+- [x] After successful submit (`201`): add poll ID to `localStorage` key `voted_poll_ids`, redirect to results page, show toast "Vote submitted"
+- [x] On network error / 5xx: show inline error message, show retry button, do NOT clear form state
+- [x] If poll ID already in `localStorage` key `voted_poll_ids`: redirect to results page, skip voting form entirely
+      — guarded in `VotePage` before the poll is fetched; this also completes backlog item #7
 
 ### Edge Cases
 
-- [ ] Empty `entries` array → `400`
-- [ ] `entries: null` or missing → `400`
-- [ ] `optionId` that is a valid UUID but doesn't belong to this poll → `400`
-- [ ] `rank: 0`, negative rank, or rank > N → `400`
-- [ ] Concurrent duplicate submissions (race condition): accepted (no server-side dedup in MVP)
+- [x] Empty `entries` array → `400`
+- [x] `entries: null` or missing → `400`
+- [x] `optionId` that is a valid UUID but doesn't belong to this poll → `400`
+- [x] `rank: 0`, negative rank, or rank > N → `400`
+- [x] Concurrent duplicate submissions (race condition): accepted (no server-side dedup in MVP)
 
 ---
 
@@ -56,7 +57,7 @@
 
 ### Frontend UX
 
-- [ ] Page `/polls/:id/results` is publicly accessible (no vote required to view)
+- [ ] Page `/poll/:id/results` is publicly accessible (no vote required to view)
 - [ ] Displays: poll title, winner badge, score table (position / option text / score), total ballots count
 - [ ] Single winner: show highlighted winner badge
 - [ ] Multiple winners (tie): show all with "Tied winners" label
