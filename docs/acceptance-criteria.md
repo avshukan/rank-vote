@@ -35,21 +35,25 @@
 
 ### API
 
-- [ ] `GET /polls/:id/results` returns `{ pollId, method: "BORDA", winners, scores, totalBallots }`
-- [ ] Borda formula: option at rank `r` out of N options gets `N − r` points
-- [ ] `scores` always contains ALL poll options, even when 0 ballots
-- [ ] `scores` sorted by `score` DESC, then by `option.order` ASC
-- [ ] `winners` — array of all options with the maximum score (0+ elements; empty when `totalBallots: 0`)
-- [ ] On tie: all tied leaders included in `winners`
-- [ ] 0 ballots: `winners: []`, all options in `scores` with `score: 0`, `totalBallots: 0`
-- [ ] Non-existent poll → `404`
-- [ ] Results calculated on the fly (no cache)
+- [x] `GET /polls/:id/results` returns `{ pollId, title, method: "BORDA", winners, scores, totalBallots }`
+- [x] Borda formula: option at rank `r` out of N options gets `N − r` points
+- [x] `winners` and `scores` entries share one shape: `{ optionId, text, score }`
+- [x] `scores` always contains ALL poll options, even when 0 ballots
+- [x] `scores` sorted by `score` DESC, then by `option.order` ASC
+- [x] `winners` — array of all options with the maximum score (0+ elements; empty when `totalBallots: 0`)
+- [x] On tie: all tied leaders included in `winners`
+- [x] 0 ballots: `winners: []`, all options in `scores` with `score: 0`, `totalBallots: 0`
+- [x] Non-existent poll → `404`
+- [x] Results calculated on the fly (no cache)
 
 ### Edge Cases
 
-- [ ] Single ballot → correct scores
-- [ ] All options tied (e.g., single ballot of N options with equal distribution across multiple ballots) → all in `winners`
-- [ ] Large number of ballots — no timeout (acceptable for MVP; caching is post-MVP)
+- [x] Single ballot → correct scores
+- [x] All options tied (e.g., single ballot of N options with equal distribution across multiple ballots) → all in `winners`
+- [x] Large number of ballots — no timeout: one query loads the poll's ballots and
+      the tally runs in memory; no load test was run, and caching stays post-MVP
+- [x] Entries pointing at an option outside the poll are ignored by the count
+      (the ballot validator already rejects them on submit)
 
 ---
 

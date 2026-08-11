@@ -115,8 +115,9 @@ Response `200 OK`:
 ```json
 {
   "pollId": "string",
+  "title": "string",
   "method": "BORDA",
-  "winners": [{ "id": "string", "text": "string" }],
+  "winners": [{ "optionId": "string", "text": "string", "score": 0 }],
   "scores": [{ "optionId": "string", "text": "string", "score": 0 }],
   "totalBallots": 0
 }
@@ -124,9 +125,12 @@ Response `200 OK`:
 
 Notes:
 
+- `winners` and `scores` share one entry shape (`{ optionId, text, score }`), so the results page needs no lookup between them
 - `winners` contains all options with the maximum score; typically one element, multiple on tie
 - `scores` always contains ALL poll options, sorted by `score` DESC, then by `option.order` ASC
+- `title` is included so the results page renders with a single request
 - When no ballots have been submitted: `winners: []`, `scores` contains all options with `score: 0`, `totalBallots: 0`
+- Borda scoring: an option ranked `r` out of `N` options earns `N − r` points
 - Results are calculated on the fly (no caching)
 
 Response `404 Not Found` if poll does not exist.

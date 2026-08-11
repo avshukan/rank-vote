@@ -5,7 +5,11 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import type { BallotResponseDto, PollResponseDto } from '@rank-vote/shared';
+import type {
+  BallotResponseDto,
+  PollResponseDto,
+  PollResultsResponseDto,
+} from '@rank-vote/shared';
 import { AppModule } from './../src/app.module';
 import { configureApp } from './../src/app.setup';
 
@@ -20,6 +24,10 @@ const asPoll = (res: request.Response): PollResponseDto =>
 /** Narrows supertest's `any` body to the ballot API contract for assertions. */
 const asBallot = (res: request.Response): BallotResponseDto =>
   res.body as BallotResponseDto;
+
+/** Narrows supertest's `any` body to the results API contract for assertions. */
+const asResults = (res: request.Response): PollResultsResponseDto =>
+  res.body as PollResultsResponseDto;
 
 describe('Polls (e2e)', () => {
   let app: INestApplication<App>;
@@ -243,6 +251,115 @@ describe('Polls (e2e)', () => {
       await request(app.getHttpServer())
         .post('/api/v1/polls/00000000-0000-0000-0000-000000000000/ballots')
         .send(fullRanking())
+        .expect(404);
+    });
+  });
+
+  describe('GET /api/v1/polls/:id/results', () => {
+    let poll: PollResponseDto;
+
+    /** A fresh poll per test keeps ballot counts independent. */
+    beforeEach(async () => {
+      poll = asPoll(
+        await request(app.getHttpServer())
+          .post('/api/v1/polls')
+          .send({ title: 'Lunch', options: ['Pizza', 'Sushi', 'Salad'] })
+          .expect(201),
+      );
+    });
+
+    /** Casts one ballot ranking the poll's options by text, best-first. */
+    const vote = async (...texts: string[]) => {
+      const entries = texts.map((text, index) => ({
+        optionId: poll.options.find((option) => option.text === text)!.id,
+        rank: index + 1,
+      }));
+      await request(app.getHttpServer())
+        .post(`/api/v1/polls/${poll.id}/ballots`)
+        .send({ entries })
+        .expect(201);
+    };
+
+    const getResults = async () =>
+      asResults(
+        await request(app.getHttpServer())
+          .get(`/api/v1/polls/${poll.id}/results`)
+          .expect(200),
+      );
+
+    it('scores every option 0 with no winner before any vote', async () => {
+      const results = await getResults();
+
+      expect(results).toEqual({
+        pollId: poll.id,
+        title: 'Lunch',
+        method: 'BORDA',
+        winners: [],
+        scores: [
+          { optionId: poll.options[0].id, text: 'Pizza', score: 0 },
+          { optionId: poll.options[1].id, text: 'Sushi', score: 0 },
+          { optionId: poll.options[2].id, text: 'Salad', score: 0 },
+        ],
+        totalBallots: 0,
+      });
+    });
+
+    it('tallies submitted ballots by Borda count', async () => {
+      await vote('Pizza', 'Sushi', 'Salad');
+      await vote('Sushi', 'Pizza', 'Salad');
+      await vote('Sushi', 'Salad', 'Pizza');
+
+      const results = await getResults();
+
+      expect(results.scores).toEqual([
+        { optionId: poll.options[1].id, text: 'Sushi', score: 5 },
+        { optionId: poll.options[0].id, text: 'Pizza', score: 3 },
+        { optionId: poll.options[2].id, text: 'Salad', score: 1 },
+      ]);
+      expect(results.winners).toEqual([
+        { optionId: poll.options[1].id, text: 'Sushi', score: 5 },
+      ]);
+      expect(results.totalBallots).toBe(3);
+    });
+
+    it('returns every tied leader as a winner', async () => {
+      await vote('Pizza', 'Sushi', 'Salad');
+      await vote('Sushi', 'Pizza', 'Salad');
+
+      const { winners, totalBallots } = await getResults();
+
+      expect(winners).toEqual([
+        { optionId: poll.options[0].id, text: 'Pizza', score: 3 },
+        { optionId: poll.options[1].id, text: 'Sushi', score: 3 },
+      ]);
+      expect(totalBallots).toBe(2);
+    });
+
+    it('counts only ballots cast for this poll', async () => {
+      const other = asPoll(
+        await request(app.getHttpServer())
+          .post('/api/v1/polls')
+          .send({ title: 'Other', options: ['A', 'B'] })
+          .expect(201),
+      );
+      await request(app.getHttpServer())
+        .post(`/api/v1/polls/${other.id}/ballots`)
+        .send({
+          entries: other.options.map((option, index) => ({
+            optionId: option.id,
+            rank: index + 1,
+          })),
+        })
+        .expect(201);
+
+      await vote('Pizza', 'Sushi', 'Salad');
+
+      expect((await getResults()).totalBallots).toBe(1);
+    });
+
+    it('returns 404 for a missing poll', async () => {
+      await request(app.getHttpServer())
+        .get('/api/v1/polls/00000000-0000-0000-0000-000000000000/results')
         .expect(404);
     });
   });
