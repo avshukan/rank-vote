@@ -1,11 +1,16 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import type { PollResponseDto } from '@rank-vote/shared';
+import type { BallotResponseDto, PollResponseDto } from '@rank-vote/shared';
+import { BallotService } from '../../application/ballot/ballot.service';
 import { PollService } from '../../application/poll/poll.service';
 import { CreatePollBodyDto } from './dto/create-poll.dto';
+import { SubmitBallotBodyDto } from './dto/submit-ballot.dto';
 
 @Controller('polls')
 export class PollsController {
-  constructor(private readonly pollService: PollService) {}
+  constructor(
+    private readonly pollService: PollService,
+    private readonly ballotService: BallotService,
+  ) {}
 
   /** POST /api/v1/polls → 201 Created */
   @Post()
@@ -17,5 +22,14 @@ export class PollsController {
   @Get(':id')
   getPoll(@Param('id') id: string): Promise<PollResponseDto> {
     return this.pollService.getPoll(id);
+  }
+
+  /** POST /api/v1/polls/:id/ballots → 201 Created, 400 invalid, 404 no poll */
+  @Post(':id/ballots')
+  submitBallot(
+    @Param('id') id: string,
+    @Body() body: SubmitBallotBodyDto,
+  ): Promise<BallotResponseDto> {
+    return this.ballotService.submitBallot(id, body);
   }
 }
