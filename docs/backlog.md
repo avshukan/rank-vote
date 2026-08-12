@@ -42,6 +42,7 @@
 | 14  | Add ranking with ties           | Value   | Low      | Multiple options can share same rank                                            |
 | 15  | Add partial ranking             | Value   | Low      | Allow ranking only subset of options                                            |
 | 16  | Add real-time updates           | Quality | Low      | Live result updates                                                             |
+| 22  | Add OpenAPI spec                | Quality | Low      | Deferred until a client outside this repo lands — mobile app or Telegram bot    |
 
 ---
 
