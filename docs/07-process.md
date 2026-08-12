@@ -50,7 +50,9 @@ Versioning follows SemVer.
 ## How We Work
 
 1. Maintain a single backlog in `docs/backlog.md` — it is the source of truth
-2. Pick the next item(s) from the backlog and agree scope in the PR/issue description
+2. Pick the next item(s) from the backlog and agree scope in
+   `docs/acceptance-criteria.md` **before** starting the work — the PR
+   description then refers to those criteria instead of restating them
 3. Pick a small stable scope for the iteration
 4. Implement features as vertical slices, sized to fit one agent session
 5. Merge changes to `main` via PR; the PR updates `docs/backlog.md` for the items it completes
