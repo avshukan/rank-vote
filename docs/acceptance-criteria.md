@@ -1,4 +1,4 @@
-# Acceptance Criteria — Tasks #3, #4, #5
+# Acceptance Criteria — Tasks #3, #4, #18, #5
 
 ## #3 Submit Ballot
 
@@ -57,6 +57,35 @@
 
 ---
 
+## #18 Not-Found Page
+
+Frontend only — no API or shared-package change.
+
+### Frontend UX
+
+- [x] `NotFound` (`src/shared/ui/`) renders a headline, a one-line description
+      and a "Create a poll" link back to `/`
+- [x] Default copy is about the route: "Page not found" / "This link does not
+      lead anywhere."
+- [x] Callers override `title`/`description` when a specific entity is missing
+- [x] `NotFoundPage` (`src/pages/`) wraps `NotFound` in the page `<main>`;
+      `NotFound` itself contributes no landmark, so flows that already own a
+      `<main>` can render it inline without nesting landmarks
+- [x] `*` catch-all route in `App.tsx` renders `NotFoundPage`
+- [x] Vote flow reuse: `getPoll` answering `404` renders `NotFound` with
+      "Poll not found" instead of the generic load error
+- [x] A `404` shows **no** Retry button — it is final; non-404 load failures
+      keep the retry affordance from #3
+
+### Edge Cases
+
+- [x] Unknown top-level path (`/no-such-place`) → not-found page
+- [x] Path that over-runs a real route (`/poll/:id/results/extra`) → not-found page
+- [x] Poll URL with a well-formed but unknown id → "Poll not found" via the API `404`
+- [x] Server error (5xx) loading a poll → still the retryable error, not the 404 page
+
+---
+
 ## #5 Show Results
 
 ### Frontend UX
@@ -77,7 +106,8 @@
 ### Edge Cases
 
 - [ ] Poll exists but 0 ballots → "No votes yet" UI (no crash)
-- [ ] Poll does not exist → the shared Not Found page (backlog #18)
+- [ ] Poll does not exist → the shared `NotFound` from #18, rendered inline with
+      the "Poll not found" copy the vote flow already uses
 - [ ] Network error loading results → show error message with retry
 
 ### Out of Scope (tracked separately)

@@ -1,17 +1,14 @@
 import { Navigate, useParams } from 'react-router-dom';
 import { BallotForm } from '../features/vote/BallotForm';
 import { readVotedPollIds } from '../shared/lib/voted-polls';
+import { NotFoundPage } from './NotFoundPage';
 
 /** Target of the shareable link: rank the options and cast a ballot. */
 export function VotePage() {
   const { id } = useParams<{ id: string }>();
 
   if (!id) {
-    return (
-      <main className="mx-auto max-w-xl p-6">
-        <p>Poll not found.</p>
-      </main>
-    );
+    return <NotFoundPage />;
   }
 
   // Soft duplicate-vote protection (docs/06-decisions.md): a browser that has

@@ -61,6 +61,11 @@ push`). e2e runs under `--experimental-vm-modules` (already in `test:e2e`).
 8. **PR.** Commit, push, open a PR to `main`, wait for green CI, merge, delete
    the branch.
 
+9. **Report.** Open the summary with the backlog ID and the item's essence in one
+   line — "#18 Not-found page — shared 404 surface plus a catch-all route" —
+   before the PR link, the gate result and anything left undone. Whatever was
+   found but not fixed gets its own backlog ID, named just as explicitly.
+
 ## Gotchas learned the hard way
 
 - `git fetch` before judging what is merged. A stale `origin/main` makes local
@@ -72,3 +77,9 @@ push`). e2e runs under `--experimental-vm-modules` (already in `test:e2e`).
   `dist` is missing — reinstall or build it.
 - The gate must include `format:check`; Prettier ignores generated code via
   `.prettierignore` (e.g. `apps/api/src/generated`).
+- `pnpm dev` renders a blank web app (backlog #21): Vite serves the CJS-only
+  `packages/shared` dist to the browser unbundled, so named imports throw. For
+  step 7, drive the production build instead: `vite build`, then
+  `vite preview --port 5173`. The port matters — `CORS_ORIGIN` pins 5173, and on
+  any other port the API rejects the preflight and every fetch looks like a
+  network error. Delete this bullet when #21 lands.

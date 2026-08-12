@@ -133,11 +133,21 @@ describe('BallotForm', () => {
     });
   });
 
-  it('reports a missing poll instead of the form', async () => {
+  it('shows the not-found surface for a missing poll, with no retry', async () => {
     getPollMock.mockRejectedValue(new ApiError(404, 'Poll poll-1 not found'));
     renderForm();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('This poll does not exist.');
+    expect(await screen.findByRole('heading', { name: 'Poll not found' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Create a poll' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Submit vote' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the retry affordance for a load failure that is not a 404', async () => {
+    getPollMock.mockRejectedValue(new ApiError(500, 'boom'));
+    renderForm();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not load the poll.');
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
   });
 });
