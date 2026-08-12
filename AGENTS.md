@@ -29,7 +29,7 @@ Node) — it provides the pinned pnpm version automatically.
 
 ```bash
 pnpm install          # install all workspace deps (also installs the pre-commit hook)
-pnpm dev              # run all apps in dev mode
+pnpm dev              # run all apps in dev mode — WEB IS BROKEN, see backlog #21
 pnpm build            # build all packages
 pnpm test             # run all tests (Jest in api, Vitest in web/shared)
 pnpm lint             # ESLint, check only (use lint:fix in a package to auto-fix)
@@ -39,6 +39,11 @@ pnpm format           # Prettier write; format:check for CI-style check
 
 Target one package with `pnpm --filter <name>`, e.g. `pnpm --filter @rank-vote/api test`,
 `pnpm --filter @rank-vote/shared build`.
+
+Until backlog #21 is fixed, `pnpm dev` serves a blank web app: Vite hands the
+browser the CommonJS-only `packages/shared` dist unbundled, so named imports
+throw and `#root` stays empty. The API half is fine. To run the app, use the
+`verify-app` skill (build + `vite preview`); delete this paragraph with #21.
 
 Pre-commit hook (Prettier via lint-staged) is managed by `simple-git-hooks`;
 after changing its config in `package.json`, re-run `pnpm simple-git-hooks`.
