@@ -48,9 +48,8 @@ push`). e2e runs under `--experimental-vm-modules` (already in `test:e2e`).
    `src/App.tsx`. Tests: Vitest + React Testing Library (validation, submit,
    rendered result).
 
-5. **Gate.** Run the full verification from `AGENTS.md` — it mirrors CI:
-   `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build`.
-   Green locally ⇒ green CI.
+5. **Gate.** Run `make verify` — the full verification from `AGENTS.md`, same
+   steps and order as CI. Green locally ⇒ green CI.
 
 6. **Backlog.** Move the completed item(s) from `## Todo` to `## Done` in
    `docs/backlog.md` — part of the Definition of Done.
@@ -77,7 +76,7 @@ push`). e2e runs under `--experimental-vm-modules` (already in `test:e2e`).
   `postinstall` so `lint`/`typecheck`/`test` (which run before `build` in CI)
   see them. If a consumer reports unresolved `@rank-vote/*` types, the dep's
   `dist` is missing — reinstall or build it.
-- The gate must include `format:check`; Prettier ignores generated code via
+- The gate must include `make format-check`; Prettier ignores generated code via
   `.prettierignore` (e.g. `apps/api/src/generated`).
 - `pnpm dev` renders a blank web app (backlog #21), which is why step 7 goes
   through `verify-app` rather than the dev server.

@@ -6,7 +6,14 @@
       "Bash(gh pr checks *)",
       "Bash(gh pr merge:*)",
       "Bash(gh pr merge *)",
-      "Bash(pnpm -v)"
+      "Bash(pnpm -v)",
+      "Bash(make help)",
+      "Bash(make verify)",
+      "Bash(make format-check)",
+      "Bash(make lint)",
+      "Bash(make typecheck)",
+      "Bash(make test)",
+      "Bash(make build)"
     ]
   }
 }

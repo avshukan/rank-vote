@@ -40,10 +40,16 @@ pnpm format           # Prettier write; format:check for CI-style check
 Target one package with `pnpm --filter <name>`, e.g. `pnpm --filter @rank-vote/api test`,
 `pnpm --filter @rank-vote/shared build`.
 
+The `Makefile` wraps the multi-step rituals; `make help` lists them. Worth
+knowing: `make setup` (install + `.env` files), `make verify` (the full gate
+below), and `make web` / `make api` / `make seed` / `make down` for running the
+app. Anything that is a single pnpm script stays a pnpm script.
+
 Until backlog #21 is fixed, `pnpm dev` serves a blank web app: Vite hands the
 browser the CommonJS-only `packages/shared` dist unbundled, so named imports
-throw and `#root` stays empty. The API half is fine. To run the app, use the
-`verify-app` skill (build + `vite preview`); delete this paragraph with #21.
+throw and `#root` stays empty. The API half is fine. To run the app, use
+`make api` and `make web` in two terminals (see the `verify-app` skill); delete
+this paragraph and the `pnpm dev` row above with #21.
 
 Pre-commit hook (Prettier via lint-staged) is managed by `simple-git-hooks`;
 after changing its config in `package.json`, re-run `pnpm simple-git-hooks`.
@@ -68,18 +74,19 @@ Copy `.env.example` to `.env` in each app before running locally.
 Before declaring any task complete, run:
 
 ```bash
-pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build
+make verify   # pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
 and report the results. This mirrors the CI job exactly (same steps, same
-order), so a green local run means a green CI. A change without a passing
+order), so a green local run means a green CI. Re-run a single step with
+`make lint`, `make test`, … while fixing. A change without a passing
 verification run is not done. New behavior requires new tests.
 
 ---
 
 ## Definition of Done
 
-- `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass locally
+- `make verify` passes locally
 - Tests added/updated for changed behavior
 - Relevant `docs/` files updated (or none affected)
 - Manually verified end-to-end
