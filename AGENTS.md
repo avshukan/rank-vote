@@ -88,9 +88,14 @@ verification run is not done. New behavior requires new tests.
 
 - `make verify` passes locally
 - Tests added/updated for changed behavior
-- Relevant `docs/` files updated (or none affected)
+- Relevant docs updated (or none affected) — `docs/`, plus `README.md`,
+  `AGENTS.md`, `.claude/` and `.github/` if a command or the process changed
 - Manually verified end-to-end
 - CI is green before merge
+
+When a change touches a command, grep for a stable part of its **old** form
+(`pnpm lint`) rather than the part you are changing — a copy that has already
+drifted matches only the stable part.
 
 ---
 
