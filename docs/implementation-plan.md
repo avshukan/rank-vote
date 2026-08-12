@@ -107,7 +107,8 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 - On load: check `localStorage` key `voted_poll_ids` — if poll ID present, redirect to Results
 - Fetch poll via `GET /api/v1/polls/:id`
 - Drag-and-drop ranking list (all options must be ordered)
-- Submit button enabled only when all options have been ranked
+- The list starts in the poll's option order, so the ballot is complete from the
+  first render and the submit button never has to be disabled
 - On success: store poll ID in `localStorage`, redirect to Results
 
 ### 3.4 Results Page (`features/results/`)

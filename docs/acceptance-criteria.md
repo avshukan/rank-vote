@@ -65,14 +65,26 @@
 - [ ] Displays: poll title, winner badge, score table (position / option text / score), total ballots count
 - [ ] Single winner: show highlighted winner badge
 - [ ] Multiple winners (tie): show all with "Tied winners" label
+- [ ] Tied options share a position range and the next position skips past it:
+      two options tied at the top are both `1-2`, the option after them is `3`
 - [ ] 0 ballots (`totalBallots: 0`): show message "No votes yet" + "Share link" button
+      that copies the **vote** URL `/poll/:id` — a browser that already voted is
+      redirected from there to these results, so one link serves both cases
 - [ ] Results URL is shareable — anyone can open it directly
+- [ ] The "Vote submitted" banner (`location.state.justVoted`, set by the ballot
+      form in #3) still renders on the finished page
 
 ### Edge Cases
 
 - [ ] Poll exists but 0 ballots → "No votes yet" UI (no crash)
-- [ ] Poll does not exist → 404 page
+- [ ] Poll does not exist → the shared Not Found page (backlog #18)
 - [ ] Network error loading results → show error message with retry
+
+### Out of Scope (tracked separately)
+
+- Explaining how the points produced the ranking → backlog #19
+- Manual "Refresh results" button → backlog #20
+- Full mobile layout → backlog #6; this task ships basic Tailwind responsiveness only
 
 ---
 

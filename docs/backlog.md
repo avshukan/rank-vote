@@ -27,9 +27,12 @@
 | ID  | Title                           | Type    | Priority | Notes                                                                           |
 | --- | ------------------------------- | ------- | -------- | ------------------------------------------------------------------------------- |
 | === | =============================== | ======= | ======== | =============================================================================== |
-| 5   | Show results                    | Value   | High     | Winner(s) and score table                                                       |
+| 18  | Not-found page                  | Quality | High     | Shared 404 page + `*` catch-all route; blocks #5, reuse it in the vote flow     |
+| 5   | Show results                    | Value   | High     | Winner(s) and score table; needs #18 for the missing-poll case                  |
 | 17  | Migrate SQLite → PostgreSQL     | Quality | High     | Decision accepted in `docs/06-decisions.md`; do it before the first deploy      |
 | 6   | Mobile responsive layout        | Quality | Medium   | Basic responsive UI                                                             |
+| 19  | Explain score calculation       | Value   | Medium   | Show how the points produced the ranking; per counting method — needs #5        |
+| 20  | Refresh results button          | Quality | Medium   | Manual re-fetch on the results page while there are no live updates (#16)       |
 | 8   | Add IRV counting                | Value   | Medium   | Instant-runoff voting                                                           |
 | 9   | Add Condorcet counting          | Value   | Medium   | Pairwise comparison winner                                                      |
 | 10  | Compare counting methods        | Value   | Medium   | Show different winners for same ballots                                         |
