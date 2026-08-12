@@ -27,8 +27,8 @@
 | ID  | Title                           | Type    | Priority | Notes                                                                           |
 | --- | ------------------------------- | ------- | -------- | ------------------------------------------------------------------------------- |
 | === | =============================== | ======= | ======== | =============================================================================== |
-| 18  | Not-found page                  | Quality | High     | Shared 404 page + `*` catch-all route; blocks #5, reuse it in the vote flow     |
-| 5   | Show results                    | Value   | High     | Winner(s) and score table; needs #18 for the missing-poll case                  |
+| 21  | Fix `pnpm dev` blank web app    | Quality | High     | Vite serves the CJS-only `shared` dist raw; named imports throw, `#root` empty  |
+| 5   | Show results                    | Value   | High     | Winner(s) and score table; use the `NotFound` from #18 for the missing poll     |
 | 17  | Migrate SQLite → PostgreSQL     | Quality | High     | Decision accepted in `docs/06-decisions.md`; do it before the first deploy      |
 | 6   | Mobile responsive layout        | Quality | Medium   | Basic responsive UI                                                             |
 | 19  | Explain score calculation       | Value   | Medium   | Show how the points produced the ranking; per counting method — needs #5        |
@@ -55,3 +55,4 @@
 |   3 | Submit ballot                   | Value   | High     | `POST /polls/:id/ballots` + drag-and-drop vote page                             |
 |   7 | Prevent duplicate voting        | Quality | Medium   | `voted_poll_ids` written on submit, checked in `VotePage` — delivered with #3   |
 |   4 | Calculate Borda result          | Value   | High     | `GET /polls/:id/results` — Borda tally, ties give multiple winners              |
+|  18 | Not-found page                  | Quality | High     | Shared `NotFound` + `*` catch-all route; vote flow uses it for a missing poll   |

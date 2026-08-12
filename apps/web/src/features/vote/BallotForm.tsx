@@ -20,6 +20,7 @@ import { ApiError } from '../../shared/api/client';
 import { submitBallot } from '../../shared/api/ballots';
 import { getPoll } from '../../shared/api/polls';
 import { markPollAsVoted } from '../../shared/lib/voted-polls';
+import { NotFound } from '../../shared/ui/NotFound';
 import { SortableOption } from './SortableOption';
 
 /**
@@ -32,6 +33,7 @@ export function BallotForm({ pollId }: { pollId: string }) {
   const [poll, setPoll] = useState<PollResponseDto | null>(null);
   const [ranking, setRanking] = useState<PollOptionDto[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [missing, setMissing] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -46,11 +48,11 @@ export function BallotForm({ pollId }: { pollId: string }) {
       })
       .catch((cause: unknown) => {
         if (!active) return;
-        setLoadError(
-          cause instanceof ApiError && cause.status === 404
-            ? 'This poll does not exist.'
-            : 'Could not load the poll.',
-        );
+        if (cause instanceof ApiError && cause.status === 404) {
+          setMissing(true);
+          return;
+        }
+        setLoadError('Could not load the poll.');
       });
     return () => {
       active = false;
@@ -106,6 +108,12 @@ export function BallotForm({ pollId }: { pollId: string }) {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // A 404 is final, so it gets the shared not-found surface rather than the
+  // retry affordance below — there is nothing to retry.
+  if (missing) {
+    return <NotFound title="Poll not found" description="This poll does not exist." />;
   }
 
   if (loadError) {
