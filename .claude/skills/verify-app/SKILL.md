@@ -35,10 +35,27 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
 3. **Seed real data** through the API, so the browser drives real UUIDs:
 
    ```bash
-   curl -s -X POST http://localhost:3000/api/v1/polls \
+   POLL_ID=$(curl -s -X POST http://localhost:3000/api/v1/polls \
      -H 'Content-Type: application/json' \
-     -d '{"title":"check","options":["Alpha","Beta"]}'
+     -d '{"title":"check","options":["Alpha","Beta"]}' \
+     | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
    ```
+
+   The results page needs a ballot too, or it renders all-zero scores and
+   proves nothing. A ballot must rank every option, so build `entries` from
+   the poll itself rather than by hand:
+
+   ```bash
+   curl -s "http://localhost:3000/api/v1/polls/$POLL_ID" \
+     | python3 -c 'import sys,json; o=json.load(sys.stdin)["options"]; print(json.dumps({"entries":[{"optionId":x["id"],"rank":i+1} for i,x in enumerate(o)]}))' \
+     | curl -s -X POST "http://localhost:3000/api/v1/polls/$POLL_ID/ballots" \
+       -H 'Content-Type: application/json' -d @-
+   ```
+
+   Let `python3` assemble the JSON. zsh does not word-split an unquoted
+   variable, so collecting the option ids into a shell string and expanding it
+   (`set -- $ids`) yields one argument, not N — the API then rejects the ballot
+   with a `400` that looks like a validation bug in the app.
 
 4. **Render each route headlessly.** Playwright's chromium is already in the
    local cache — no project dependency needed. `--dump-dom` runs the JS and
@@ -53,6 +70,15 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
    `--virtual-time-budget` waits for the fetch and re-render; without it you dump
    an empty `#root`. Give each render its own `--user-data-dir` so a stuck
    profile lock cannot silently reuse a previous page.
+
+   The routes (`apps/web/src/App.tsx`) are **singular** — `/poll/:id` — while
+   the API path is plural (`/api/v1/polls/:id`). Guessing the plural form on the
+   web side hits the `*` catch-all and renders the not-found page, which is
+   indistinguishable from a real bug:
+   - `/` — create-poll form
+   - `/poll/:id` — vote page
+   - `/poll/:id/results` — results page
+   - anything else — shared `NotFound`
 
 5. **Assert on the rendered DOM,** not on the HTTP status — the SPA answers `200`
    for every path, including the ones that render the 404 page. Grep for the
