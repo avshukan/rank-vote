@@ -52,16 +52,18 @@ Notes:
 
 ### Unit Tests
 
-Target: utility functions and counting display logic.
+Target: utility functions and result display logic.
 
 What to test:
 
-- score formatting
-- rank sorting helpers
+- position labels in the score table, including the tie form (`1-2`, `1-2`, `3`)
+- `localStorage` helpers for duplicate-vote protection
+
+The API returns `scores` already sorted (score DESC, then option order ASC), so
+the frontend has no sorting or counting logic of its own to test — only how that
+order is rendered.
 
 Framework: Vitest (built-in with Vite)
-
-> **Note:** `vitest` and `@testing-library/react` are not yet installed. Add them to `apps/web` devDependencies in Phase 3.
 
 Location: co-located with source files (`*.test.ts`)
 
@@ -73,8 +75,11 @@ MVP: minimal component testing.
 
 Focus:
 
-- ranking form renders options correctly
-- submit button is disabled until all options are ranked
+- ranking form renders options correctly and submits them in the displayed order
+  (the list starts in the poll's own option order, so a ballot is always complete
+  and the submit button is never disabled)
+- results page renders winner, score table and the zero-ballot state
+- loading and error/retry states of pages that fetch
 
 Framework: Vitest + React Testing Library
 
