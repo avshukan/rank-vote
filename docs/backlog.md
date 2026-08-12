@@ -27,8 +27,8 @@
 | ID  | Title                           | Type    | Priority | Notes                                                                           |
 | --- | ------------------------------- | ------- | -------- | ------------------------------------------------------------------------------- |
 | === | =============================== | ======= | ======== | =============================================================================== |
-| 4   | Calculate Borda result          | Value   | High     | Initial counting method; supports tie (multiple winners)                        |
 | 5   | Show results                    | Value   | High     | Winner(s) and score table                                                       |
+| 17  | Migrate SQLite → PostgreSQL     | Quality | High     | Decision accepted in `docs/06-decisions.md`; do it before the first deploy      |
 | 6   | Mobile responsive layout        | Quality | Medium   | Basic responsive UI                                                             |
 | 8   | Add IRV counting                | Value   | Medium   | Instant-runoff voting                                                           |
 | 9   | Add Condorcet counting          | Value   | Medium   | Pairwise comparison winner                                                      |
@@ -51,3 +51,4 @@
 |   2 | Share poll link                 | Value   | High     | Shareable `/poll/:id` link with copy button, shown after creation               |
 |   3 | Submit ballot                   | Value   | High     | `POST /polls/:id/ballots` + drag-and-drop vote page                             |
 |   7 | Prevent duplicate voting        | Quality | Medium   | `voted_poll_ids` written on submit, checked in `VotePage` — delivered with #3   |
+|   4 | Calculate Borda result          | Value   | High     | `GET /polls/:id/results` — Borda tally, ties give multiple winners              |

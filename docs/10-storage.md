@@ -16,8 +16,8 @@ Reason:
 - migrated while there is **no production data**, the cheapest moment to switch
 - Prisma provides full TypeScript type safety and keeps the swap small
 
-> **Implementation note:** the migration is a pending slice. Until it lands, the
-> running code still uses SQLite as documented under
+> **Implementation note:** the migration is a pending slice — backlog item #17.
+> Until it lands, the running code still uses SQLite as documented under
 > [Backup & Migration](#backup--migration) below.
 
 ---

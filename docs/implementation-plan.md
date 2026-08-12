@@ -51,9 +51,9 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 ### 2.2 Domain Layer (`src/domain/`)
 
-- Implement `BordaCount` service:
+- Implement `calculateBorda` (pure function, `domain/result/borda.ts`):
   - For N options, rank 1 → N−1 points, rank 2 → N−2 points, …, last → 0 points
-  - Output: options sorted by total score, winner identified
+  - Output: options sorted by total score, winners identified (all leaders on a tie)
 - Implement ballot validator:
   - All poll options must be present
   - Ranks are unique consecutive integers starting from 1
@@ -65,6 +65,7 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
   - `getPoll(id)` → returns poll with options or throws `NotFoundException`
 - `BallotService`:
   - `submitBallot(pollId, dto)` → validates, persists ballot + entries, returns ballot DTO
+- `ResultService`:
   - `getResults(pollId)` → loads all ballots, runs Borda count, returns results DTO
 
 ### 2.4 Presentation Layer (`src/presentation/`)
