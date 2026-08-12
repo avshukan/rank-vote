@@ -19,7 +19,9 @@ Pure refactors or single-package changes don't need the full sequence.
 
 1. **Pick & branch.** Choose the top open item in `docs/backlog.md`. Create
    `feat/<name>` (or `fix/`, `chore/`). Read the item's row and the relevant
-   `docs/` (`09-api-design.md`, `10-storage.md`, `04-domain-model.md`).
+   `docs/` (`09-api-design.md`, `10-storage.md`, `04-domain-model.md`). If the
+   item's acceptance criteria still hold open questions, run `task-readiness`
+   first and land its docs PR.
 
 2. **shared** (`packages/shared`). Add only the types/DTOs/constants this slice
    needs — they are the single source of truth for the wire contract. Keep them
@@ -61,6 +63,9 @@ push`). e2e runs under `--experimental-vm-modules` (already in `test:e2e`).
 
 ## Gotchas learned the hard way
 
+- `git fetch` before judging what is merged. A stale `origin/main` makes local
+  work look unmerged, and `gh pr list` defaults to `--state open`, so a merged
+  PR reads as one that was never opened — use `--state all`.
 - Internal packages are consumed from their built `dist`; they build on
   `postinstall` so `lint`/`typecheck`/`test` (which run before `build` in CI)
   see them. If a consumer reports unresolved `@rank-vote/*` types, the dep's

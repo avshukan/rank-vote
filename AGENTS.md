@@ -82,10 +82,18 @@ verification run is not done. New behavior requires new tests.
 
 ---
 
-## Skills
+## Skills & Commands
 
 - Recurring procedures live in `.claude/skills/` — read them before inventing
   your own approach.
+- `.claude/commands/` holds the same kind of knowledge in the other trigger
+  mode. Which one a procedure belongs in:
+  - **skill** — the agent should recognise on its own that the procedure
+    applies (`new-slice` when picking up a backlog item, `task-readiness`
+    before implementing one).
+  - **command** — a ritual the human starts at a chosen moment, where firing
+    automatically would be wrong (`/retro`, `/handoff`).
+- Both directories are committed. Check both before writing a new one.
 - If you performed a multi-step procedure this session that will clearly recur,
   or noticed an existing skill or instruction is wrong, propose creating or
   fixing it at the end of the session (do not create or change skills silently).
