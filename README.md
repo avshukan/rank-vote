@@ -5,16 +5,16 @@ Simple web app for group decisions using ranked voting (Borda count).
 ## Quick Start
 
 ```bash
-# Install dependencies
-pnpm install
+# Install dependencies and create the .env files from the examples
+make setup
 
-# Copy env files and fill in values
-cp apps/api/.env.example apps/api/.env
-cp apps/web/.env.example apps/web/.env
-
-# Start all apps in dev mode
-pnpm dev
+# Run the app — two terminals, API first
+make api
+make web        # http://localhost:5173
 ```
+
+`make help` lists the rest. `pnpm dev` currently renders a blank page
+(see backlog #21), which is why the two halves are started separately.
 
 ## Environment Variables
 

@@ -4,9 +4,10 @@
 
 ## Definition of Done
 
-- [ ] `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass locally
+- [ ] `make verify` passes locally
 - [ ] Tests added/updated for changed behavior
-- [ ] Relevant `docs/` files updated (or none affected)
+- [ ] Relevant docs updated (or none affected) — `docs/`, plus `README.md`,
+      `AGENTS.md`, `.claude/` and `.github/` if a command or the process changed
 - [ ] Manually verified the change end-to-end
 
 ## AI involvement

@@ -56,7 +56,7 @@ and for items whose acceptance criteria were written in the same session.
    shared page, a shared component, a route change) ships as its own PR — folding
    it into the feature makes that PR touch unrelated flows.
 
-7. **Ship the docs.** Own branch `docs/<name>`, `pnpm format:check`, PR, merge.
+7. **Ship the docs.** Own branch `docs/<name>`, `make format-check`, PR, merge.
    Only then start `new-slice`.
 
 ## Gotchas learned the hard way

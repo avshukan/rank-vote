@@ -16,46 +16,29 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
 
 ## Steps
 
-1. **Serve the web app.** `pnpm dev` is broken (backlog #21), so build and preview:
-
-   ```bash
-   pnpm --filter @rank-vote/web exec vite build
-   pnpm --filter @rank-vote/web exec vite preview --port 5173 --strictPort
-   ```
+1. **Serve the web app** with `make web` — `pnpm dev` is broken (backlog #21),
+   so the target builds and previews instead.
 
    The port is load-bearing: `CORS_ORIGIN` in `apps/api/.env` pins
-   `http://localhost:5173`. On any other port the API rejects the preflight and
-   every fetch surfaces as a generic network error, which reads exactly like an
-   app bug and sends you chasing the wrong thing.
+   `http://localhost:5173`, which is why `make web` passes `--strictPort`. On
+   any other port the API rejects the preflight and every fetch surfaces as a
+   generic network error, which reads exactly like an app bug and sends you
+   chasing the wrong thing.
 
-2. **Start the API separately** — `cd apps/api && pnpm dev`, not root `pnpm dev`.
-   Root `pnpm dev` is one supervisor over both apps: killing the web port to
-   restart it takes the API down with it.
+2. **Start the API separately** — `make api` in its own terminal, not root
+   `pnpm dev`. Root `pnpm dev` is one supervisor over both apps: killing the web
+   port to restart it takes the API down with it.
 
-3. **Seed real data** through the API, so the browser drives real UUIDs:
+3. **Seed real data** with `make seed`, so the browser drives real UUIDs. It
+   creates a poll and prints its vote and results URLs.
 
-   ```bash
-   POLL_ID=$(curl -s -X POST http://localhost:3000/api/v1/polls \
-     -H 'Content-Type: application/json' \
-     -d '{"title":"check","options":["Alpha","Beta"]}' \
-     | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
-   ```
-
-   The results page needs a ballot too, or it renders all-zero scores and
-   proves nothing. A ballot must rank every option, so build `entries` from
-   the poll itself rather than by hand:
-
-   ```bash
-   curl -s "http://localhost:3000/api/v1/polls/$POLL_ID" \
-     | python3 -c 'import sys,json; o=json.load(sys.stdin)["options"]; print(json.dumps({"entries":[{"optionId":x["id"],"rank":i+1} for i,x in enumerate(o)]}))' \
-     | curl -s -X POST "http://localhost:3000/api/v1/polls/$POLL_ID/ballots" \
-       -H 'Content-Type: application/json' -d @-
-   ```
-
-   Let `python3` assemble the JSON. zsh does not word-split an unquoted
-   variable, so collecting the option ids into a shell string and expanding it
-   (`set -- $ids`) yields one argument, not N — the API then rejects the ballot
-   with a `400` that looks like a validation bug in the app.
+   The ballot it posts is not optional garnish: without one the results page
+   renders all-zero scores and proves nothing. A ballot must rank every option,
+   so the target builds `entries` from the poll's own options via `python3`
+   rather than by hand — zsh does not word-split an unquoted variable, so
+   collecting the option ids into a shell string and expanding it (`set -- $ids`)
+   yields one argument, not N, and the API then rejects the ballot with a `400`
+   that looks like a validation bug in the app.
 
 4. **Render each route headlessly.** Playwright's chromium is already in the
    local cache — no project dependency needed. `--dump-dom` runs the JS and
@@ -99,4 +82,4 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
 - Coreutils sometimes resolve oddly inside loops and functions in this sandbox
   (`command not found: head`). Use absolute paths — `/usr/bin/head`,
   `/usr/bin/grep` — in scripted renders.
-- Kill the servers when done: `lsof -ti:5173,3000 | xargs kill`.
+- Kill the servers when done: `make down`.
