@@ -143,7 +143,9 @@ drifted matches only the stable part.
   (GitHub Copilot agent branches are `copilot/*`)
 - CI must be green before merge; each merged PR must be production-ready
 - Slice work vertically, sized to fit one agent session
-- The backlog source of truth is `docs/backlog.md`; see current priorities there
+- The backlog source of truth is `docs/backlog.md`; see current priorities there.
+  Its tables have fixed column widths — read the `Format` section in that file
+  before editing them
 - Documentation is part of the Definition of Done — update relevant `docs/`
   files alongside code changes
 - See `docs/07-process.md` for the full process, `docs/12-ai-first.md` for the
