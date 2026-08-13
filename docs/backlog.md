@@ -24,26 +24,28 @@
 
 ## Todo
 
-| ID  | Title                           | Type    | Priority | Notes                                                                                |
-| --- | ------------------------------- | ------- | -------- | ------------------------------------------------------------------------------------ |
-| === | =============================== | ======= | ======== | ===============================================================================      |
-| 21  | Fix `pnpm dev` blank web app    | Quality | High     | Vite serves the CJS-only `shared` dist raw; named imports throw, `#root` empty       |
-| 5   | Show results                    | Value   | High     | Winner(s) and score table; use the `NotFound` from #18 for the missing poll          |
-| 17  | Migrate SQLite → PostgreSQL     | Quality | High     | Decision accepted in `docs/06-decisions.md`; do it before the first deploy           |
-| 6   | Mobile responsive layout        | Quality | Medium   | Basic responsive UI                                                                  |
-| 19  | Explain score calculation       | Value   | Medium   | Show how the points produced the ranking; per counting method — needs #5             |
-| 20  | Refresh results button          | Quality | Medium   | Manual re-fetch on the results page while there are no live updates (#16)            |
-| 8   | Add IRV counting                | Value   | Medium   | Instant-runoff voting                                                                |
-| 9   | Add Condorcet counting          | Value   | Medium   | Pairwise comparison winner                                                           |
-| 10  | Compare counting methods        | Value   | Medium   | Show different winners for same ballots                                              |
-| 11  | Add PWA support                 | Quality | Low      | Installable web app                                                                  |
-| 12  | Add poll editing                | Value   | Low      | Edit poll after creation                                                             |
-| 13  | Add poll expiration             | Value   | Low      | Closing date/time                                                                    |
-| 14  | Add ranking with ties           | Value   | Low      | Multiple options can share same rank                                                 |
-| 15  | Add partial ranking             | Value   | Low      | Allow ranking only subset of options                                                 |
-| 16  | Add real-time updates           | Quality | Low      | Live result updates                                                                  |
-| 22  | Add OpenAPI spec                | Quality | Low      | Deferred until a client outside this repo lands — mobile app or Telegram bot         |
-| 23  | `/critique` command             | Quality | Low      | Design self-critique before implementing; seen 1× (2026-08-13) — write it on the 2nd |
+| ID  | Title                           | Type    | Priority | Notes                                                                           |
+| --- | ------------------------------- | ------- | -------- | ------------------------------------------------------------------------------- |
+| === | =============================== | ======= | ======== | =============================================================================== |
+| 21  | Fix `pnpm dev` blank web app    | Quality | High     | Vite serves the CJS-only `shared` dist raw;                                     |
+| 21  |                                 |         |          | named imports throw, `#root` empty                                              |
+| 5   | Show results                    | Value   | High     | Winner(s) and score table; use the `NotFound` from #18 for the missing poll     |
+| 17  | Migrate SQLite → PostgreSQL     | Quality | High     | Decision accepted in `docs/06-decisions.md`; do it before the first deploy      |
+| 6   | Mobile responsive layout        | Quality | Medium   | Basic responsive UI                                                             |
+| 19  | Explain score calculation       | Value   | Medium   | Show how the points produced the ranking; per counting method — needs #5        |
+| 20  | Refresh results button          | Quality | Medium   | Manual re-fetch on the results page while there are no live updates (#16)       |
+| 8   | Add IRV counting                | Value   | Medium   | Instant-runoff voting                                                           |
+| 9   | Add Condorcet counting          | Value   | Medium   | Pairwise comparison winner                                                      |
+| 10  | Compare counting methods        | Value   | Medium   | Show different winners for same ballots                                         |
+| 11  | Add PWA support                 | Quality | Low      | Installable web app                                                             |
+| 12  | Add poll editing                | Value   | Low      | Edit poll after creation                                                        |
+| 13  | Add poll expiration             | Value   | Low      | Closing date/time                                                               |
+| 14  | Add ranking with ties           | Value   | Low      | Multiple options can share same rank                                            |
+| 15  | Add partial ranking             | Value   | Low      | Allow ranking only subset of options                                            |
+| 16  | Add real-time updates           | Quality | Low      | Live result updates                                                             |
+| 22  | Add OpenAPI spec                | Quality | Low      | Deferred until a client outside this repo lands — mobile app or Telegram bot    |
+| 23  | `/critique` command             | Quality | Low      | Design self-critique before implementing;                                       |
+| 21  |                                 |         |          | Seen 1× (2026-08-13) — write it on the 2nd                                      |
 
 ---
 
