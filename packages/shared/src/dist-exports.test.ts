@@ -1,8 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { readFileSync, realpathSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 // `packages/shared` is consumed from two different module systems: the NestJS
@@ -14,8 +12,77 @@ import { beforeAll, describe, expect, it } from 'vitest';
 describe('@rank-vote/shared build output', () => {
   // Vitest runs from the package root. A wrong cwd cannot go unnoticed: the
   // build below is what would fail first.
-  const packageRoot = process.cwd();
+  const packageRoot = realpathSync(process.cwd());
+  const repoRoot = join(packageRoot, '..', '..');
   const read = (...segments: string[]) => readFileSync(join(packageRoot, ...segments), 'utf8');
+
+  type Entry = {
+    /** The resolved entry point, relative to the package root. */
+    path: string;
+    source: string;
+    maxOptions: number;
+    bordaMethod: string;
+  };
+
+  // Each half is resolved the way its own consumer resolves it: by package
+  // name, from that app's directory, in a child Node process — so the
+  // `exports` map does the routing, and neither Vite nor Vitest is in the way.
+  // Reading `dist/` by a hard-coded path instead would leave the map untested,
+  // and a map that sent `import` back to the CommonJS file would reproduce the
+  // blank page with every assertion still green. Loading is not proof by
+  // itself either: Node synthesizes named exports out of CommonJS, so the
+  // import below would succeed against the wrong file — hence the assertions
+  // on the resolved path. The specifier lives in these strings rather than in
+  // an `import` of this file on purpose: the gate runs typecheck before build,
+  // where `dist/` and its declarations do not exist yet.
+  const ESM_PROBE = `
+    import { realpathSync } from 'node:fs';
+    import { fileURLToPath } from 'node:url';
+    import * as shared from '@rank-vote/shared';
+
+    process.stdout.write(
+      JSON.stringify({
+        path: realpathSync(fileURLToPath(import.meta.resolve('@rank-vote/shared'))),
+        maxOptions: shared.MAX_OPTIONS,
+        bordaMethod: shared.CountingMethod.BORDA,
+      }),
+    );
+  `;
+
+  const CJS_PROBE = `
+    const { realpathSync } = require('node:fs');
+    const shared = require('@rank-vote/shared');
+
+    process.stdout.write(
+      JSON.stringify({
+        path: realpathSync(require.resolve('@rank-vote/shared')),
+        maxOptions: shared.MAX_OPTIONS,
+        bordaMethod: shared.CountingMethod.BORDA,
+      }),
+    );
+  `;
+
+  const loadFrom = (app: string, nodeArgs: string[], probe: string): Entry => {
+    const stdout = execFileSync(process.execPath, [...nodeArgs, '--eval', probe], {
+      cwd: join(repoRoot, 'apps', app),
+      encoding: 'utf8',
+      // Let the child's own failure — a resolution error, a missing build
+      // half — reach the test output instead of a bare "command failed".
+      stdio: ['ignore', 'pipe', 'inherit'],
+    });
+    const { path, ...values } = JSON.parse(stdout) as Omit<Entry, 'path' | 'source'> & {
+      path: string;
+    };
+
+    return {
+      path: relative(packageRoot, path),
+      source: readFileSync(path, 'utf8'),
+      ...values,
+    };
+  };
+
+  let esm: Entry;
+  let cjs: Entry;
 
   // Build from clean first, so these assertions describe what the build config
   // emits today rather than whatever artifacts an earlier branch left in
@@ -35,42 +102,29 @@ describe('@rank-vote/shared build output', () => {
 
     run('clean');
     run('build');
+
+    esm = loadFrom('web', ['--input-type=module'], ESM_PROBE);
+    cjs = loadFrom('api', [], CJS_PROBE);
   }, 120_000);
 
-  it('emits CommonJS for the require condition, which the API resolves', () => {
-    const cjs = read('dist', 'index.js');
-
-    expect(cjs).toContain('require(');
-    expect(cjs).not.toMatch(/^export /m);
+  it('routes the API to a CommonJS build through the require condition', () => {
+    expect(cjs.path).toBe(join('dist', 'index.js'));
+    expect(cjs.source).toContain('require(');
+    expect(cjs.source).not.toMatch(/^export /m);
   });
 
-  it('emits real ESM for the import condition, which Vite resolves', () => {
-    const esm = read('dist', 'esm', 'index.js');
-
-    expect(esm).toMatch(/^export \* from/m);
-    expect(esm).not.toContain('require(');
+  it('routes Vite to a real ESM build through the import condition', () => {
+    expect(esm.path).toBe(join('dist', 'esm', 'index.js'));
+    expect(esm.source).toMatch(/^export \* from/m);
+    expect(esm.source).not.toContain('require(');
   });
 
   it('marks the ESM output as a module, so Node does not read it as CommonJS', () => {
     expect(JSON.parse(read('dist', 'esm', 'package.json'))).toEqual({ type: 'module' });
   });
 
-  // Both entry points are loaded through a computed specifier on purpose: a
-  // literal one would tie `pnpm typecheck` to the presence of `dist/`, and the
-  // gate runs typecheck before build — so a clean checkout would fail there.
-  it('serves its named exports through the ESM entry point', async () => {
-    const entry = pathToFileURL(join(packageRoot, 'dist', 'esm', 'index.js')).href;
-    const esm = (await import(/* @vite-ignore */ entry)) as typeof import('./index.js');
-
-    expect(esm.MAX_OPTIONS).toBe(10);
-    expect(esm.CountingMethod.BORDA).toBe('BORDA');
-  });
-
-  it('serves its named exports through the CommonJS entry point', () => {
-    const require = createRequire(join(packageRoot, 'package.json'));
-    const cjs = require(join(packageRoot, 'dist', 'index.js')) as typeof import('./index.js');
-
-    expect(cjs.MAX_OPTIONS).toBe(10);
-    expect(cjs.CountingMethod.BORDA).toBe('BORDA');
+  it('serves its named exports through both entry points', () => {
+    expect(cjs).toMatchObject({ maxOptions: 10, bordaMethod: 'BORDA' });
+    expect(esm).toMatchObject({ maxOptions: 10, bordaMethod: 'BORDA' });
   });
 });
