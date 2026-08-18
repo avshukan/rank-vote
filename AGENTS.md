@@ -49,6 +49,9 @@ app. Anything that is a single pnpm script stays a pnpm script.
 Vite and the browser to `import` — and its `exports` map routes each consumer
 to the right one. A CommonJS-only build is what used to leave `pnpm dev`
 serving a blank page, so keep both halves when changing how it is built.
+Its `build` must not wipe `dist` first: `pnpm dev` starts every package in
+parallel, and the API's watcher then compiles against a missing `dist`. The
+dual-output test in `packages/shared/src` wipes and rebuilds on its own.
 
 Pre-commit hook (Prettier via lint-staged) is managed by `simple-git-hooks`;
 after changing its config in `package.json`, re-run `pnpm simple-git-hooks`.
