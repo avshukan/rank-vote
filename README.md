@@ -13,8 +13,9 @@ make api
 make web        # http://localhost:5173
 ```
 
-`make help` lists the rest. `pnpm dev` currently renders a blank page
-(see backlog #21), which is why the two halves are started separately.
+`make help` lists the rest. `pnpm dev` runs both halves plus the shared
+package in watch mode under one supervisor; the split targets exist so that
+restarting the web half does not take the API down with it.
 
 ## Environment Variables
 

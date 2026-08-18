@@ -16,8 +16,8 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
 
 ## Steps
 
-1. **Serve the web app** with `make web` — `pnpm dev` is broken (backlog #21),
-   so the target builds and previews instead.
+1. **Serve the web app** with `make web` — the target builds and previews the
+   production bundle, which is what end-to-end verification should exercise.
 
    The port is load-bearing: `CORS_ORIGIN` in `apps/api/.env` pins
    `http://localhost:5173`, which is why `make web` passes `--strictPort`. On
@@ -78,7 +78,8 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
 
 - If the app misbehaves, check whether it also misbehaves on `main` before
   debugging your own diff: `git stash push -u`, render, `git stash pop`. This is
-  how #21 was identified as pre-existing rather than caused by the slice.
+  how the blank-page bug (#21) was identified as pre-existing rather than
+  caused by the slice.
 - Coreutils sometimes resolve oddly inside loops and functions in this sandbox
   (`command not found: head`). Use absolute paths — `/usr/bin/head`,
   `/usr/bin/grep` — in scripted renders.

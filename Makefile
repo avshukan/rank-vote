@@ -51,10 +51,11 @@ build: ## Build every package
 	pnpm build
 
 # --- running the app ---------------------------------------------------------
-# `pnpm dev` serves a blank web app (backlog #21), and root `pnpm dev` puts both
-# apps under one supervisor, so restarting the web half kills the API. Hence two
-# targets, meant for two terminals. WEB_PORT is load-bearing: CORS_ORIGIN in
-# apps/api/.env pins it, and on any other port every fetch fails as a CORS error.
+# Root `pnpm dev` puts both apps under one supervisor, so restarting the web half
+# kills the API. Hence two targets, meant for two terminals; `web` previews the
+# production bundle, which is what end-to-end verification should exercise.
+# WEB_PORT is load-bearing: CORS_ORIGIN in apps/api/.env pins it, and on any
+# other port every fetch fails as a CORS error.
 
 web: ## Build the web app and preview it on WEB_PORT (5173)
 	pnpm --filter @rank-vote/web exec vite build && \

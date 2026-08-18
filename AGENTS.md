@@ -29,7 +29,7 @@ Node) — it provides the pinned pnpm version automatically.
 
 ```bash
 pnpm install          # install all workspace deps (also installs the pre-commit hook)
-pnpm dev              # run all apps in dev mode — WEB IS BROKEN, see backlog #21
+pnpm dev              # run all apps in dev mode (api + web + shared in watch)
 pnpm build            # build all packages
 pnpm test             # run all tests (Jest in api, Vitest in web/shared)
 pnpm lint             # ESLint, check only (use lint:fix in a package to auto-fix)
@@ -45,11 +45,10 @@ knowing: `make setup` (install + `.env` files), `make verify` (the full gate
 below), and `make web` / `make api` / `make seed` / `make down` for running the
 app. Anything that is a single pnpm script stays a pnpm script.
 
-Until backlog #21 is fixed, `pnpm dev` serves a blank web app: Vite hands the
-browser the CommonJS-only `packages/shared` dist unbundled, so named imports
-throw and `#root` stays empty. The API half is fine. To run the app, use
-`make api` and `make web` in two terminals (see the `verify-app` skill); delete
-this paragraph and the `pnpm dev` row above with #21.
+`packages/shared` builds twice — CommonJS for the API to `require`, ESM for
+Vite and the browser to `import` — and its `exports` map routes each consumer
+to the right one. A CommonJS-only build is what used to leave `pnpm dev`
+serving a blank page, so keep both halves when changing how it is built.
 
 Pre-commit hook (Prettier via lint-staged) is managed by `simple-git-hooks`;
 after changing its config in `package.json`, re-run `pnpm simple-git-hooks`.
