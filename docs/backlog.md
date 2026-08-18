@@ -59,7 +59,6 @@ actually changed, instead of a re-alignment of every row.
 | 8   | Add IRV counting           | Value   | Medium   | Instant-runoff voting                                        |
 | 9   | Add Condorcet counting     | Value   | Medium   | Pairwise comparison winner                                   |
 | 10  | Compare counting methods   | Value   | Medium   | Show different winners for same ballots                      |
-| 25  | Unify eslint and TS majors | Quality | Medium   | web is on eslint 10/TS 6, the rest on 9/TS 5; lockfile churn |
 | 11  | Add PWA support            | Quality | Low      | Installable web app                                          |
 | 12  | Add poll editing           | Value   | Low      | Edit poll after creation                                     |
 | 13  | Add poll expiration        | Value   | Low      | Closing date/time                                            |
@@ -68,7 +67,6 @@ actually changed, instead of a re-alignment of every row.
 | 16  | Add real-time updates      | Quality | Low      | Live result updates                                          |
 | 22  | Add OpenAPI spec           | Quality | Low      | Deferred until an outside client lands (mobile app, bot)     |
 | 23  | `/critique` command        | Quality | Low      | Design self-critique; seen 1× 2026-08-13, write on the 2nd   |
-| 24  | `pnpm dev` orphans the API | Quality | Low      | Ctrl+C leaves `node dist/main` on 3000; `nest start --watch` |
 
 ---
 
