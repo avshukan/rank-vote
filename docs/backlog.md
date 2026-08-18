@@ -67,7 +67,7 @@ actually changed, instead of a re-alignment of every row.
 | 15  | Add partial ranking        | Value   | Low      | Allow ranking only subset of options                         |
 | 16  | Add real-time updates      | Quality | Low      | Live result updates                                          |
 | 22  | Add OpenAPI spec           | Quality | Low      | Deferred until an outside client lands (mobile app, bot)     |
-| 23  | `/critique` command        | Quality | Low      | Design self-critique; seen 1× 2026-08-13, write on the 2nd   |
+| 23  | `/critique` command        | Quality | Low      | Design self-critique; seen 2× 2026-08-13, write on the 3rd   |
 
 ---
 
