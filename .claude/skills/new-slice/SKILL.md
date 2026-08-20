@@ -1,6 +1,6 @@
 ---
 name: new-slice
-description: Implement one backlog item as a thin vertical slice (shared → api → web) from branch to merged PR, following the layered-architecture golden path.
+description: Implement one backlog item as a thin vertical slice (shared → api → web) from branch to a PR that is ready for code review, following the layered-architecture golden path.
 ---
 
 # new-slice
@@ -58,13 +58,20 @@ push`). e2e runs under `--experimental-vm-modules` (already in `test:e2e`).
    or the browser), not just tests. Confirm the happy path plus the error codes.
    For anything touching `apps/web`, follow the `verify-app` skill.
 
-8. **PR.** Commit, push, open a PR to `main`, wait for green CI, merge, delete
-   the branch.
+8. **PR.** Commit, push, open a PR to `main`, wait for green CI — and **stop
+   there**. Do not merge and do not delete the branch: the slice still has to go
+   through code review, and merging it yourself is what skips the review. Green
+   CI says the gate passed, not that anyone has read the diff. Merging is the
+   repository owner's call, including when they have merged an earlier PR of
+   yours in the same session — that was one decision about one PR, not standing
+   permission for the next.
 
-9. **Report.** Open the summary with the backlog ID and the item's essence in one
-   line — "#18 Not-found page — shared 404 surface plus a catch-all route" —
-   before the PR link, the gate result and anything left undone. Whatever was
-   found but not fixed gets its own backlog ID, named just as explicitly.
+9. **Report, and hand the PR over.** Open the summary with the backlog ID and the
+   item's essence in one line — "#18 Not-found page — shared 404 surface plus a
+   catch-all route" — before the PR link, the gate result, the runtime
+   verification and anything left undone. End by saying in as many words that the
+   PR is **ready for code review** and is waiting on the owner to merge. Whatever
+   was found but not fixed gets its own backlog ID, named just as explicitly.
 
 ## Gotchas learned the hard way
 
