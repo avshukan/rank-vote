@@ -3,6 +3,7 @@ import { MAX_OPTIONS, MIN_OPTIONS } from '@rank-vote/shared';
 import type { PollResponseDto } from '@rank-vote/shared';
 import { ApiError } from '../../shared/api/client';
 import { createPoll } from '../../shared/api/polls';
+import { ShareLink } from '../../shared/ui/ShareLink';
 
 const initialOptions = (): string[] => ['', ''];
 
@@ -125,38 +126,11 @@ export function CreatePollForm() {
 }
 
 function PollCreated({ poll }: { poll: PollResponseDto }) {
-  const shareUrl = `${window.location.origin}/poll/${poll.id}`;
-  const [copied, setCopied] = useState(false);
-
-  async function copy() {
-    try {
-      await navigator.clipboard?.writeText(shareUrl);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <h2 className="text-xl font-semibold">Poll created 🎉</h2>
       <p>Share this link so people can vote:</p>
-      <div className="flex gap-2">
-        <input
-          type="text"
-          readOnly
-          value={shareUrl}
-          aria-label="Shareable poll link"
-          className="flex-1 rounded border border-gray-300 px-3 py-2"
-        />
-        <button
-          type="button"
-          onClick={copy}
-          className="rounded bg-blue-600 px-4 py-2 font-medium text-white"
-        >
-          {copied ? 'Copied' : 'Copy'}
-        </button>
-      </div>
+      <ShareLink url={`${window.location.origin}/poll/${poll.id}`} />
     </div>
   );
 }

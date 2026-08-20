@@ -54,7 +54,6 @@ adapts to the column, never the column to the content.
 <!-- prettier-ignore -->
 | ID  | Title                      | Type     | Priority | Notes                                                       |
 | --- | -------------------------- | -------- | -------- | ----------------------------------------------------------- |
-| 5   | Show results               | Value    | High     | Winner(s) and score table; `NotFound` (#18) if poll is gone |
 | 17  | Migrate to PostgreSQL      | Quality  | High     | Accepted in `docs/06-decisions.md`; before first deploy     |
 | 6   | Mobile responsive layout   | Quality  | Medium   | Basic responsive UI                                         |
 | 19  | Explain score calculation  | Value    | Medium   | How the points produced the ranking, per method; needs #5   |
@@ -87,3 +86,4 @@ adapts to the column, never the column to the content.
 |   4 | Calculate Borda result     | Value    | High     | `GET /polls/:id/results` — Borda tally, ties give winners   |
 |  18 | Not-found page             | Quality  | High     | Shared `NotFound` + `*` catch-all; used by the vote flow    |
 |  21 | Fix `pnpm dev` blank app   | Quality  | High     | shared builds ESM beside CJS; `exports` routes each one     |
+|   5 | Show results               | Value    | High     | Winner(s) and score table; `NotFound` (#18) if poll is gone |
