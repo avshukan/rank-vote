@@ -43,7 +43,9 @@ Target one package with `pnpm --filter <name>`, e.g. `pnpm --filter @rank-vote/a
 The `Makefile` wraps the multi-step rituals; `make help` lists them. Worth
 knowing: `make setup` (install + `.env` files), `make verify` (the full gate
 below), and `make web` / `make api` / `make seed` / `make down` for running the
-app. Anything that is a single pnpm script stays a pnpm script.
+app. `make prune-merged` deletes local branches whose PR is merged — squash
+merges leave no trace for `git branch --merged`, so it asks GitHub instead.
+Anything that is a single pnpm script stays a pnpm script.
 
 `packages/shared` builds twice — CommonJS for the API to `require`, ESM for
 Vite and the browser to `import` — and its `exports` map routes each consumer
