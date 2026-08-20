@@ -61,6 +61,11 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
    an empty `#root`. Give each render its own `--user-data-dir` so a stuck
    profile lock cannot silently reuse a previous page.
 
+   Under `pnpm dev` the dump carries the react-refresh preamble and the whole
+   unbundled stylesheet ahead of the app markup — ~14 kB of it, against ~400
+   bytes in the production bundle. Stripping the tags and reading the first
+   lines therefore shows build noise, not the page: anchor on `id="root">`.
+
    The routes (`apps/web/src/App.tsx`) are **singular** — `/poll/:id` — while
    the API path is plural (`/api/v1/polls/:id`). Guessing the plural form on the
    web side hits the `*` catch-all and renders the not-found page, which is
