@@ -25,6 +25,13 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
    generic network error, which reads exactly like an app bug and sends you
    chasing the wrong thing.
 
+   That also makes this ritual a **production-bundle-only** check, which is a
+   real blind spot: #21 rendered a blank page under `pnpm dev` while `make web`
+   stayed green, because Rollup converts CommonJS itself and the dev server does
+   not. `packages/shared/src/dist-exports.test.ts` is the guard for that class
+   of break; if your slice changes how `packages/shared` is built, render at
+   least one route under `pnpm dev` as well.
+
 2. **Start the API separately** — `make api` in its own terminal, not root
    `pnpm dev`. Root `pnpm dev` is one supervisor over both apps: killing the web
    port to restart it takes the API down with it.

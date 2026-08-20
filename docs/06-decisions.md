@@ -102,6 +102,47 @@ Reason:
 
 ---
 
+## Shared Package Build
+
+### Dual CommonJS + ESM output from `packages/shared`
+
+Status:
+
+- accepted
+
+Chosen:
+
+- `packages/shared` compiles twice — CommonJS to `dist/`, ESM to `dist/esm/` —
+  and its `exports` map routes `require` (the NestJS API) and `import` (Vite and
+  the browser) to the matching half
+- `dist/esm/package.json` carries `{"type":"module"}`, so Node reads that
+  subtree as ESM rather than as CommonJS
+- `packages/shared/src/dist-exports.test.ts` pins both halves down
+
+Reason:
+
+- Vite does not pre-bundle **linked** workspace packages, so a CommonJS-only
+  `dist` reached the browser raw, every named import threw, and `#root` stayed
+  empty under `pnpm dev` (backlog #21)
+- the break was dev-server-only — `vite build` was always fine, because Rollup
+  converts CommonJS itself — so neither the gate nor `make web` could catch it,
+  which is why the guard is a test rather than the `verify-app` ritual
+- the `require` condition still points at the artifacts that already existed,
+  so the API resolves exactly what it resolved before
+
+Rejected:
+
+- `optimizeDeps.include` in `vite.config.ts` — a one-liner that does clear the
+  blank page, but Vite then never re-optimizes the linked dep, so rebuilding
+  `shared` in watch mode left the dev server serving **stale code with no
+  warning** (measured: `MAX_OPTIONS` changed to `9` on disk while the server
+  kept serving `10` across a full page reload). `pnpm dev` runs `shared` in
+  watch mode precisely so its edits flow through, and silent staleness is a
+  worse failure than the loud one it would replace
+- a single ESM-only build — the API is CommonJS and `require`s the package
+
+---
+
 ## Deployment
 
 MVP deployment targets:

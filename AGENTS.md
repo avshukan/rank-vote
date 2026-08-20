@@ -52,6 +52,8 @@ serving a blank page, so keep both halves when changing how it is built.
 Its `build` must not wipe `dist` first: `pnpm dev` starts every package in
 parallel, and the API's watcher then compiles against a missing `dist`. The
 dual-output test in `packages/shared/src` wipes and rebuilds on its own.
+`docs/06-decisions.md` records why the one-line `optimizeDeps.include` fix was
+rejected.
 
 Pre-commit hook (Prettier via lint-staged) is managed by `simple-git-hooks`;
 after changing its config in `package.json`, re-run `pnpm simple-git-hooks`.
