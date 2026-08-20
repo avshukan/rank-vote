@@ -31,10 +31,10 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 - Define enums: `BallotFormat`, `CountingMethod`
 - Define DTOs matching the API contract:
-  - `CreatePollDto` / `CreatePollResponseDto`
-  - `GetPollResponseDto`
-  - `SubmitBallotDto` / `SubmitBallotResponseDto`
-  - `GetResultsResponseDto`
+  - `CreatePollDto` / `PollResponseDto` (also the `GET /polls/:id` response)
+  - `PollOptionDto`
+  - `SubmitBallotDto` / `BallotResponseDto`, with `BallotEntryDto`
+  - `PollResultsResponseDto`, with `PollScoreDto`
 - Export validation constants (min/max options count: 2–10)
 
 ---
@@ -127,7 +127,8 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 ### 3.6 Tests
 
 - **Unit**: score-formatting helpers, rank-sort utilities (Vitest)
-- **Component**: ranking form renders options; submit disabled until full ranking (Vitest + RTL)
+- **Component**: ranking form renders options and submits them in the displayed
+  order; the list starts complete, so submit is never disabled (Vitest + RTL)
 
 ---
 
