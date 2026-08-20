@@ -1,17 +1,19 @@
 import { useLocation, useParams } from 'react-router-dom';
+import { ResultsView } from '../features/results/ResultsView';
+import { NotFoundPage } from './NotFoundPage';
 
 interface ResultsLocationState {
   justVoted?: boolean;
 }
 
-/**
- * Landing page after a vote. The winner and score table arrive with backlog
- * items #4 (Borda count) and #5 (Show results); for now the route resolves and
- * confirms the submitted ballot.
- */
+/** Landing page after a vote, and the target of a shared results link. */
 export function ResultsPage() {
   const { id } = useParams<{ id: string }>();
   const { state } = useLocation() as { state: ResultsLocationState | null };
+
+  if (!id) {
+    return <NotFoundPage />;
+  }
 
   return (
     <main className="mx-auto max-w-xl p-6">
@@ -23,10 +25,8 @@ export function ResultsPage() {
           Vote submitted
         </p>
       )}
-      <h1 className="mb-4 text-2xl font-bold">Results</h1>
-      <p>
-        Results for poll <code>{id}</code> are coming soon.
-      </p>
+      {/* Keyed by id so switching polls refetches instead of showing stale results. */}
+      <ResultsView key={id} pollId={id} />
     </main>
   );
 }

@@ -90,32 +90,32 @@ Frontend only — no API or shared-package change.
 
 ### Frontend UX
 
-- [ ] Page `/poll/:id/results` is publicly accessible (no vote required to view)
-- [ ] Displays: poll title, winner badge, score table (position / option text / score), total ballots count
-- [ ] Single winner: show highlighted winner badge
-- [ ] Multiple winners (tie): show all with "Tied winners" label
-- [ ] Tied options share a position range and the next position skips past it:
+- [x] Page `/poll/:id/results` is publicly accessible (no vote required to view)
+- [x] Displays: poll title, winner badge, score table (position / option text / score), total ballots count
+- [x] Single winner: show highlighted winner badge
+- [x] Multiple winners (tie): show all with "Tied winners" label
+- [x] Tied options share a position range and the next position skips past it:
       two options tied at the top are both `1-2`, the option after them is `3`.
       The rule applies to **every** group of equal scores, not only the winners:
       scores `5, 4, 4, 2` render as positions `1`, `2-3`, `2-3`, `4`
-- [ ] 0 ballots (`totalBallots: 0`): show message "No votes yet" + "Share link" button
+- [x] 0 ballots (`totalBallots: 0`): show message "No votes yet" + "Share link" button
       that copies the **vote** URL `/poll/:id` — a browser that already voted is
       redirected from there to these results, so one link serves both cases
-- [ ] The zero-ballot state **replaces** the winner badge and the score table;
+- [x] The zero-ballot state **replaces** the winner badge and the score table;
       the poll title and the total ballots count still render. `scores` does
       arrive filled with every option at `score: 0`, but a table of nothing but
       zeroes is an empty state pretending to be data — the options themselves
       are one click away behind the share link
-- [ ] Results URL is shareable — anyone can open it directly
-- [ ] The "Vote submitted" banner (`location.state.justVoted`, set by the ballot
+- [x] Results URL is shareable — anyone can open it directly
+- [x] The "Vote submitted" banner (`location.state.justVoted`, set by the ballot
       form in #3) still renders on the finished page
 
 ### Edge Cases
 
-- [ ] Poll exists but 0 ballots → "No votes yet" UI (no crash)
-- [ ] Poll does not exist → the shared `NotFound` from #18, rendered inline with
+- [x] Poll exists but 0 ballots → "No votes yet" UI (no crash)
+- [x] Poll does not exist → the shared `NotFound` from #18, rendered inline with
       the "Poll not found" copy the vote flow already uses
-- [ ] Network error loading results → show error message with retry
+- [x] Network error loading results → show error message with retry
 
 ### Out of Scope (tracked separately)
 
