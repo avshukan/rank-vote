@@ -56,8 +56,7 @@ push`). e2e runs under `--experimental-vm-modules` (already in `test:e2e`).
 
 7. **Verify runtime.** Boot the app and drive the real flow (e.g. `curl` the API,
    or the browser), not just tests. Confirm the happy path plus the error codes.
-   For anything touching `apps/web`, follow the `verify-app` skill — `pnpm dev`
-   does not currently serve a working web app.
+   For anything touching `apps/web`, follow the `verify-app` skill.
 
 8. **PR.** Commit, push, open a PR to `main`, wait for green CI, merge, delete
    the branch.
@@ -78,5 +77,6 @@ push`). e2e runs under `--experimental-vm-modules` (already in `test:e2e`).
   `dist` is missing — reinstall or build it.
 - The gate must include `make format-check`; Prettier ignores generated code via
   `.prettierignore` (e.g. `apps/api/src/generated`).
-- `pnpm dev` renders a blank web app (backlog #21), which is why step 7 goes
-  through `verify-app` rather than the dev server.
+- `packages/shared` builds twice, CommonJS for the API and ESM for Vite. A
+  CommonJS-only build renders a blank web app (#21) — if the browser reports
+  a missing named export from `@rank-vote/shared`, the ESM half is missing.

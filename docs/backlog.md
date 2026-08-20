@@ -51,7 +51,6 @@ actually changed, instead of a re-alignment of every row.
 <!-- prettier-ignore -->
 | ID  | Title                      | Type    | Priority | Notes                                                        |
 | --- | -------------------------- | ------- | -------- | ------------------------------------------------------------ |
-| 21  | Fix `pnpm dev` blank app   | Quality | High     | Vite serves the CJS-only `shared` dist raw; `#root` empty    |
 | 5   | Show results               | Value   | High     | Winner(s) and score table; `NotFound` (#18) if poll is gone  |
 | 17  | Migrate to PostgreSQL      | Quality | High     | Accepted in `docs/06-decisions.md`; before first deploy      |
 | 6   | Mobile responsive layout   | Quality | Medium   | Basic responsive UI                                          |
@@ -82,3 +81,4 @@ actually changed, instead of a re-alignment of every row.
 |   7 | Prevent duplicate voting   | Quality | Medium   | `voted_poll_ids` on submit, checked in `VotePage`; with #3   |
 |   4 | Calculate Borda result     | Value   | High     | `GET /polls/:id/results` — Borda tally, ties give winners    |
 |  18 | Not-found page             | Quality | High     | Shared `NotFound` + `*` catch-all; used by the vote flow     |
+|  21 | Fix `pnpm dev` blank app   | Quality | High     | shared builds ESM beside CJS; `exports` routes each one      |

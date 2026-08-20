@@ -16,14 +16,21 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
 
 ## Steps
 
-1. **Serve the web app** with `make web` — `pnpm dev` is broken (backlog #21),
-   so the target builds and previews instead.
+1. **Serve the web app** with `make web` — the target builds and previews the
+   production bundle, which is what end-to-end verification should exercise.
 
    The port is load-bearing: `CORS_ORIGIN` in `apps/api/.env` pins
    `http://localhost:5173`, which is why `make web` passes `--strictPort`. On
    any other port the API rejects the preflight and every fetch surfaces as a
    generic network error, which reads exactly like an app bug and sends you
    chasing the wrong thing.
+
+   That also makes this ritual a **production-bundle-only** check, which is a
+   real blind spot: #21 rendered a blank page under `pnpm dev` while `make web`
+   stayed green, because Rollup converts CommonJS itself and the dev server does
+   not. `packages/shared/src/dist-exports.test.ts` is the guard for that class
+   of break; if your slice changes how `packages/shared` is built, render at
+   least one route under `pnpm dev` as well.
 
 2. **Start the API separately** — `make api` in its own terminal, not root
    `pnpm dev`. Root `pnpm dev` is one supervisor over both apps: killing the web
@@ -78,7 +85,8 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
 
 - If the app misbehaves, check whether it also misbehaves on `main` before
   debugging your own diff: `git stash push -u`, render, `git stash pop`. This is
-  how #21 was identified as pre-existing rather than caused by the slice.
+  how the blank-page bug (#21) was identified as pre-existing rather than
+  caused by the slice.
 - Coreutils sometimes resolve oddly inside loops and functions in this sandbox
   (`command not found: head`). Use absolute paths — `/usr/bin/head`,
   `/usr/bin/grep` — in scripted renders.
