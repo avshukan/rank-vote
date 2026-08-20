@@ -95,10 +95,17 @@ Frontend only — no API or shared-package change.
 - [ ] Single winner: show highlighted winner badge
 - [ ] Multiple winners (tie): show all with "Tied winners" label
 - [ ] Tied options share a position range and the next position skips past it:
-      two options tied at the top are both `1-2`, the option after them is `3`
+      two options tied at the top are both `1-2`, the option after them is `3`.
+      The rule applies to **every** group of equal scores, not only the winners:
+      scores `5, 4, 4, 2` render as positions `1`, `2-3`, `2-3`, `4`
 - [ ] 0 ballots (`totalBallots: 0`): show message "No votes yet" + "Share link" button
       that copies the **vote** URL `/poll/:id` — a browser that already voted is
       redirected from there to these results, so one link serves both cases
+- [ ] The zero-ballot state **replaces** the winner badge and the score table;
+      the poll title and the total ballots count still render. `scores` does
+      arrive filled with every option at `score: 0`, but a table of nothing but
+      zeroes is an empty state pretending to be data — the options themselves
+      are one click away behind the share link
 - [ ] Results URL is shareable — anyone can open it directly
 - [ ] The "Vote submitted" banner (`location.state.justVoted`, set by the ballot
       form in #3) still renders on the finished page
