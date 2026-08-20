@@ -56,8 +56,10 @@ and for items whose acceptance criteria were written in the same session.
    shared page, a shared component, a route change) ships as its own PR — folding
    it into the feature makes that PR touch unrelated flows.
 
-7. **Ship the docs.** Own branch `docs/<name>`, `make format-check`, PR, merge.
-   Only then start `new-slice`.
+7. **Ship the docs.** Own branch `docs/<name>`, `make format-check`, PR — then
+   stop at green CI and hand it over, exactly as `new-slice` step 8 does. The
+   merge is the repository owner's call. `new-slice` starts once the docs PR has
+   actually landed, so the code is written against decisions that are on `main`.
 
 ## Gotchas learned the hard way
 
