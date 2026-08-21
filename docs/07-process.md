@@ -65,6 +65,7 @@ Versioning follows SemVer.
 
 A task or iteration is considered done when:
 
+- the PR has passed code review
 - implementation is merged to `main`
 - CI is green (format, lint, typecheck, tests, build)
 - tests are added/updated for changed behavior
@@ -128,4 +129,7 @@ Codex**, and **GitHub Copilot** (coding agent).
   humans; CI gates their work like anyone else's
 - See `docs/12-ai-first.md` for the full AI-first strategy and tooling roadmap
 
-Human review is required for important decisions.
+Human review is required for important decisions, and every PR goes through
+code review before it is merged — including PRs an agent opened. Agents take a
+change as far as a pushed PR with green CI and then hand it over; the merge is a
+human decision, and one merge is never standing permission for the next.

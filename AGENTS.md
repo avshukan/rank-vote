@@ -96,6 +96,9 @@ verification run is not done. New behavior requires new tests.
   `AGENTS.md`, `.claude/` and `.github/` if a command or the process changed
 - Manually verified end-to-end
 - CI is green before merge
+- The PR has been through code review — a green gate says the build passed, not
+  that anyone read the diff. An agent opens the PR and hands it over; merging is
+  the repository owner's call, never the agent's
 
 When a change touches a command, grep for a stable part of its **old** form
 (`pnpm lint`) rather than the part you are changing — a copy that has already
