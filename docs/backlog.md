@@ -62,6 +62,7 @@ adapts to the column, never the column to the content.
 | 9   | Add Condorcet counting     | Value    | Medium   | Pairwise comparison winner                                  |
 | 10  | Compare counting methods   | Value    | Medium   | Show different winners for same ballots                     |
 | 25  | Unify eslint and TS majors | Refactor | Medium   | web on eslint 10/TS 6, the rest on 9/TS 5; lock churn       |
+| 26  | Extract page fetch/retry   | Refactor | Medium   | BallotForm and ResultsView duplicate load/404/retry         |
 | 11  | Add PWA support            | Quality  | Low      | Installable web app                                         |
 | 12  | Add poll editing           | Value    | Low      | Edit poll after creation                                    |
 | 13  | Add poll expiration        | Value    | Low      | Closing date/time                                           |

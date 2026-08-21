@@ -133,9 +133,7 @@ describe('ResultsView', () => {
     renderResults();
 
     expect(await screen.findByText('No votes yet')).toBeInTheDocument();
-    expect(screen.getByLabelText('Shareable poll link')).toHaveValue(
-      `${window.location.origin}/poll/poll-1`,
-    );
+    expect(screen.getByLabelText('Vote link')).toHaveValue(`${window.location.origin}/poll/poll-1`);
     expect(screen.getByRole('heading', { name: 'Lunch?' })).toBeInTheDocument();
     expect(screen.getByText('0 ballots counted')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();

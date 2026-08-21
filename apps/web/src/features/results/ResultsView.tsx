@@ -79,7 +79,7 @@ export function ResultsView({ pollId }: { pollId: string }) {
         <div className="flex flex-col gap-3">
           <p className="text-lg font-medium">No votes yet</p>
           <p className="text-gray-600">Share the link so people can vote:</p>
-          <ShareLink url={`${window.location.origin}/poll/${pollId}`} />
+          <ShareLink url={`${window.location.origin}/poll/${pollId}`} label="Vote link" />
         </div>
       ) : (
         <>
