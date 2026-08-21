@@ -12,7 +12,7 @@ API_URL  ?= http://localhost:$(API_PORT)/api/v1
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
 .PHONY: help setup verify format format-check lint typecheck test build \
-        web api seed prune-merged down db-migrate
+        web api seed render-app prune-merged down db-migrate
 
 help: ## List the available targets
 	@awk -F':.*## ' '/^[a-z][a-z-]*:.*## /{printf "  \033[36m%-13s\033[0m%s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -44,7 +44,7 @@ lint: ## ESLint across the workspace
 typecheck: ## tsc per package
 	pnpm typecheck
 
-test: ## Jest (api) + Vitest (web, shared)
+test: ## Node tooling + Jest (api) + Vitest (web, shared)
 	pnpm test
 
 build: ## Build every package
@@ -106,6 +106,10 @@ export SEED_PY
 
 seed: ## Seed three polls through the running API: no ballots, one winner, a tie
 	@API_URL=$(API_URL) WEB_BASE=http://localhost:$(WEB_PORT) python3 -c "$$SEED_PY"
+
+render-app: ## Dump rendered DOM for local URL=... (optional BROWSER_BIN=...)
+	@test -n "$(URL)" || { echo "usage: make render-app URL=http://localhost:$(WEB_PORT)/<path>"; exit 2; }
+	@node scripts/dump-dom.mjs "$(URL)"
 
 prune-merged: ## Delete local branches whose PR is merged
 	@git fetch --quiet --prune origin && \

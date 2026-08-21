@@ -25,8 +25,8 @@ Pure refactors or single-package changes don't need the full sequence.
 
 2. **shared** (`packages/shared`). Add only the types/DTOs/constants this slice
    needs — they are the single source of truth for the wire contract. Keep them
-   plain (no validation decorators, no ORM types). shared builds to CommonJS on
-   `postinstall`, so the CJS NestJS API can `require` it.
+   plain (no validation decorators, no ORM types). shared builds both CommonJS
+   for the NestJS API and ESM for Vite; keep both outputs available to consumers.
 
 3. **api**, bottom-up by layer (dependency direction `domain → application →
 infrastructure → presentation`):
@@ -41,7 +41,9 @@ infrastructure → presentation`):
      `src/app.setup.ts` so tests exercise what production runs.
    - Tests: co-located `*.spec.ts` unit tests (mock Prisma) + `test/*.e2e-spec.ts`
      (supertest against a throwaway SQLite db via non-destructive `prisma db
-push`). e2e runs under `--experimental-vm-modules` (already in `test:e2e`).
+push`; create the empty file first because Prisma 7 rejects a missing
+     SQLite target). e2e runs under `--experimental-vm-modules` (already in
+     `test:e2e`).
 
 4. **web** (`apps/web`). A feature folder under `src/features/`, calls through
    `src/shared/api/` (fetch client using the shared DTO types), routed from

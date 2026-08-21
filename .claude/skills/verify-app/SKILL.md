@@ -55,19 +55,18 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
    That trap is worth naming twice: it also catches you when you skip the target
    and hand-roll a fixture with `curl`.
 
-4. **Render each route headlessly.** Playwright's chromium is already in the
-   local cache — no project dependency needed. `--dump-dom` runs the JS and
-   prints the resulting DOM:
+4. **Render each route in a real browser.** Prefer browser automation exposed by
+   the active agent when it can navigate, inspect the DOM, and report console
+   errors. When no browser tool is available, use the repository fallback:
 
    ```bash
-   SHELL_BIN=$(ls -d ~/Library/Caches/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-*/chrome-headless-shell | tail -1)
-   "$SHELL_BIN" --headless --disable-gpu --no-sandbox --virtual-time-budget=6000 \
-     --user-data-dir=<scratch>/profile --dump-dom "http://localhost:5173/<path>"
+   make render-app URL="http://localhost:5173/<path>"
    ```
 
-   `--virtual-time-budget` waits for the fetch and re-render; without it you dump
-   an empty `#root`. Give each render its own `--user-data-dir` so a stuck
-   profile lock cannot silently reuse a previous page.
+   `scripts/dump-dom.mjs` finds Chromium in Playwright caches and common macOS,
+   Linux, and Windows locations, isolates each browser profile, and waits for
+   fetches and re-rendering. Set `BROWSER_BIN=/path/to/chromium` when discovery
+   cannot find an installed browser. The script accepts only loopback URLs.
 
    Under `pnpm dev` the dump carries the react-refresh preamble and the whole
    unbundled stylesheet ahead of the app markup — ~14 kB of it, against ~400
@@ -84,16 +83,14 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
    - anything else — shared `NotFound`
 
 5. **Assert on the rendered DOM,** not on the HTTP status — the SPA answers `200`
-   for every path, including the ones that render the 404 page. Grep for the
-   markers that distinguish the states (`<h1>` text, a button label, an option).
+   for every path, including the ones that render the 404 page. Check markers
+   that distinguish the states (`<h1>` text, a button label, an option).
 
-   What this proves is the _first paint_ of a route. `--dump-dom` loads, waits
-   and prints once, so anything behind an interaction — a click, typed input, a
-   permission prompt, `localStorage` carried across navigations — is invisible
-   to it. A clean dump of every route is therefore not yet "verified end-to-end":
-   interactive behaviour rests on the Vitest + RTL tests, and browser automation
-   is out of MVP scope on purpose (`docs/11-testing-strategy.md`). Say which
-   half you actually covered when you report.
+   The `render-app` fallback proves only the _first paint_ of a route: it loads,
+   waits and prints once. An integrated browser tool can additionally exercise
+   clicks, typed input, and `localStorage` across navigations. If only the
+   fallback is available, interactive behaviour rests on the Vitest + RTL tests.
+   Say which level was covered when reporting the verification.
 
 6. **Read stderr too.** Console errors and CORS failures land there, not in the
    dumped DOM. An empty `<div id="root"></div>` plus an `Uncaught` line in stderr
@@ -104,15 +101,8 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
 
 ## Gotchas learned the hard way
 
-- If the app misbehaves, check whether it also misbehaves on `main` before
-  debugging your own diff: `git stash push -u`, render, `git stash pop`. This is
-  how the blank-page bug (#21) was identified as pre-existing rather than
-  caused by the slice.
-- Coreutils sometimes resolve oddly inside loops and functions in this sandbox
-  (`command not found: head`). It is not a short list of offenders — `rm`, `tr`
-  and `wc` fail the same way. Use absolute paths (`/bin/rm`, `/usr/bin/head`,
-  `/usr/bin/grep`, `/usr/bin/tr`, `/usr/bin/wc`) for every coreutil in a
-  scripted render.
+- If the app misbehaves, compare it with `main` in a separate worktree when
+  practical. Do not stash or rewrite user changes solely to run this check.
 - Kill the servers when done: `make down`. If `make web` is running as a
   background job, expect it to report a _failure_ right after — `vite preview`
   is killed by the signal and exits `143`, which surfaces as

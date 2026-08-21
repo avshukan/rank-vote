@@ -31,7 +31,7 @@ Node) — it provides the pinned pnpm version automatically.
 pnpm install          # install all workspace deps (also installs the pre-commit hook)
 pnpm dev              # run all apps in dev mode (api + web + shared in watch)
 pnpm build            # build all packages
-pnpm test             # run all tests (Jest in api, Vitest in web/shared)
+pnpm test             # run all tests (Node tooling, Jest api, Vitest web/shared)
 pnpm lint             # ESLint, check only (use lint:fix in a package to auto-fix)
 pnpm typecheck        # per-package tsc
 pnpm format           # Prettier write; format:check for CI-style check
@@ -43,9 +43,11 @@ Target one package with `pnpm --filter <name>`, e.g. `pnpm --filter @rank-vote/a
 The `Makefile` wraps the multi-step rituals; `make help` lists them. Worth
 knowing: `make setup` (install + `.env` files), `make verify` (the full gate
 below), and `make web` / `make api` / `make seed` / `make down` for running the
-app. `make prune-merged` deletes local branches whose PR is merged — squash
-merges leave no trace for `git branch --merged`, so it asks GitHub instead.
-Anything that is a single pnpm script stays a pnpm script.
+app. `make render-app URL=http://localhost:5173/<path>` renders a local route
+through an installed Chromium-compatible browser. `make prune-merged` deletes
+local branches whose PR is merged — squash merges leave no trace for
+`git branch --merged`, so it asks GitHub instead. Anything that is a single
+pnpm script stays a pnpm script.
 
 `packages/shared` builds twice — CommonJS for the API to `require`, ESM for
 Vite and the browser to `import` — and its `exports` map routes each consumer
@@ -95,7 +97,8 @@ verification run is not done. New behavior requires new tests.
 - `make verify` passes locally
 - Tests added/updated for changed behavior
 - Relevant docs updated (or none affected) — `docs/`, plus `README.md`,
-  `AGENTS.md`, `.claude/` and `.github/` if a command or the process changed
+  `AGENTS.md`, `.claude/`, `.agents/` and `.github/` if a workflow or the
+  process changed
 - Manually verified end-to-end
 - CI is green before merge
 - The PR has been through code review — a green gate says the build passed, not
@@ -108,18 +111,24 @@ drifted matches only the stable part.
 
 ---
 
-## Skills & Commands
+## Skills & Workflows
 
-- Recurring procedures live in `.claude/skills/` — read them before inventing
-  your own approach.
-- `.claude/commands/` holds the same kind of knowledge in the other trigger
-  mode. Which one a procedure belongs in:
-  - **skill** — the agent should recognise on its own that the procedure
-    applies (`new-slice` when picking up a backlog item, `task-readiness`
-    before implementing one).
-  - **command** — a ritual the human starts at a chosen moment, where firing
-    automatically would be wrong (`/retro`, `/handoff`).
-- Both directories are committed. Check both before writing a new one.
+- Recurring procedures live canonically in `.claude/skills/` and follow the
+  Agent Skills `SKILL.md` format. Read them before inventing your own approach.
+- `.agents/skills/` contains only relative symlinks to those canonical folders,
+  so Codex discovers the same repository skills without duplicated content.
+  Add the matching symlink whenever a skill is added; never edit through a
+  second copy.
+- **Automatic skills** should be recognised when the procedure applies
+  (`new-slice` when picking up a backlog item, `task-readiness` before
+  implementing one).
+- **Explicit-only skills** are rituals the human starts at a chosen moment
+  (`retro`, `handoff`). Mark them explicit-only for each supported agent; the
+  canonical `SKILL.md` stays portable while tool-specific policy lives in
+  `.claude/settings.json` and the skill's `agents/` directory. The description
+  and body must also say that user intent is required because the Agent Skills
+  standard has no cross-client invocation policy.
+- Both skill locations are committed. Check them before writing a new one.
 - If you performed a multi-step procedure this session that will clearly recur,
   or noticed an existing skill or instruction is wrong, propose creating or
   fixing it at the end of the session (do not create or change skills silently).
@@ -140,8 +149,8 @@ drifted matches only the stable part.
 - The note is committed, but **only on work branches**: to hand off across
   devices, commit it (together with WIP code) and push the branch. The PR that
   finishes the slice must delete the note — it never reaches `main`.
-- In Claude Code, `/handoff` runs this procedure; in other tools, ask the agent
-  to "write a handoff per AGENTS.md".
+- Invoke the `handoff` skill explicitly: `/handoff` in Claude Code and Copilot
+  CLI, `$handoff` in Codex, or ask the agent to "write a handoff per AGENTS.md".
 
 ---
 
