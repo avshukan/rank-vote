@@ -1,3 +1,11 @@
+---
+name: retro
+description: Review the current session for reusable workflows, stale instructions, and avoidable friction when the user explicitly requests a retrospective.
+disable-model-invocation: true
+---
+
+# retro
+
 Run a session retrospective to grow this repository's procedural knowledge.
 
 Analyze the current session (conversation, commands run, files changed — use
@@ -7,7 +15,8 @@ and answer:
 1. **Missing skills**: which multi-step procedures were performed manually this
    session and will clearly recur? For each, propose a skill as
    `.claude/skills/<name>/SKILL.md` with a one-line description and an outline
-   of its steps.
+   of its steps. The matching `.agents/skills/<name>` Codex adapter is part of
+   the same change.
 2. **Broken or stale knowledge**: did any instruction in `AGENTS.md`, an
    existing skill, or a doc in `docs/` turn out to be wrong, stale, or missing
    during this session? Propose the concrete fix.

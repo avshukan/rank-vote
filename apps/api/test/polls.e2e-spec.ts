@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { existsSync, unlinkSync } from 'node:fs';
+import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -35,10 +35,12 @@ describe('Polls (e2e)', () => {
   beforeAll(async () => {
     // Point the app (and Prisma) at a throwaway database, then apply the schema
     // to a fresh empty file via `db push` (--url overrides prisma.config.ts).
-    // Deleting first keeps it a non-destructive create (no --force-reset).
+    // Prisma 7 checks that SQLite exists before pushing, so recreate the empty
+    // throwaway file after deleting it. No --force-reset is needed.
     process.env.DATABASE_URL = TEST_DB_URL;
     const dbPath = join(API_DIR, TEST_DB);
     if (existsSync(dbPath)) unlinkSync(dbPath);
+    writeFileSync(dbPath, '');
     execSync(`pnpm exec prisma db push --url ${TEST_DB_URL}`, {
       cwd: API_DIR,
       stdio: 'ignore',

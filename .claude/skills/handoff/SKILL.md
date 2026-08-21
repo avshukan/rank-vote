@@ -1,3 +1,11 @@
+---
+name: handoff
+description: Write a compact .agents/HANDOFF.md for unfinished work when the user explicitly asks to hand a session to another agent, tool, or device.
+disable-model-invocation: true
+---
+
+# handoff
+
 Hand off unfinished work to the next session (any tool, any device).
 
 Follow the **Session Handoff** section of `AGENTS.md` in write mode: collect
@@ -12,5 +20,5 @@ commit the note together with the WIP changes on the current work branch
 (mark the commit `wip:`) and push the branch — never to `main` directly.
 
 End by reminding the user: the next session (Claude Code, Codex, or any agent
-that loads AGENTS.md) picks the note up at session start automatically; the PR
-that finishes the slice must delete `.agents/HANDOFF.md`.
+that loads `AGENTS.md`) picks the note up at session start automatically; the
+PR that finishes the slice must delete `.agents/HANDOFF.md`.

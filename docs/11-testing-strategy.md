@@ -43,7 +43,10 @@ Location: `apps/api/test/`
 
 Notes:
 
-- use in-memory SQLite for test database
+- use a throwaway SQLite file for the test database
+- create the empty SQLite target before
+  `prisma db push`; Prisma 7 rejects a missing target during its connectivity
+  check
 - no external services required
 
 ---
@@ -82,6 +85,17 @@ Focus:
 - loading and error/retry states of pages that fetch
 
 Framework: Vitest + React Testing Library
+
+---
+
+## Repository Tooling
+
+Node helpers under `scripts/` use the built-in `node:test` runner with
+co-located `*.test.mjs` files. The root `pnpm test` runs these before the
+workspace Jest and Vitest suites.
+
+Manual browser helpers such as `make render-app` are smoke-verification tools,
+not automated end-to-end tests.
 
 ---
 

@@ -14,9 +14,10 @@ for deepening that setup. Agents in use: **Claude Code**, **OpenAI Codex**,
 - **Honest feedback loops over trust**: an agent is only as good as how fast
   it learns it broke something. Lint, typecheck, tests, and build must
   genuinely fail; CI is a required gate, not a report.
-- **Skills are code**: recurring procedures live in `.claude/skills/`, change
-  via PR, and are proposed by agents but approved by a human (until autonomy
-  is earned).
+- **Skills are code**: recurring procedures live canonically in
+  `.claude/skills/`; `.agents/skills/` contains symlink adapters for Codex.
+  Skills change via PR and are proposed by agents but approved by a human
+  (until autonomy is earned).
 - **CLI-first for agent tools**: an MCP server is added only when no CLI can
   do the job — every connected server permanently costs context.
 - **Autonomy is increased gradually**, only after the gates around it are
@@ -32,8 +33,8 @@ for deepening that setup. Agents in use: **Claude Code**, **OpenAI Codex**,
   with the Definition of Done
 - Pre-commit Prettier hook (`simple-git-hooks` + `lint-staged`)
 - Canonical `AGENTS.md` with verification-first rule and DoD; `CLAUDE.md` shim
-- Skill lifecycle levels 0–1: skill-proposal rule in `AGENTS.md` + `/retro`
-  command (`.claude/commands/retro.md`)
+- Skill lifecycle levels 0–1: skill-proposal rule in `AGENTS.md` + explicit-only
+  `retro` skill (`.claude/skills/retro/SKILL.md`)
 
 Manual (repo settings): ruleset on `main` requiring PR + green `checks`.
 
@@ -58,15 +59,17 @@ MCP for those. Mirror config for Codex (`config.toml`) and Copilot agent
 
 ### Wave 4 — Autonomy
 
-`.claude/settings.json` with a permissions allowlist (pnpm scripts, read-only
-git) and deny rules for secrets (`.env*`). Loosen gradually as gates prove
-themselves. Parallel agents in git worktrees for independent slices.
+`.claude/settings.json` has a permissions allowlist for verification commands
+and deny rules for secrets (`.env*`). It deliberately does not pre-approve PR
+merge commands: review and merge remain the repository owner's decision.
+Loosen gradually as gates prove themselves. Parallel agents in git worktrees
+for independent slices.
 
 ### Wave 5 — Skill lifecycle automation (levels 2–3)
 
-- Level 2: Claude Code hook at session end reminding to run `/retro`
-  (Codex has only `notify`; Copilot agent only `copilot-setup-steps.yml` —
-  re-verify capabilities when implementing, the ecosystem moves fast)
+- Level 2: tool-specific session-end reminders to invoke the explicit-only
+  `retro` skill. Re-verify hook capabilities for each agent when implementing;
+  the ecosystem moves fast.
 - Level 3: weekly scheduled meta-agent that reviews recent PRs and proposes
   skill/instruction updates as PRs
 
