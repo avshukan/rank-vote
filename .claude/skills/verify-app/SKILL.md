@@ -37,15 +37,23 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
    port to restart it takes the API down with it.
 
 3. **Seed real data** with `make seed`, so the browser drives real UUIDs. It
-   creates a poll and prints its vote and results URLs.
+   creates three polls and prints a vote and a results URL for each: one with no
+   ballots, one with a single winner, one with a tie at the top and a trailing
+   option.
 
-   The ballot it posts is not optional garnish: without one the results page
-   renders all-zero scores and proves nothing. A ballot must rank every option,
-   so the target builds `entries` from the poll's own options via `python3`
-   rather than by hand — zsh does not word-split an unquoted variable, so
-   collecting the option ids into a shell string and expanding it (`set -- $ids`)
-   yields one argument, not N, and the API then rejects the ballot with a `400`
-   that looks like a validation bug in the app.
+   All three exist because a results page is in one of those states and
+   verifying only the middle one leaves the others unproven — the tie is what
+   exercises shared position ranges, and the empty poll is a different render
+   path, not a table of zeroes.
+
+   The ballots are not optional garnish: without them the results page renders
+   all-zero scores and proves nothing. A ballot must rank every option, so the
+   target builds `entries` in `python3` rather than in the shell — zsh does not
+   word-split an unquoted variable, so collecting the option ids into a string
+   and expanding it (`set -- $ids`) yields one argument, not N, and the API then
+   rejects the ballot with a `400` that looks like a validation bug in the app.
+   That trap is worth naming twice: it also catches you when you skip the target
+   and hand-roll a fixture with `curl`.
 
 4. **Render each route headlessly.** Playwright's chromium is already in the
    local cache — no project dependency needed. `--dump-dom` runs the JS and

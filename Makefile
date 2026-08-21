@@ -12,7 +12,7 @@ API_URL  ?= http://localhost:$(API_PORT)/api/v1
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
 .PHONY: help setup verify format format-check lint typecheck test build \
-        web api seed down db-migrate
+        web api seed prune-merged down db-migrate
 
 help: ## List the available targets
 	@awk -F':.*## ' '/^[a-z][a-z-]*:.*## /{printf "  \033[36m%-13s\033[0m%s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -64,17 +64,58 @@ web: ## Build the web app and preview it on WEB_PORT (5173)
 api: ## Run the API in watch mode on API_PORT (3000), in its own terminal
 	pnpm --filter @rank-vote/api dev
 
-seed: ## Create a poll with one full ballot through the running API
-	@POLL_ID=$$(curl -sS -X POST $(API_URL)/polls \
-	    -H 'Content-Type: application/json' \
-	    -d '{"title":"check","options":["Alpha","Beta"]}' \
-	  | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])') && \
-	curl -sS "$(API_URL)/polls/$$POLL_ID" \
-	  | python3 -c 'import sys,json; o=json.load(sys.stdin)["options"]; print(json.dumps({"entries":[{"optionId":x["id"],"rank":i+1} for i,x in enumerate(o)]}))' \
-	  | curl -sS -X POST "$(API_URL)/polls/$$POLL_ID/ballots" \
-	      -H 'Content-Type: application/json' -d @- > /dev/null && \
-	echo "vote:    http://localhost:$(WEB_PORT)/poll/$$POLL_ID" && \
-	echo "results: http://localhost:$(WEB_PORT)/poll/$$POLL_ID/results"
+# One python program rather than a curl pipeline: a ballot must rank every
+# option, and building `entries` in the shell is how the ids get collapsed into
+# a single argument (zsh does not word-split), which the API then rejects as a
+# 400 that reads like an app bug. It seeds all three states a results page can
+# be in — no ballots, one winner, a tie — because verifying only the middle one
+# leaves the other two unproven.
+define SEED_PY
+import json, os, urllib.request
+
+API = os.environ["API_URL"]
+WEB = os.environ["WEB_BASE"]
+
+def post(path, body):
+    request = urllib.request.Request(
+        API + path,
+        data=json.dumps(body).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    with urllib.request.urlopen(request) as response:
+        return json.load(response)
+
+def seed(label, title, options, rankings):
+    poll = post("/polls", {"title": title, "options": options})
+    ids = [option["id"] for option in poll["options"]]
+    for ranking in rankings:
+        post(
+            "/polls/%s/ballots" % poll["id"],
+            {"entries": [{"optionId": ids[o], "rank": r + 1} for r, o in enumerate(ranking)]},
+        )
+    print("%-13s %s/poll/%s/results" % (label + ":", WEB, poll["id"]))
+    print("%-13s %s/poll/%s" % ("", WEB, poll["id"]))
+
+# A tie needs opposing ballots: the first two options swap places and split the
+# points, the third trails so the table also shows a position after the range.
+seed("no ballots", "Dinner?", ["Ramen", "Tacos", "Pho"], [])
+seed("one winner", "check", ["Alpha", "Beta"], [[0, 1]])
+seed("tie", "Offsite city?", ["Lisbon", "Porto", "Faro"], [[0, 1, 2], [1, 0, 2]])
+endef
+export SEED_PY
+
+seed: ## Seed three polls through the running API: no ballots, one winner, a tie
+	@API_URL=$(API_URL) WEB_BASE=http://localhost:$(WEB_PORT) python3 -c "$$SEED_PY"
+
+prune-merged: ## Delete local branches whose PR is merged
+	@git fetch --quiet --prune origin && \
+	CURRENT=$$(git rev-parse --abbrev-ref HEAD) && \
+	MERGED=$$(gh pr list --state merged --limit 300 --json headRefName -q '.[].headRefName') && \
+	for BRANCH in $$(git for-each-ref --format='%(refname:short)' refs/heads/ | grep -v '^main$$'); do \
+	  if [ "$$BRANCH" = "$$CURRENT" ]; then echo "kept:    $$BRANCH (checked out)"; \
+	  elif echo "$$MERGED" | grep -qx "$$BRANCH"; then git branch -D "$$BRANCH" > /dev/null && echo "deleted: $$BRANCH"; \
+	  else echo "kept:    $$BRANCH (no merged PR)"; fi; \
+	done
 
 down: ## Stop whatever is listening on the web and API ports
 	@PIDS=$$(lsof -ti:$(WEB_PORT),$(API_PORT) || true); \
