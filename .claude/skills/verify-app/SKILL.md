@@ -87,6 +87,14 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
    for every path, including the ones that render the 404 page. Grep for the
    markers that distinguish the states (`<h1>` text, a button label, an option).
 
+   What this proves is the _first paint_ of a route. `--dump-dom` loads, waits
+   and prints once, so anything behind an interaction — a click, typed input, a
+   permission prompt, `localStorage` carried across navigations — is invisible
+   to it. A clean dump of every route is therefore not yet "verified end-to-end":
+   interactive behaviour rests on the Vitest + RTL tests, and browser automation
+   is out of MVP scope on purpose (`docs/11-testing-strategy.md`). Say which
+   half you actually covered when you report.
+
 6. **Read stderr too.** Console errors and CORS failures land there, not in the
    dumped DOM. An empty `<div id="root"></div>` plus an `Uncaught` line in stderr
    means the bundle failed to boot — the page is not "still loading".
@@ -101,6 +109,13 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
   how the blank-page bug (#21) was identified as pre-existing rather than
   caused by the slice.
 - Coreutils sometimes resolve oddly inside loops and functions in this sandbox
-  (`command not found: head`). Use absolute paths — `/usr/bin/head`,
-  `/usr/bin/grep` — in scripted renders.
-- Kill the servers when done: `make down`.
+  (`command not found: head`). It is not a short list of offenders — `rm`, `tr`
+  and `wc` fail the same way. Use absolute paths (`/bin/rm`, `/usr/bin/head`,
+  `/usr/bin/grep`, `/usr/bin/tr`, `/usr/bin/wc`) for every coreutil in a
+  scripted render.
+- Kill the servers when done: `make down`. If `make web` is running as a
+  background job, expect it to report a _failure_ right after — `vite preview`
+  is killed by the signal and exits `143`, which surfaces as
+  `ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL` and a non-zero `make` status. That is the
+  teardown, not a broken build; check the log for the `✓ built` line before
+  spending a call on it.
