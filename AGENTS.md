@@ -123,11 +123,14 @@ drifted matches only the stable part.
   (`new-slice` when picking up a backlog item, `task-readiness` before
   implementing one).
 - **Explicit-only skills** are rituals the human starts at a chosen moment
-  (`retro`, `handoff`). Mark them explicit-only for each supported agent; the
-  canonical `SKILL.md` stays portable while tool-specific policy lives in
-  `.claude/settings.json` and the skill's `agents/` directory. The description
-  and body must also say that user intent is required because the Agent Skills
-  standard has no cross-client invocation policy.
+  (`retro`, `handoff`). Keep them manual-only for every supported agent: set
+  `disable-model-invocation: true` in the `SKILL.md` frontmatter — Claude Code's
+  documented control, which also blocks subagent preload and scheduled-task
+  firing — backed by `"user-invocable-only"` in `.claude/settings.json`
+  `skillOverrides`; for Codex, `allow_implicit_invocation: false` in the skill's
+  `agents/openai.yaml`. The description and body must also state that user intent
+  is required, since the portable Agent Skills standard has no cross-client
+  invocation policy.
 - Both skill locations are committed. Check them before writing a new one.
 - If you performed a multi-step procedure this session that will clearly recur,
   or noticed an existing skill or instruction is wrong, propose creating or

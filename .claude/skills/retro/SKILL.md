@@ -1,6 +1,7 @@
 ---
 name: retro
 description: Review the current session for reusable workflows, stale instructions, and avoidable friction when the user explicitly requests a retrospective.
+disable-model-invocation: true
 ---
 
 # retro

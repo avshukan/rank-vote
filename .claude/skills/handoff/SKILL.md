@@ -1,6 +1,7 @@
 ---
 name: handoff
 description: Write a compact .agents/HANDOFF.md for unfinished work when the user explicitly asks to hand a session to another agent, tool, or device.
+disable-model-invocation: true
 ---
 
 # handoff
