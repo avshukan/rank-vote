@@ -142,15 +142,20 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 ## Phase 5 — Deployment
 
-| App        | Platform               | Notes                                            |
-| ---------- | ---------------------- | ------------------------------------------------ |
-| `apps/web` | Vercel                 | Set `VITE_API_URL` env var; SPA routing fallback |
-| `apps/api` | Railway                | Set `DATABASE_URL`, `CORS_ORIGIN`; Dockerfile    |
-| Database   | SQLite on Railway host | Path defined in `DATABASE_URL`                   |
+| App        | Platform                     | Notes                                     |
+| ---------- | ---------------------------- | ----------------------------------------- |
+| `apps/web` | Docker image (nginx, static) | Application VPS; set `VITE_API_URL`       |
+| `apps/api` | Docker image (Node.js)       | Application VPS; set API environment vars |
+| Database   | PostgreSQL container         | Same VPS; persistent volume               |
 
-- Add `Dockerfile` for `apps/api` (multi-stage Node.js build)
-- Add `vercel.json` for `apps/web` (SPA fallback route)
-- Configure env vars in each platform's dashboard
+- Add separate Docker images for `apps/web` and `apps/api`
+- Orchestrate the application and PostgreSQL with `docker-compose`
+- Configure application environment variables on the VPS
+- Configure offsite database backups with an independent provider outside
+  DigitalOcean, plus a documented and tested restore procedure
+
+See `docs/06-decisions.md` for the accepted deployment and database-hosting
+decisions, and `docs/10-storage.md` for backup and recovery requirements.
 
 ---
 

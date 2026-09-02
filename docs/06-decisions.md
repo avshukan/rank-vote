@@ -147,11 +147,11 @@ Rejected:
 
 MVP deployment targets:
 
-| App        | Platform                     | Notes                 |
-| ---------- | ---------------------------- | --------------------- |
-| `apps/web` | Docker image (nginx, static) | separately scalable   |
-| `apps/api` | Docker image (Node.js)       | separately scalable   |
-| Database   | Neon (managed PostgreSQL)    | serverless, free tier |
+| App        | Platform                     | Notes                  |
+| ---------- | ---------------------------- | ---------------------- |
+| `apps/web` | Docker image (nginx, static) | separately scalable    |
+| `apps/api` | Docker image (Node.js)       | separately scalable    |
+| Database   | PostgreSQL container         | on the application VPS |
 
 Notes:
 
@@ -226,30 +226,68 @@ See `docs/10-storage.md` for schema details.
 
 ## Database Hosting
 
-### Neon (managed PostgreSQL)
+### Self-hosted PostgreSQL on the application VPS
 
 Status:
 
-- accepted
+- accepted (supersedes the Neon decision below)
 
 Chosen:
 
-- Neon serverless Postgres for production; local Postgres container for dev
+- run PostgreSQL in Docker on the same DigitalOcean VPS as the application
+- store database data in persistent storage / a Docker volume whose lifecycle
+  is independent of the PostgreSQL container
+- keep database backups outside both the current VPS and DigitalOcean, with an
+  independent provider
 
 Reason:
 
-- MVP has **no authentication** (see MVP Principles), so a BaaS platform's
-  batteries (auth/realtime/storage) add no value — a plain Postgres is the fit,
-  and Neon is exactly that with no platform baggage
-- scale-to-zero that **auto-resumes** on the first query (no manual un-pausing),
-  which suits a low-traffic hobby app
-- DB branching gives cheap dev/preview parity
+- minimizing recurring cost is the priority at the current, early stage
+- sharing the application VPS avoids the cost of a managed database or a
+  dedicated database VPS
+- persistent storage keeps data across routine container replacement or
+  recreation
+- offsite backups preserve a recovery path even after complete loss of the VPS,
+  the DigitalOcean account, or DigitalOcean infrastructure
+
+Consequences:
+
+- the project owns PostgreSQL operations, including backup, restore, upgrades,
+  monitoring, and recovery testing
+- the application and database share a failure domain; persistent storage does
+  not replace backups, and backups provide recovery rather than high availability
+- backup tooling, provider, schedule, retention, and restore-test cadence must be
+  selected before production deployment; requirements are in `docs/10-storage.md`
+
+Next stage:
+
+- when the project grows and reliability requirements justify the additional
+  cost, migrate to managed PostgreSQL
+- choose the managed database from a provider separate from application hosting,
+  so application-hosting and database infrastructure do not share a provider
 
 Rejected:
 
-- Supabase — great product, but its value is the BaaS layer we do not use; its
-  free tier also pauses after ~1 week idle and needs manual waking
-- self-hosted Postgres — full control, but volume/backups become our problem
+- a separate PostgreSQL VPS now — additional cost and operational complexity are
+  not justified at the current scale
+- multi-provider replication now — additional cost and complexity are not
+  justified at the current scale
+
+### Neon (managed PostgreSQL, superseded)
+
+Status:
+
+- superseded by self-hosted PostgreSQL on the application VPS
+
+Reason (historical):
+
+- managed operations and scale-to-zero suited a low-traffic early deployment
+- a plain managed PostgreSQL service avoided an unused BaaS layer
+
+Why superseded:
+
+- minimizing recurring cost now takes precedence; managed PostgreSQL remains the
+  planned next stage when reliability requirements grow
 
 ---
 
