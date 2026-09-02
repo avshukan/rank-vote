@@ -96,14 +96,22 @@ apps/web/src/
 
 ---
 
-## Initial Storage
+## Storage
 
-MVP storage:
+Current implementation:
 
 - SQLite (via Prisma)
 
-Migration to PostgreSQL planned after MVP.
-See `docs/10-storage.md` for schema and rationale.
+Accepted production target:
+
+- PostgreSQL (via Prisma)
+- PostgreSQL container on the application VPS
+- persistent storage independent of the container lifecycle
+- offsite backups with a provider outside DigitalOcean
+
+The PostgreSQL migration is backlog item #17 and must land before the first
+deployment. See `docs/06-decisions.md` for the hosting decision and
+`docs/10-storage.md` for storage, backup, and recovery requirements.
 
 ---
 
