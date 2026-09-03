@@ -19,12 +19,12 @@ restarting the web half does not take the API down with it.
 
 ## Environment Variables
 
-| Variable       | App | Default                        | Description                                   |
-| -------------- | --- | ------------------------------ | --------------------------------------------- |
-| `DATABASE_URL` | api | `file:./dev.db`                | SQLite path (or PostgreSQL URL in production) |
-| `PORT`         | api | `3000`                         | API listen port                               |
-| `CORS_ORIGIN`  | api | `http://localhost:5173`        | Allowed frontend origin                       |
-| `VITE_API_URL` | web | `http://localhost:3000/api/v1` | Backend API base URL                          |
+| Variable       | App | Default                        | Description                                |
+| -------------- | --- | ------------------------------ | ------------------------------------------ |
+| `DATABASE_URL` | api | `file:./dev.db`                | SQLite path (PostgreSQL after backlog #17) |
+| `PORT`         | api | `3000`                         | API listen port                            |
+| `CORS_ORIGIN`  | api | `http://localhost:5173`        | Allowed frontend origin                    |
+| `VITE_API_URL` | web | `http://localhost:3000/api/v1` | Backend API base URL                       |
 
 ## Docs
 
@@ -33,4 +33,5 @@ See [`docs/`](docs/) for full documentation. Start with:
 - [`docs/00-product.md`](docs/00-product.md) — product vision
 - [`docs/05-architecture.md`](docs/05-architecture.md) — monorepo structure and tech stack
 - [`docs/implementation-plan.md`](docs/implementation-plan.md) — phased plan
+- [`docs/backlog.md`](docs/backlog.md) — what is done and what is next
 - [`AGENTS.md`](AGENTS.md) — guide for AI agents and contributors

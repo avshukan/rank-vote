@@ -35,6 +35,10 @@ A deployed increment with:
 
 Versioning follows SemVer.
 
+No release has been cut yet: there are no tags and no changelog file, because
+nothing is deployed. Both start with the first production deployment
+(backlog #29).
+
 ---
 
 ## Principles
@@ -67,11 +71,16 @@ A task or iteration is considered done when:
 
 - the PR has passed code review
 - implementation is merged to `main`
-- CI is green (format, lint, typecheck, tests, build)
+- CI is green (format, lint, typecheck, tests, build) — `make verify` runs the
+  same steps in the same order locally
 - tests are added/updated for changed behavior
 - manual testing is completed
 - related documentation is updated (including `docs/backlog.md`)
-- deployment works correctly
+- the change is production-ready
+
+`AGENTS.md` restates this list as the agent-facing checklist, and
+`.github/pull_request_template.md` carries the part an author can tick before
+review. They repeat each other on purpose — a change here belongs in both.
 
 ---
 
@@ -95,9 +104,13 @@ Examples:
 
 ## CI/CD
 
-- merge to `main` triggers automatic deployment
+- CI (`.github/workflows/ci.yml`) runs on every PR and on pushes to `main`:
+  format, lint, typecheck, test, build
+- **CD does not exist yet.** Nothing is built into an image, deployed, or
+  released on merge; the work is tracked as backlog #27 (container images),
+  #28 (offsite database backups) and #29 (first production deployment)
 - each merge should be production-ready
-- releases are tagged manually
+- releases will be tagged manually once there is something to release
 
 ---
 

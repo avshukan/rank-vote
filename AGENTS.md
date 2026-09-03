@@ -211,5 +211,6 @@ Read these files to understand the project before making changes:
 | `docs/11-testing-strategy.md` | What to test, frameworks, coverage expectations        |
 | `docs/12-ai-first.md`         | AI-first strategy, tooling roadmap                     |
 | `docs/implementation-plan.md` | Phased implementation plan with all deliverables       |
+| `docs/acceptance-criteria.md` | Agreed criteria per backlog item, settled before code  |
 | `docs/backlog.md`             | Prioritized backlog items                              |
 | `docs/glossary.md`            | Domain terminology                                     |
