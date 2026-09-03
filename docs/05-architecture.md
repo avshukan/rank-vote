@@ -87,7 +87,7 @@ apps/api/src/
   presentation/
 ```
 
-How the layers actually depend on each other:
+Current layer dependencies:
 
 - `domain/` — pure functions (Borda count, strict-ranking validation). No
   framework, no ORM, no HTTP.
@@ -97,15 +97,15 @@ How the layers actually depend on each other:
 - `presentation/` — controllers and `class-validator` DTOs that `implement` the
   shared DTOs. Input validation lives only here, at the edge.
 
-Two consequences of "simplified" worth naming, because the code follows them
-deliberately:
+Two implementation details are worth recording because contributors need to
+understand the code that exists today:
 
-- **There is no repository abstraction.** Application services inject
-  `PrismaService` and issue Prisma queries directly. The boundary that is
-  enforced is the _type_ boundary: each mapper declares its own structural
-  interface (`PersistedPoll`, `PersistedBallot`, …) so no Prisma type reaches a
-  DTO or a caller. Introducing repositories is a possible later refactor, not a
-  rule the current code breaks.
+- **There is currently no repository abstraction.** Application services inject
+  `PrismaService` and issue Prisma queries directly. Each mapper declares its
+  own structural interface (`PersistedPoll`, `PersistedBallot`, …), which keeps
+  Prisma-generated types out of shared DTOs and callers. This describes the
+  current MVP coupling; it is not a rule that repository abstractions are
+  forbidden if a future change gives them a concrete benefit.
 - **Runtime configuration is shared with the tests.** Prefix, `ValidationPipe`
   and CORS are applied by `configureApp` in `src/app.setup.ts`, which both
   `main.ts` and the e2e suite call, so the tests exercise what production runs.
@@ -136,11 +136,11 @@ Accepted production target:
 - PostgreSQL (via Prisma)
 - PostgreSQL container on the application VPS
 - persistent storage independent of the container lifecycle
-- offsite backups with a provider outside DigitalOcean
+- offsite backups outside the VPS and DigitalOcean
 
 The PostgreSQL migration is backlog item #17 and must land before the first
-deployment. See `docs/06-decisions.md` for the hosting decision and
-`docs/10-storage.md` for storage, backup, and recovery requirements.
+deployment. See `docs/06-decisions.md` for the hosting and staged-backup decision
+and `docs/10-storage.md` for storage, backup, and recovery requirements.
 
 ---
 
