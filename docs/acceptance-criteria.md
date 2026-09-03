@@ -168,8 +168,8 @@ boxes are unchecked and the open questions below still need answers.
 
 ### Behaviour unchanged
 
-- [ ] All four endpoints keep the contract in `docs/09-api-design.md`,
-      including the `400`/`404` cases
+- [ ] All four documented product endpoints keep the contract in
+      `docs/09-api-design.md`, including the `400`/`404` cases
 - [ ] `scores` keeps its order (score DESC, then `option.order` ASC) and ties
       still produce multiple `winners` (#4)
 
@@ -184,17 +184,18 @@ boxes are unchecked and the open questions below still need answers.
 ### Out of Scope (tracked separately)
 
 - Container images for `web`/`api` and the application compose stack → #27
-- Offsite backups, retention and restore tests → #28
-- Deploying anything anywhere → #29
+- First production deployment → #29
+- Manual offsite backup and restore drill after deployment → #28
+- Automated offsite backups → #32
 
 ### Open Questions (block implementation)
 
 - **Where does the local database come from?** `docs/06-decisions.md` puts
-  containers "just before the first deploy" (#27), but this item needs
-  PostgreSQL running in dev and CI now. Minimal answer: a database-only
-  `docker-compose.yml` lands with #17 and #27 extends it with the app
-  services. Needs the owner's confirmation, since it moves the first container
-  file earlier than the decision says.
+  application containers "just before the first deploy" (#27), but this item
+  needs PostgreSQL running in dev and CI now. Minimal answer: a database-only
+  `docker-compose.yml` lands with #17 and #27 extends it with the app services.
+  Needs the owner's confirmation because it moves the first container file
+  earlier than the current containerization decision says.
 - **How does the e2e suite isolate runs?** Today it deletes and recreates a
   SQLite file. Minimal answer: keep the suite provisioning its own database and
   reset the schema per run (`prisma db push --force-reset`) against a dedicated
@@ -211,13 +212,20 @@ run `task-readiness` when one is picked up.
   the shape (one image per app, `docker-compose`), but base images, the nginx
   configuration, build-time `VITE_API_URL` injection and health checks are all
   unsettled.
-- **#28 Offsite database backups** — `docs/10-storage.md` lists the open
-  implementation decisions (provider, tool, format, frequency, retention,
-  encryption, restore cadence, alerting); every one is a prerequisite.
+- **#31 Rate-limit write endpoints** — basic protection for the two public
+  unauthenticated POST endpoints must be decided before the first public deploy.
 - **#29 First production deploy** — needs a host, a domain, TLS termination,
-  secret handling and a release ritual, none of which exist yet.
-- Everything at `Medium`/`Low` priority — criteria are written when the item is
-  picked up, not in advance.
+  secret handling and a release ritual; it needs #27 and #31.
+- **#28 Manual offsite backup** — after #29, create a logical dump, copy it to
+  the owner's local machine outside DigitalOcean, restore it into clean
+  PostgreSQL and verify the application can use the restored database.
+- **#32 Automate offsite backups** — after #28 proves recovery, choose the
+  independent object-storage provider, schedule, retention, encryption,
+  monitoring and restore-test cadence.
+- **#33 Add production monitoring** — health, alerting and error tracking are
+  intentionally tracked separately from the first deployment.
+- Everything else at `Medium`/`Low` priority — criteria are written when the
+  item is picked up, not in advance.
 
 ---
 

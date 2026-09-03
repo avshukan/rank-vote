@@ -61,7 +61,8 @@ nothing is deployed. Both start with the first production deployment
 4. Implement features as vertical slices, sized to fit one agent session
 5. Merge changes to `main` via PR; the PR updates `docs/backlog.md` for the items it completes
 6. Each merge should be production-ready
-7. Finish iteration with a release
+7. Finish iteration with a merged, production-ready increment; cut a release
+   once deployment exists
 
 ---
 
@@ -107,8 +108,10 @@ Examples:
 - CI (`.github/workflows/ci.yml`) runs on every PR and on pushes to `main`:
   format, lint, typecheck, test, build
 - **CD does not exist yet.** Nothing is built into an image, deployed, or
-  released on merge; the work is tracked as backlog #27 (container images),
-  #28 (offsite database backups) and #29 (first production deployment)
+  released on merge. The first-deploy path is tracked as #17 (PostgreSQL), #27
+  (container images), #31 (write rate limiting) and #29 (first production
+  deployment); recovery then proceeds through #28 (manual offsite backup and
+  restore drill) and #32 (automated offsite backups)
 - each merge should be production-ready
 - releases will be tagged manually once there is something to release
 

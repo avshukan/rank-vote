@@ -85,7 +85,8 @@ Includes: domain logic, backend, frontend, integration, and basic testing.
 ## Iteration
 
 A short time-boxed development cycle (1–2 weeks).  
-Has a fixed scope and ends with a release.
+Has a fixed scope and ends with a merged, production-ready increment; once
+deployment exists, that increment may be released.
 
 ---
 

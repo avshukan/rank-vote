@@ -95,8 +95,8 @@ MVP is intentionally lightweight and does not yet include:
 - role management
 
 The public write endpoints (`POST /polls`, `POST /polls/:id/ballots`) are
-unauthenticated and unthrottled. Acceptable while nothing is deployed; tracked
-as backlog #31 for the decision before the first public deployment.
+unauthenticated and unthrottled. Basic rate limiting is required before the
+first public deployment and is tracked as backlog #31.
 
 ---
 
@@ -109,7 +109,8 @@ infrastructure:
   tests, and stops there (backlog #27, #29)
 - storage is still SQLite; PostgreSQL is accepted but not migrated
   (backlog #17)
-- no backups, monitoring, alerting, or error tracking (backlog #28 covers
-  database backups)
+- no backups yet: the first manual offsite backup and restore drill is #28,
+  followed by automated offsite backups in #32
+- no production monitoring, alerting, or error tracking; tracked as #33
 - results are recalculated on every request, with no caching — deliberate at
   MVP scale, see `docs/09-api-design.md`

@@ -153,11 +153,11 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 ---
 
-## Phase 5 — Deployment
+## Phase 5 — Deployment & Recovery
 
-**Status:** not started. Tracked as backlog #17 (PostgreSQL), #27 (container
-images), #28 (offsite backups) and #29 (first production deployment); nothing
-in this phase exists in the repository yet.
+**Status:** not started. The path is tracked as #17 (PostgreSQL), #27
+(container images), #31 (write rate limiting), #29 (first production deploy),
+#28 (manual offsite backup/restore), then #32 (automated offsite backups).
 
 | App        | Platform                     | Notes                                     |
 | ---------- | ---------------------------- | ----------------------------------------- |
@@ -168,11 +168,17 @@ in this phase exists in the repository yet.
 - Add separate Docker images for `apps/web` and `apps/api`
 - Orchestrate the application and PostgreSQL with `docker-compose`
 - Configure application environment variables on the VPS
-- Configure offsite database backups with an independent provider outside
-  DigitalOcean, plus a documented and tested restore procedure
+- Add basic rate limiting for public write endpoints before public deployment
+- Perform the first production deployment
+- Immediately prove recovery with a manual logical dump copied outside
+  DigitalOcean and restored into clean PostgreSQL
+- Then automate scheduled offsite backups to independent object storage with a
+  documented retention and restore-test policy
+
+Production monitoring/alerting is tracked separately as #33.
 
 See `docs/06-decisions.md` for the accepted deployment and database-hosting
-decisions, and `docs/10-storage.md` for backup and recovery requirements.
+decisions, and `docs/10-storage.md` for the staged backup and recovery plan.
 
 ---
 

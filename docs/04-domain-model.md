@@ -21,8 +21,10 @@ Notes:
 model; neither is a column in `apps/api/prisma/schema.prisma` and neither is
 part of `PollResponseDto`. The MVP fixes both for every poll —
 `STRICT_RANKING` and `BORDA` — so the results response reports
-`method: "BORDA"` from a constant in the mapper. The fields become real with
-the multi-method work (backlog #8, #9, #10).
+`method: "BORDA"` from a constant in the mapper. `countingMethods` becomes
+relevant with the multi-method work (backlog #8, #9, #10); `ballotFormat`
+becomes relevant when additional ballot formats are implemented (#14, #15 and
+future pairwise-ballot work).
 
 ---
 

@@ -49,8 +49,8 @@ the migration are in `docs/acceptance-criteria.md` (#17).
 
 ## Production PostgreSQL backup and recovery
 
-These are operational requirements, not a selected backup implementation. The
-provider and tooling remain open until the deployment slice.
+Backup capability is introduced in stages so the early project keeps operating
+cost and complexity low while still proving that recovery works.
 
 ### Data persistence
 
@@ -59,38 +59,42 @@ provider and tooling remain open until the deployment slice.
 - Replacing or recreating the PostgreSQL container must not delete the database.
 - The volume remains part of the VPS failure domain and is **not** a backup.
 
-### Offsite backup
+### Stage 1 — manual offsite backup and restore
 
-- Backups must be copied outside the current VPS and outside DigitalOcean.
-- The backup location must use an independent provider and remain usable if the
-  VPS, the DigitalOcean account, or DigitalOcean infrastructure is completely
-  lost.
-- The backup process must be repeatable, monitored for failures, and covered by
-  a documented retention policy.
+Immediately after the first production deployment, create a logical PostgreSQL
+backup manually and copy it outside the VPS and outside DigitalOcean, initially
+to the project owner's local machine. Then restore that backup into a clean
+PostgreSQL instance and verify that the schema/data are readable and the
+application can connect.
 
-### Restore and verification
+This stage is backlog #28. Its purpose is to prove the complete recovery path
+before automating it; the local machine is an offsite copy, but it is not the
+intended long-term backup service.
 
-- The restore procedure must start from an offsite backup and a clean PostgreSQL
-  instance; it must not depend on access to the original VPS.
-- Restore tests must run periodically and confirm that the schema and data are
-  readable and that the application can connect to the restored database.
-- The result and date of each restore test must be recorded so that backup
-  existence is not mistaken for recoverability.
+### Stage 2 — automated offsite backups
 
-### Open implementation decisions
+After the manual backup/restore path is proven, automate logical dumps on a
+schedule and send them to object storage with an independent provider outside
+DigitalOcean. This stage is backlog #32.
 
-- independent backup provider and storage service
-- backup tool and format (logical, physical, or both)
-- backup frequency and target recovery point (RPO)
-- retention periods and number of retained copies
-- encryption, key custody, and access-control model
+Stage 2 must define:
+
+- backup tool and format
+- schedule and target recovery point (RPO)
+- retention policy
+- encryption and access control
+- failed-backup monitoring/alerting
 - restore-test cadence and target recovery time (RTO)
-- monitoring, alerting, and ownership for failed backups
 
-The intended next stage is managed PostgreSQL from a provider separate from
-application hosting. A dedicated PostgreSQL VPS and multi-provider replication
-are deliberately deferred at the current scale because their cost and
-operational complexity are not justified.
+### Stage 3 — managed PostgreSQL
+
+When the project grows and reliability requirements justify the additional
+cost, migrate to managed PostgreSQL from a provider separate from application
+hosting. Independent backups remain required.
+
+A dedicated PostgreSQL VPS and multi-provider replication are deliberately
+deferred at the current scale because their cost and operational complexity are
+not justified.
 
 ---
 
@@ -126,8 +130,8 @@ cp dev.db dev.db.bak                   # plain copy (app stopped)
   `sqlite3 new.db < backup.sql`.
 
 For the move to PostgreSQL see [Migration path](#migration-path-sqlite--postgresql)
-above — swap the provider and `DATABASE_URL`, then `db:deploy`; no application
-code changes.
+above — swap the provider and `DATABASE_URL`, replace the SQLite driver adapter,
+then `db:deploy`.
 
 ---
 
