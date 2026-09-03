@@ -64,8 +64,14 @@ Examples:
 
 - DTOs
 - enums
-- validation schemas
+- validation constants
 - API contracts
+
+The package is built **twice** — CommonJS for the NestJS API to `require`, ESM
+for Vite and the browser to `import` — and its `exports` map routes each
+consumer to the matching half. This is load-bearing, not incidental: a
+CommonJS-only build renders a blank web app under `pnpm dev`. See the
+"Shared Package Build" decision in `docs/06-decisions.md`.
 
 ---
 
@@ -80,6 +86,29 @@ apps/api/src/
   infrastructure/
   presentation/
 ```
+
+How the layers actually depend on each other:
+
+- `domain/` — pure functions (Borda count, strict-ranking validation). No
+  framework, no ORM, no HTTP.
+- `application/` — services that orchestrate a use case, plus a **mapper** per
+  feature that turns persisted rows into shared DTOs.
+- `infrastructure/` — `PrismaService`, exported by a `@Global()` module.
+- `presentation/` — controllers and `class-validator` DTOs that `implement` the
+  shared DTOs. Input validation lives only here, at the edge.
+
+Two consequences of "simplified" worth naming, because the code follows them
+deliberately:
+
+- **There is no repository abstraction.** Application services inject
+  `PrismaService` and issue Prisma queries directly. The boundary that is
+  enforced is the _type_ boundary: each mapper declares its own structural
+  interface (`PersistedPoll`, `PersistedBallot`, …) so no Prisma type reaches a
+  DTO or a caller. Introducing repositories is a possible later refactor, not a
+  rule the current code breaks.
+- **Runtime configuration is shared with the tests.** Prefix, `ValidationPipe`
+  and CORS are applied by `configureApp` in `src/app.setup.ts`, which both
+  `main.ts` and the e2e suite call, so the tests exercise what production runs.
 
 ---
 

@@ -93,3 +93,23 @@ MVP is intentionally lightweight and does not yet include:
 - strong duplicate vote prevention
 - private polls
 - role management
+
+The public write endpoints (`POST /polls`, `POST /polls/:id/ballots`) are
+unauthenticated and unthrottled. Acceptable while nothing is deployed; tracked
+as backlog #31 for the decision before the first public deployment.
+
+---
+
+## Operations
+
+Nothing is deployed yet, and the repository contains no deployment
+infrastructure:
+
+- no container images, no `docker-compose`, no CD pipeline — CI builds and
+  tests, and stops there (backlog #27, #29)
+- storage is still SQLite; PostgreSQL is accepted but not migrated
+  (backlog #17)
+- no backups, monitoring, alerting, or error tracking (backlog #28 covers
+  database backups)
+- results are recalculated on every request, with no caching — deliberate at
+  MVP scale, see `docs/09-api-design.md`

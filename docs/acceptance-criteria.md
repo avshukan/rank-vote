@@ -1,4 +1,9 @@
-# Acceptance Criteria — Tasks #3, #4, #18, #5
+# Acceptance Criteria
+
+Agreed scope per `docs/backlog.md` item, settled **before** the code is written
+(`docs/07-process.md`, step 2). One section per item, added when the item is
+picked up; a checked box means the shipped behaviour matches. Items with no
+section here are listed under [Not specified yet](#not-specified-yet).
 
 ## #3 Submit Ballot
 
@@ -122,6 +127,97 @@ Frontend only — no API or shared-package change.
 - Explaining how the points produced the ranking → backlog #19
 - Manual "Refresh results" button → backlog #20
 - Full mobile layout → backlog #6; this task ships basic Tailwind responsiveness only
+
+---
+
+## #17 Migrate to PostgreSQL
+
+Accepted in `docs/06-decisions.md` (Storage, Database Hosting); requirements in
+`docs/10-storage.md`. Blocks #27. Written during the repository audit, so the
+boxes are unchecked and the open questions below still need answers.
+
+### Database
+
+- [ ] `datasource db` in `apps/api/prisma/schema.prisma` uses provider
+      `postgresql`
+- [ ] The Prisma 7 driver adapter in
+      `src/infrastructure/prisma/prisma.service.ts` is swapped from
+      `@prisma/adapter-better-sqlite3` to the PostgreSQL adapter, and the
+      SQLite adapter dependency is dropped
+- [ ] The migration history is regenerated for PostgreSQL — there is no
+      production data, so the SQLite `init` migration is replaced, not migrated
+- [ ] Models are otherwise unchanged: `Poll`, `PollOption`, `Ballot`,
+      `BallotEntry` keep their fields, relations and UUID ids as documented in
+      `docs/10-storage.md`
+- [ ] `prisma migrate deploy` against an empty database reproduces that schema
+
+### Local development
+
+- [ ] A local PostgreSQL is reachable by `make api` / `pnpm dev` through one
+      documented command, and `make db-migrate` works against it
+- [ ] `apps/api/.env.example` carries a PostgreSQL `DATABASE_URL`, and
+      `make setup` still yields a working `.env`
+
+### Tests and CI
+
+- [ ] The e2e suite provisions its schema in PostgreSQL instead of a throwaway
+      SQLite file, and consecutive runs stay isolated from each other
+- [ ] Unit tests stay database-free (Prisma is mocked)
+- [ ] CI supplies a PostgreSQL instance so `pnpm test` is green on a clean
+      runner; `make verify` mirrors it locally
+
+### Behaviour unchanged
+
+- [ ] All four endpoints keep the contract in `docs/09-api-design.md`,
+      including the `400`/`404` cases
+- [ ] `scores` keeps its order (score DESC, then `option.order` ASC) and ties
+      still produce multiple `winners` (#4)
+
+### Documentation
+
+- [ ] `docs/10-storage.md`: the "Current SQLite backup and migration" section
+      is replaced by its PostgreSQL equivalent
+- [ ] `docs/05-architecture.md` no longer names SQLite as the current
+      implementation; `README.md` and `AGENTS.md` env tables say PostgreSQL
+- [ ] `docs/backlog.md`: #17 moves to `## Done`
+
+### Out of Scope (tracked separately)
+
+- Container images for `web`/`api` and the application compose stack → #27
+- Offsite backups, retention and restore tests → #28
+- Deploying anything anywhere → #29
+
+### Open Questions (block implementation)
+
+- **Where does the local database come from?** `docs/06-decisions.md` puts
+  containers "just before the first deploy" (#27), but this item needs
+  PostgreSQL running in dev and CI now. Minimal answer: a database-only
+  `docker-compose.yml` lands with #17 and #27 extends it with the app
+  services. Needs the owner's confirmation, since it moves the first container
+  file earlier than the decision says.
+- **How does the e2e suite isolate runs?** Today it deletes and recreates a
+  SQLite file. Minimal answer: keep the suite provisioning its own database and
+  reset the schema per run (`prisma db push --force-reset`) against a dedicated
+  test database.
+
+---
+
+## Not specified yet
+
+Open backlog items with no criteria in this file. Listed so the gap is visible;
+run `task-readiness` when one is picked up.
+
+- **#27 Dockerize web and api** — the decision in `docs/06-decisions.md` fixes
+  the shape (one image per app, `docker-compose`), but base images, the nginx
+  configuration, build-time `VITE_API_URL` injection and health checks are all
+  unsettled.
+- **#28 Offsite database backups** — `docs/10-storage.md` lists the open
+  implementation decisions (provider, tool, format, frequency, retention,
+  encryption, restore cadence, alerting); every one is a prerequisite.
+- **#29 First production deploy** — needs a host, a domain, TLS termination,
+  secret handling and a release ritual, none of which exist yet.
+- Everything at `Medium`/`Low` priority — criteria are written when the item is
+  picked up, not in advance.
 
 ---
 

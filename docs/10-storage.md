@@ -30,10 +30,20 @@ Reason:
 ## Migration path (SQLite → PostgreSQL)
 
 - change the Prisma `provider` to `postgresql` and point `DATABASE_URL` at the
-  Postgres instance (the application VPS in production, the `docker-compose`
-  Postgres locally)
-- regenerate the migration history for Postgres, then `prisma migrate deploy`
-- no application/business-logic code changes required
+  Postgres instance (the application VPS in production, a local Postgres in dev)
+- swap the Prisma 7 driver adapter: `@prisma/adapter-better-sqlite3` →
+  the Postgres adapter, in `src/infrastructure/prisma/prisma.service.ts`
+- regenerate the migration history for Postgres (there is no production data,
+  so the SQLite history is replaced rather than migrated), then
+  `prisma migrate deploy`
+- no domain or application logic changes: the services speak Prisma's model
+  API, not SQL
+
+**What the swap does reach**, and is easy to under-estimate: the e2e suite
+provisions its database itself (`prisma db push` onto a throwaway SQLite file),
+so it needs a real Postgres instance — locally and in CI. Dev and CI therefore
+both gain a database dependency they do not have today. Acceptance criteria for
+the migration are in `docs/acceptance-criteria.md` (#17).
 
 ---
 

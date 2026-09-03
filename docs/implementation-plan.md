@@ -12,6 +12,8 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 ## Phase 0 — Monorepo Scaffold
 
+**Status:** shipped.
+
 **Goal:** Working skeleton, tooling ready.
 
 - Initialize `pnpm` workspace at the repo root (`pnpm-workspace.yaml`, root `package.json`)
@@ -27,6 +29,8 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 ## Phase 1 — Shared Package (`packages/shared`)
 
+**Status:** shipped.
+
 **Goal:** Single source of truth for types used by both frontend and backend.
 
 - Define enums: `BallotFormat`, `CountingMethod`
@@ -40,6 +44,8 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 ---
 
 ## Phase 2 — Backend (`apps/api`)
+
+**Status:** shipped on SQLite; the move to PostgreSQL is backlog #17.
 
 **Goal:** All four API endpoints working with SQLite + Prisma.
 
@@ -76,17 +82,22 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
   - `POST /api/v1/polls/:id/ballots`
   - `GET /api/v1/polls/:id/results`
 - Input validation via `class-validator` + NestJS `ValidationPipe`
-- Global exception filter for 400/404 responses
+- No custom exception filter: Nest's built-in `NotFoundException` /
+  `BadRequestException` already produce the error shape documented in
+  `docs/09-api-design.md`
 - CORS origin configured via env var
 
 ### 2.5 Tests
 
 - **Unit**: `BordaCount` algorithm, ballot validator (`*.spec.ts` co-located)
-- **Integration**: all four endpoints with in-memory SQLite + Supertest (`apps/api/test/`)
+- **Integration**: all four endpoints against a throwaway SQLite file +
+  Supertest (`apps/api/test/`); see `docs/11-testing-strategy.md`
 
 ---
 
 ## Phase 3 — Frontend (`apps/web`)
+
+**Status:** shipped. Full mobile layout is backlog #6.
 
 **Goal:** Three usable pages; no registration required.
 
@@ -134,6 +145,8 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 ## Phase 4 — Integration & Local Dev
 
+**Status:** shipped.
+
 - Root `dev` script runs `apps/api` and `apps/web` concurrently
 - Verify end-to-end flow: create → share → vote → results
 - Ensure CORS, `VITE_API_URL`, and Prisma client generation are wired correctly
@@ -141,6 +154,10 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 ---
 
 ## Phase 5 — Deployment
+
+**Status:** not started. Tracked as backlog #17 (PostgreSQL), #27 (container
+images), #28 (offsite backups) and #29 (first production deployment); nothing
+in this phase exists in the repository yet.
 
 | App        | Platform                     | Notes                                     |
 | ---------- | ---------------------------- | ----------------------------------------- |
