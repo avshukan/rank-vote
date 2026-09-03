@@ -22,8 +22,16 @@ help: ## List the available targets
 setup: ## Install dependencies and create each app's .env from its .env.example
 	corepack enable || echo "corepack enable failed; using the pnpm already on PATH"
 	pnpm install
-	test -f apps/api/.env || cp apps/api/.env.example apps/api/.env
-	test -f apps/web/.env || cp apps/web/.env.example apps/web/.env
+	@if test -f apps/api/.env; then \
+		echo "warning: apps/api/.env already exists; setup left it unchanged. Check it against apps/api/.env.example."; \
+	else \
+		cp apps/api/.env.example apps/api/.env; \
+	fi
+	@if test -f apps/web/.env; then \
+		echo "warning: apps/web/.env already exists; setup left it unchanged. Check it against apps/web/.env.example."; \
+	else \
+		cp apps/web/.env.example apps/web/.env; \
+	fi
 
 # --- gate --------------------------------------------------------------------
 # Same steps in the same order as .github/workflows/ci.yml — green here is green
