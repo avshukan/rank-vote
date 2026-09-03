@@ -25,14 +25,17 @@ layers depend on each other.
 ```bash
 pnpm dev            # nest start --watch
 pnpm test           # unit specs, then the e2e suite
+pnpm test:e2e       # reset rank_vote_test, then run the API e2e suite
 pnpm db:migrate     # prisma migrate dev
 pnpm db:deploy      # prisma migrate deploy
 ```
 
 ## Database
 
-SQLite via Prisma today; PostgreSQL is accepted and pending as backlog #17.
-`DATABASE_URL` comes from `apps/api/.env` (copy `.env.example`, or run
-`make setup`). Schema, backup and migration notes live in
+PostgreSQL is accessed through Prisma. Start the local development and test
+databases with `make db-up`; `DATABASE_URL` comes from `apps/api/.env` (copy
+`.env.example`, or run `make setup`). The e2e runner always resets the separate
+`rank_vote_test` database and never reads the development URL. Schema, backup
+and migration notes live in
 [`docs/10-storage.md`](../../docs/10-storage.md); the wire contract in
 [`docs/09-api-design.md`](../../docs/09-api-design.md).

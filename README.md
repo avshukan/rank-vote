@@ -8,7 +8,11 @@ Simple web app for group decisions using ranked voting (Borda count).
 # Install dependencies and create the .env files from the examples
 make setup
 
-# Run the app — two terminals, API first
+# Start PostgreSQL and apply migrations
+make db-up
+make db-migrate
+
+# Run the app — two terminals
 make api
 make web        # http://localhost:5173
 ```
@@ -19,12 +23,12 @@ restarting the web half does not take the API down with it.
 
 ## Environment Variables
 
-| Variable       | App | Default                        | Description                                |
-| -------------- | --- | ------------------------------ | ------------------------------------------ |
-| `DATABASE_URL` | api | `file:./dev.db`                | SQLite path (PostgreSQL after backlog #17) |
-| `PORT`         | api | `3000`                         | API listen port                            |
-| `CORS_ORIGIN`  | api | `http://localhost:5173`        | Allowed frontend origin                    |
-| `VITE_API_URL` | web | `http://localhost:3000/api/v1` | Backend API base URL                       |
+| Variable       | App | Default                                                                   | Description                |
+| -------------- | --- | ------------------------------------------------------------------------- | -------------------------- |
+| `DATABASE_URL` | api | `postgresql://rank_vote:rank_vote@localhost:5432/rank_vote?schema=public` | PostgreSQL development URL |
+| `PORT`         | api | `3000`                                                                    | API listen port            |
+| `CORS_ORIGIN`  | api | `http://localhost:5173`                                                   | Allowed frontend origin    |
+| `VITE_API_URL` | web | `http://localhost:3000/api/v1`                                            | Backend API base URL       |
 
 ## Docs
 

@@ -171,7 +171,7 @@ Chosen:
 
 - one image per app (`web`: nginx serving the static build; `api`: Node.js),
   orchestrated with `docker-compose`
-- backlog #17 introduces the repository-root `docker-compose.yml` with a
+- backlog #17 introduced the repository-root `docker-compose.yml` with a
   PostgreSQL service only, plus `make db-up` as the standard local entry point
 - backlog #27 later adds the `web` and `api` images and services, just before the
   first deploy
@@ -205,7 +205,7 @@ Status:
 Chosen:
 
 - PostgreSQL as the database, accessed via Prisma
-- migrate **now**, before the first deploy while there is no production data
+- migrated before the first deploy while there was no production data
 
 Reason:
 

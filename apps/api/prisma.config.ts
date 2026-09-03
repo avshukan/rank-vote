@@ -1,6 +1,6 @@
 // Prisma CLI config. `.env` is loaded via dotenv (Prisma 7 no longer loads it
-// automatically). The fallback keeps `prisma generate` working in CI, where no
-// `.env` is present; migrate/runtime always run with a real DATABASE_URL.
+// automatically). The fallback is only parsed during client generation;
+// migrations and runtime receive a real DATABASE_URL.
 import 'dotenv/config';
 import { defineConfig } from 'prisma/config';
 
@@ -10,6 +10,8 @@ export default defineConfig({
     path: 'prisma/migrations',
   },
   datasource: {
-    url: process.env['DATABASE_URL'] ?? 'file:./dev.db',
+    url:
+      process.env['DATABASE_URL'] ??
+      'postgresql://rank_vote:rank_vote@localhost:5432/rank_vote?schema=public',
   },
 });

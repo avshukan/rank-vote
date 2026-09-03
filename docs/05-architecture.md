@@ -129,22 +129,22 @@ apps/web/src/
 
 Current implementation:
 
-- SQLite (via Prisma)
+- PostgreSQL (via Prisma)
+- database-only Compose service for local development
+- separate `rank_vote` development and `rank_vote_test` e2e databases
 
 Accepted production target:
 
-- PostgreSQL (via Prisma)
 - PostgreSQL container on the application VPS
 - persistent storage independent of the container lifecycle
 - offsite backups outside the VPS and DigitalOcean
 
-The PostgreSQL migration is backlog item #17 and must land before the first
-deployment. It also introduces a database-only Compose file for local
-development and the fixed PostgreSQL test database; CI may provide PostgreSQL
-through its native service mechanism. Backlog #27 later adds the `web` and `api`
-images and services to the Compose stack. See `docs/06-decisions.md` for the
-hosting and staged-containerization decisions and `docs/10-storage.md` for
-storage, testing, backup, and recovery requirements.
+Backlog #17 introduced the database-only Compose file and the fixed PostgreSQL
+test database; CI provides PostgreSQL through its native service mechanism.
+Backlog #27 later adds the `web` and `api` images and services to the Compose
+stack. See `docs/06-decisions.md` for the hosting and
+staged-containerization decisions and `docs/10-storage.md` for storage,
+testing, backup, and recovery requirements.
 
 ---
 
