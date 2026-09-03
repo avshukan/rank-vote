@@ -21,6 +21,36 @@ make web        # http://localhost:5173
 package in watch mode under one supervisor; the split targets exist so that
 restarting the web half does not take the API down with it.
 
+## Stopping and Restarting
+
+To stop the local app cleanly:
+
+1. Press `Ctrl+C` in both terminals running `make api` and `make web`.
+2. From the repository root, run `make down`. This stops anything still
+   listening on the web and API ports (`5173` and `3000` by default), including
+   a process left behind by a watcher.
+3. Stop PostgreSQL with `docker compose stop postgres`.
+
+`make down` stops the web and API processes only; it does not stop PostgreSQL.
+The database is stored in the named Docker volume `rank_vote_postgres_data`, so
+both `docker compose stop postgres` and `docker compose down` preserve the local
+data. The latter also removes the Compose container and network. Do not add
+`-v` unless you intentionally want to delete the local database.
+
+For the next development session, start PostgreSQL and the two app processes
+again:
+
+```bash
+make db-up
+
+# Two terminals
+make api
+make web        # http://localhost:5173
+```
+
+There is no need to repeat `make setup` on every run. Run `make db-migrate`
+again after pulling or creating new database migrations.
+
 ## Environment Variables
 
 | Variable       | App | Default                                                                   | Description                |
