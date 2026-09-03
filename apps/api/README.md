@@ -1,8 +1,10 @@
 # @rank-vote/api
 
-The rank-vote backend: NestJS + Prisma, serving the four public endpoints under
-`/api/v1`. Part of the [rank-vote](../../README.md) monorepo — run it from the
-repository root (`make api`), not from here.
+The rank-vote backend: NestJS + Prisma. The product API has four documented
+endpoints under `/api/v1`; the current Nest scaffold also exposes
+`GET /api/v1` returning `Hello World!` until backlog #30 removes it. Part of the
+[rank-vote](../../README.md) monorepo — run it from the repository root
+(`make api`), not from here.
 
 ## Layout
 
