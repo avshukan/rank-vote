@@ -55,9 +55,10 @@ adapts to the column, never the column to the content.
 | ID  | Title                      | Type     | Priority | Notes                                                       |
 | --- | -------------------------- | -------- | -------- | ----------------------------------------------------------- |
 | 17  | Migrate to PostgreSQL      | Quality  | High     | Accepted in `docs/06-decisions.md`; blocks #27              |
-| 27  | Dockerize web and api      | Quality  | High     | One image per app + compose; needs #17, blocks #28          |
-| 28  | Offsite database backups   | Quality  | High     | Backup, retention, restore test; needs #27, blocks #29      |
-| 29  | First production deploy    | Quality  | High     | VPS stack, env config, release tag; needs #28               |
+| 27  | Dockerize web and api      | Quality  | High     | One image per app + compose; needs #17, blocks #29          |
+| 31  | Rate-limit write endpoints | Quality  | High     | Public POSTs are unthrottled; blocks #29                    |
+| 29  | First production deploy    | Quality  | High     | VPS stack, env config, release tag; needs #27 and #31       |
+| 28  | Manual offsite backup      | Quality  | High     | Local pg_dump + restore drill; needs #29, blocks #32        |
 | 6   | Mobile responsive layout   | Quality  | Medium   | Basic responsive UI                                         |
 | 19  | Explain score calculation  | Value    | Medium   | How the points produced the ranking, per method; needs #5   |
 | 20  | Refresh results button     | Quality  | Medium   | Manual re-fetch on the results page until #16 lands         |
@@ -66,8 +67,9 @@ adapts to the column, never the column to the content.
 | 10  | Compare counting methods   | Value    | Medium   | Show different winners for same ballots                     |
 | 25  | Unify eslint and TS majors | Refactor | Medium   | web on eslint 10/TS 6, the rest on 9/TS 5; lock churn       |
 | 26  | Extract page fetch/retry   | Refactor | Medium   | BallotForm and ResultsView duplicate load/404/retry         |
-| 30  | Drop the scaffold endpoint | Quality  | Medium   | `GET /` returns Hello World; a health check would fit #27   |
-| 31  | Rate-limit write endpoints | Quality  | Medium   | Public POSTs are unthrottled; decide before #29             |
+| 30  | Drop the scaffold endpoint | Quality  | Medium   | `GET /api/v1` returns Hello World; health fits #27          |
+| 32  | Automate offsite backups   | Quality  | Medium   | Scheduled dumps to independent object storage; needs #28    |
+| 33  | Add production monitoring  | Quality  | Medium   | Health, alerting and error tracking after first deploy      |
 | 11  | Add PWA support            | Quality  | Low      | Installable web app                                         |
 | 12  | Add poll editing           | Value    | Low      | Edit poll after creation                                    |
 | 13  | Add poll expiration        | Value    | Low      | Closing date/time                                           |
