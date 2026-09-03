@@ -61,7 +61,8 @@ nothing is deployed. Both start with the first production deployment
 4. Implement features as vertical slices, sized to fit one agent session
 5. Merge changes to `main` via PR; the PR updates `docs/backlog.md` for the items it completes
 6. Each merge should be production-ready
-7. Finish iteration with a release
+7. Finish iteration with a merged, production-ready increment; cut a release
+   once deployment exists
 
 ---
 
