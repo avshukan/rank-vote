@@ -53,7 +53,7 @@ App and `ANTHROPIC_API_KEY` secret (`/install-github-app` from Claude Code).
 
 Committed `.mcp.json` with **Playwright MCP** — browser eyes/hands so agents
 verify UI flows themselves (create poll → vote → results); becomes valuable
-from Phase 3. GitHub stays on `gh` CLI, SQLite on `sqlite3`/`prisma` CLI — no
+from Phase 3. GitHub stays on `gh` CLI, PostgreSQL on `psql`/`prisma` CLI — no
 MCP for those. Mirror config for Codex (`config.toml`) and Copilot agent
 (repo settings) — verify current syntax when implementing.
 

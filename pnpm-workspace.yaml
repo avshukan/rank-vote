@@ -4,7 +4,8 @@ packages:
 allowBuilds:
   '@nestjs/core': true
   '@prisma/engines': true
-  better-sqlite3: true
+  # Prisma declares this optional peer; the PostgreSQL app must not build it.
+  better-sqlite3: false
   prisma: true
   simple-git-hooks: true
   unrs-resolver: true

@@ -1,6 +1,3 @@
-import { execSync } from 'node:child_process';
-import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
@@ -12,10 +9,6 @@ import type {
 } from '@rank-vote/shared';
 import { AppModule } from './../src/app.module';
 import { configureApp } from './../src/app.setup';
-
-const API_DIR = join(__dirname, '..');
-const TEST_DB = 'test-e2e.db';
-const TEST_DB_URL = `file:./${TEST_DB}`;
 
 /** Narrows supertest's `any` body to the poll API contract for assertions. */
 const asPoll = (res: request.Response): PollResponseDto =>
@@ -33,19 +26,6 @@ describe('Polls (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeAll(async () => {
-    // Point the app (and Prisma) at a throwaway database, then apply the schema
-    // to a fresh empty file via `db push` (--url overrides prisma.config.ts).
-    // Prisma 7 checks that SQLite exists before pushing, so recreate the empty
-    // throwaway file after deleting it. No --force-reset is needed.
-    process.env.DATABASE_URL = TEST_DB_URL;
-    const dbPath = join(API_DIR, TEST_DB);
-    if (existsSync(dbPath)) unlinkSync(dbPath);
-    writeFileSync(dbPath, '');
-    execSync(`pnpm exec prisma db push --url ${TEST_DB_URL}`, {
-      cwd: API_DIR,
-      stdio: 'ignore',
-    });
-
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -57,8 +37,6 @@ describe('Polls (e2e)', () => {
 
   afterAll(async () => {
     await app?.close();
-    const dbPath = join(API_DIR, TEST_DB);
-    if (existsSync(dbPath)) unlinkSync(dbPath);
   });
 
   it('POST /api/v1/polls creates a poll (201) with options in order', async () => {

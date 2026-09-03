@@ -1,5 +1,5 @@
 // rank-vote data model. See docs/10-storage.md and docs/04-domain-model.md.
-// SQLite for the MVP; the datasource URL is supplied via prisma.config.ts.
+// The datasource URL is supplied via prisma.config.ts.
 
 generator client {
   provider     = "prisma-client"
@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Poll {

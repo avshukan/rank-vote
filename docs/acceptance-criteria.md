@@ -133,67 +133,66 @@ Frontend only — no API or shared-package change.
 ## #17 Migrate to PostgreSQL
 
 Accepted in `docs/06-decisions.md` (Storage, Database Hosting); requirements in
-`docs/10-storage.md`. Blocks #27. The readiness decisions below settle local
-provisioning and e2e isolation; implementation can start once this docs PR is
-on `main`.
+`docs/10-storage.md`. Shipped before #27. The readiness decisions below record
+the local provisioning and e2e isolation contract implemented by this slice.
 
 ### Database
 
-- [ ] `datasource db` in `apps/api/prisma/schema.prisma` uses provider
+- [x] `datasource db` in `apps/api/prisma/schema.prisma` uses provider
       `postgresql`
-- [ ] The Prisma 7 driver adapter in
+- [x] The Prisma 7 driver adapter in
       `src/infrastructure/prisma/prisma.service.ts` is swapped from
       `@prisma/adapter-better-sqlite3` to the PostgreSQL adapter, and the
       SQLite adapter dependency is dropped
-- [ ] The migration history is regenerated for PostgreSQL — there is no
+- [x] The migration history is regenerated for PostgreSQL — there is no
       production data, so the SQLite `init` migration is replaced, not migrated
-- [ ] Models are otherwise unchanged: `Poll`, `PollOption`, `Ballot`,
+- [x] Models are otherwise unchanged: `Poll`, `PollOption`, `Ballot`,
       `BallotEntry` keep their fields, relations and UUID ids as documented in
       `docs/10-storage.md`
-- [ ] `prisma migrate deploy` against an empty database reproduces that schema
+- [x] `prisma migrate deploy` against an empty database reproduces that schema
 
 ### Local development
 
-- [ ] A repository-root `docker-compose.yml` contains a PostgreSQL service only;
+- [x] A repository-root `docker-compose.yml` contains a PostgreSQL service only;
       container images and services for `web` and `api` are not introduced
-- [ ] `make db-up` starts that local PostgreSQL, after which `make api` /
+- [x] `make db-up` starts that local PostgreSQL, after which `make api` /
       `pnpm dev` can reach it and `make db-migrate` works against it
-- [ ] The local PostgreSQL provisions separate development and fixed
+- [x] The local PostgreSQL provisions separate development and fixed
       `rank_vote_test` databases; #27 later extends the Compose stack with
       `web` and `api`
-- [ ] `apps/api/.env.example` carries a PostgreSQL `DATABASE_URL`, and
+- [x] `apps/api/.env.example` carries a PostgreSQL `DATABASE_URL`, and
       `make setup` still yields a working `.env`
 
 ### Tests and CI
 
-- [ ] Every e2e run receives an explicit test-only `DATABASE_URL` that points at
+- [x] Every e2e run receives an explicit test-only `DATABASE_URL` that points at
       the dedicated `rank_vote_test` database; it must not fall back to or reset
       the development database
-- [ ] Before Jest starts the e2e suite, `prisma db push --force-reset` recreates
+- [x] Before Jest starts the e2e suite, `prisma db push --force-reset` recreates
       the schema in `rank_vote_test`, so consecutive runs are isolated
-- [ ] Unit tests stay database-free (Prisma is mocked)
-- [ ] CI supplies a PostgreSQL instance so `pnpm test` is green on a clean
+- [x] Unit tests stay database-free (Prisma is mocked)
+- [x] CI supplies a PostgreSQL instance so `pnpm test` is green on a clean
       runner; CI may use its native service mechanism rather than Compose, and
       `make verify` mirrors the same test contract locally
 
 ### Behaviour unchanged
 
-- [ ] All four documented product endpoints keep the contract in
+- [x] All four documented product endpoints keep the contract in
       `docs/09-api-design.md`, including the `400`/`404` cases
-- [ ] `scores` keeps its order (score DESC, then `option.order` ASC) and ties
+- [x] `scores` keeps its order (score DESC, then `option.order` ASC) and ties
       still produce multiple `winners` (#4)
 
 ### Documentation
 
-- [ ] `docs/10-storage.md`: the "Current SQLite backup and migration" section
+- [x] `docs/10-storage.md`: the "Current SQLite backup and migration" section
       is replaced by its PostgreSQL equivalent
-- [ ] `docs/05-architecture.md` no longer names SQLite as the current
+- [x] `docs/05-architecture.md` no longer names SQLite as the current
       implementation; `README.md`, `AGENTS.md`, `docs/08-known-limitations.md`
       and the `new-slice` skill no longer describe SQLite or the absence of all
       Compose infrastructure as the current state
-- [ ] `docs/11-testing-strategy.md` and `docs/implementation-plan.md` describe
+- [x] `docs/11-testing-strategy.md` and `docs/implementation-plan.md` describe
       the implemented PostgreSQL workflow rather than the pending target
-- [ ] `docs/backlog.md`: #17 moves to `## Done`
+- [x] `docs/backlog.md`: #17 moves to `## Done`
 
 ### Out of Scope (tracked separately)
 

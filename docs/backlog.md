@@ -54,7 +54,6 @@ adapts to the column, never the column to the content.
 <!-- prettier-ignore -->
 | ID  | Title                      | Type     | Priority | Notes                                                       |
 | --- | -------------------------- | -------- | -------- | ----------------------------------------------------------- |
-| 17  | Migrate to PostgreSQL      | Quality  | High     | Accepted in `docs/06-decisions.md`; blocks #27              |
 | 27  | Dockerize web and api      | Quality  | High     | One image per app + compose; needs #17, blocks #29          |
 | 31  | Rate-limit write endpoints | Quality  | High     | Public POSTs are unthrottled; blocks #29                    |
 | 29  | First production deploy    | Quality  | High     | VPS stack, env config, release tag; needs #27 and #31       |
@@ -95,3 +94,4 @@ adapts to the column, never the column to the content.
 |  18 | Not-found page             | Quality  | High     | Shared `NotFound` + `*` catch-all; used by the vote flow    |
 |  21 | Fix `pnpm dev` blank app   | Quality  | High     | shared builds ESM beside CJS; `exports` routes each one     |
 |   5 | Show results               | Value    | High     | Winner(s) and score table; `NotFound` (#18) if poll is gone |
+|  17 | Migrate to PostgreSQL      | Quality  | High     | PostgreSQL adapter, local Compose, isolated e2e + CI        |

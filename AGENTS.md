@@ -13,7 +13,7 @@ tool-specific files must only point here, never duplicate content.
 ```text
 apps/
   web/        # React + Vite + TypeScript + Tailwind CSS
-  api/        # NestJS + TypeScript (+ Prisma + SQLite from Phase 2)
+  api/        # NestJS + TypeScript + Prisma + PostgreSQL
 packages/
   shared/     # Shared types, DTOs, enums, validation constants
 docs/         # All project documentation
@@ -41,10 +41,10 @@ Target one package with `pnpm --filter <name>`, e.g. `pnpm --filter @rank-vote/a
 `pnpm --filter @rank-vote/shared build`.
 
 The `Makefile` wraps the multi-step rituals; `make help` lists them. Worth
-knowing: `make setup` (install + `.env` files), `make verify` (the full gate
-below), and `make web` / `make api` / `make seed` / `make down` for running the
-app. `make render-app URL=http://localhost:5173/<path>` renders a local route
-through an installed Chromium-compatible browser. `make prune-merged` deletes
+knowing: `make setup` (install + `.env` files), `make db-up` (local PostgreSQL),
+`make verify` (the full gate below), and `make web` / `make api` / `make seed` /
+`make down` for running the app. `make render-app` renders a local `URL` through
+an installed Chromium-compatible browser. `make prune-merged` deletes
 local branches whose PR is merged — squash merges leave no trace for
 `git branch --merged`, so it asks GitHub instead. Anything that is a single
 pnpm script stays a pnpm script.
@@ -68,12 +68,12 @@ after changing its config in `package.json`, re-run `pnpm simple-git-hooks`.
 
 Copy `.env.example` to `.env` in each app before running locally.
 
-| Variable       | App        | Description                       |
-| -------------- | ---------- | --------------------------------- |
-| `DATABASE_URL` | `apps/api` | SQLite path, e.g. `file:./dev.db` |
-| `PORT`         | `apps/api` | API listen port (default `3000`)  |
-| `CORS_ORIGIN`  | `apps/api` | Allowed frontend origin           |
-| `VITE_API_URL` | `apps/web` | Backend API base URL              |
+| Variable       | App        | Description                                    |
+| -------------- | ---------- | ---------------------------------------------- |
+| `DATABASE_URL` | `apps/api` | PostgreSQL URL (development DB is `rank_vote`) |
+| `PORT`         | `apps/api` | API listen port (default `3000`)               |
+| `CORS_ORIGIN`  | `apps/api` | Allowed frontend origin                        |
+| `VITE_API_URL` | `apps/web` | Backend API base URL                           |
 
 ---
 
@@ -199,18 +199,18 @@ drifted matches only the stable part.
 
 Read these files to understand the project before making changes:
 
-| File                          | What it covers                                         |
-| ----------------------------- | ------------------------------------------------------ |
-| `docs/00-product.md`          | Product vision and use cases                           |
-| `docs/01-mvp-scope.md`        | MVP features, constraints, out-of-scope                |
-| `docs/04-domain-model.md`     | Core domain entities and enums                         |
-| `docs/05-architecture.md`     | Monorepo structure, tech stack, folder layout          |
-| `docs/06-decisions.md`        | All architecture and technology decisions (ADRs)       |
-| `docs/09-api-design.md`       | API endpoints, request/response shapes, constraints    |
-| `docs/10-storage.md`          | Prisma schema, SQLite setup, duplicate vote protection |
-| `docs/11-testing-strategy.md` | What to test, frameworks, coverage expectations        |
-| `docs/12-ai-first.md`         | AI-first strategy, tooling roadmap                     |
-| `docs/implementation-plan.md` | Phased implementation plan with all deliverables       |
-| `docs/acceptance-criteria.md` | Agreed criteria per backlog item, settled before code  |
-| `docs/backlog.md`             | Prioritized backlog items                              |
-| `docs/glossary.md`            | Domain terminology                                     |
+| File                          | What it covers                                      |
+| ----------------------------- | --------------------------------------------------- |
+| `docs/00-product.md`          | Product vision and use cases                        |
+| `docs/01-mvp-scope.md`        | MVP features, constraints, out-of-scope             |
+| `docs/04-domain-model.md`     | Core domain entities and enums                      |
+| `docs/05-architecture.md`     | Monorepo structure, tech stack, folder layout       |
+| `docs/06-decisions.md`        | All architecture and technology decisions (ADRs)    |
+| `docs/09-api-design.md`       | API endpoints, request/response shapes, constraints |
+| `docs/10-storage.md`          | PostgreSQL setup, Prisma schema, duplicate voting   |
+| `docs/11-testing-strategy.md` | Frameworks, test isolation, coverage expectations   |
+| `docs/12-ai-first.md`         | AI-first strategy, tooling roadmap                  |
+| `docs/implementation-plan.md` | Phased implementation plan with all deliverables    |
+| `docs/acceptance-criteria.md` | Agreed criteria per backlog item                    |
+| `docs/backlog.md`             | Prioritized backlog items                           |
+| `docs/glossary.md`            | Domain terminology                                  |

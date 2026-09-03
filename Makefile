@@ -12,7 +12,7 @@ API_URL  ?= http://localhost:$(API_PORT)/api/v1
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
 .PHONY: help setup verify format format-check lint typecheck test build \
-        web api seed render-app prune-merged down db-migrate
+        web api seed render-app prune-merged down db-up db-migrate
 
 help: ## List the available targets
 	@awk -F':.*## ' '/^[a-z][a-z-]*:.*## /{printf "  \033[36m%-13s\033[0m%s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -127,6 +127,9 @@ down: ## Stop whatever is listening on the web and API ports
 	else echo "nothing to stop on ports $(WEB_PORT) and $(API_PORT)"; fi
 
 # --- database ----------------------------------------------------------------
+
+db-up: ## Start the local PostgreSQL development and test databases
+	docker compose up -d --wait postgres
 
 db-migrate: ## Apply Prisma migrations to the local database
 	pnpm --filter @rank-vote/api db:migrate

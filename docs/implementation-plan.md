@@ -45,9 +45,9 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 ## Phase 2 — Backend (`apps/api`)
 
-**Status:** shipped on SQLite; the move to PostgreSQL is backlog #17.
+**Status:** shipped on PostgreSQL.
 
-**Goal:** All four API endpoints working with SQLite + Prisma.
+**Goal:** All four API endpoints working with PostgreSQL + Prisma.
 
 ### 2.1 Database Layer
 
@@ -90,8 +90,9 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 ### 2.5 Tests
 
 - **Unit**: `BordaCount` algorithm, ballot validator (`*.spec.ts` co-located)
-- **Integration**: all four endpoints against a throwaway SQLite file +
-  Supertest (`apps/api/test/`); see `docs/11-testing-strategy.md`
+- **Integration**: all four endpoints against the isolated `rank_vote_test`
+  PostgreSQL database + Supertest (`apps/api/test/`); see
+  `docs/11-testing-strategy.md`
 
 ---
 
@@ -155,9 +156,10 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 ## Phase 5 — Deployment & Recovery
 
-**Status:** not started. The path is tracked as #17 (PostgreSQL), #27
-(container images), #31 (write rate limiting), #29 (first production deploy),
-#28 (manual offsite backup/restore), then #32 (automated offsite backups).
+**Status:** PostgreSQL migration shipped; application containerization and
+deployment have not started. The remaining path is tracked as #27 (container
+images), #31 (write rate limiting), #29 (first production deploy), #28 (manual
+offsite backup/restore), then #32 (automated offsite backups).
 
 | App        | Platform                     | Notes                                     |
 | ---------- | ---------------------------- | ----------------------------------------- |
@@ -165,10 +167,9 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 | `apps/api` | Docker image (Node.js)       | Application VPS; set API environment vars |
 | Database   | PostgreSQL container         | Same VPS; persistent volume               |
 
-- Migrate from SQLite to PostgreSQL in #17: add a database-only local Compose
-  file and `make db-up`, provision separate development and `rank_vote_test`
-  databases, reset the test schema before e2e, and supply PostgreSQL in CI
-  (native CI service provisioning is allowed)
+- PostgreSQL migration (#17) is complete: the database-only local Compose file
+  and `make db-up` provision separate development and `rank_vote_test`
+  databases, e2e resets only the test schema, and CI supplies PostgreSQL
 - Add separate Docker images for `apps/web` and `apps/api`
 - Extend the #17 Compose stack with the application services in #27
 - Configure application environment variables on the VPS

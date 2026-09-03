@@ -8,66 +8,42 @@
   production, local container in dev)
 - **ORM**: Prisma
 
-Status: accepted target (migration from SQLite pending; see
-`docs/06-decisions.md`)
+Status: implemented (see `docs/06-decisions.md`)
 
 Reason:
 
 - a networked DB is required for independent `api` scaling — SQLite is
   single-writer and cannot back multiple replicas
-- migrated while there is **no production data**, the cheapest moment to switch
+- migrated while there was **no production data**, the cheapest moment to switch
 - Prisma provides full TypeScript type safety and keeps the swap small
 - self-hosting on the application VPS minimizes recurring cost at the current
   stage; offsite backups mitigate complete loss of the DigitalOcean environment
 
-> **Implementation note:** the migration is a pending slice — backlog item #17.
-> Until it lands, the running code still uses SQLite as documented under
-> [Current SQLite backup and migration](#current-sqlite-backup-and-migration)
-> below.
-
----
-
-## Migration path (SQLite → PostgreSQL)
-
-- change the Prisma `provider` to `postgresql` and point `DATABASE_URL` at the
-  Postgres instance (the application VPS in production, a local Postgres in dev)
-- swap the Prisma 7 driver adapter: `@prisma/adapter-better-sqlite3` →
-  the Postgres adapter, in `src/infrastructure/prisma/prisma.service.ts`
-- regenerate the migration history for Postgres (there is no production data,
-  so the SQLite history is replaced rather than migrated), then
-  `prisma migrate deploy`
-- no domain or application logic changes: the services speak Prisma's model
-  API, not SQL
-
-**What the swap does reach**, and is easy to under-estimate: the e2e suite
-provisions its database itself (`prisma db push` onto a throwaway SQLite file),
-so it needs a real Postgres instance — locally and in CI. Dev and CI therefore
-both gain a database dependency they do not have today. Acceptance criteria for
-the migration are in `docs/acceptance-criteria.md` (#17).
+The migration landed in backlog #17 before the first deployment, while there
+was no production data. The Prisma datasource now uses `postgresql`, runtime
+connections use `@prisma/adapter-pg`, and the migration history begins with a
+PostgreSQL `init` migration. Models and HTTP contracts did not change.
 
 ---
 
 ## Development and test PostgreSQL contract
 
-Backlog #17 introduces a repository-root `docker-compose.yml` containing only
-the PostgreSQL service. `make db-up` is the standard command that starts it for
-local development. The Compose instance provisions separate development and
-fixed `rank_vote_test` databases. Application images and the `web` / `api`
-services remain out of scope until #27 extends the stack.
+The repository-root `docker-compose.yml` contains only the PostgreSQL service.
+`make db-up` is the standard command that starts it for local development. The
+Compose instance provisions separate `rank_vote` development and fixed
+`rank_vote_test` databases. Application images and the `web` / `api` services
+remain out of scope until #27 extends the stack.
 
-The normal `apps/api/.env` points at the development database. Every e2e run
-must instead receive an explicit test-only `DATABASE_URL` pointing at
-`rank_vote_test`; the test harness must not fall back to the development URL.
-Before Jest starts, it runs `prisma db push --force-reset` against that test
-database so each run starts from a clean schema. The development database must
-never be reset by the test lifecycle.
+The normal `apps/api/.env` points at `rank_vote`. `pnpm test:e2e` runs
+`apps/api/test/run-e2e.mjs`, which gives Prisma and Jest an explicit test-only
+`DATABASE_URL` pointing at `rank_vote_test`. The runner reads only
+`TEST_DATABASE_URL` (or its fixed local test default), verifies the database
+name, and refuses any other target. Before Jest starts, it runs
+`prisma db push --force-reset`, so each run starts from a clean schema without
+ever resetting the development database.
 
-CI must provide an equivalent PostgreSQL test database, but it does not have to
-run the local Compose file. A native CI database service is an acceptable and
-simpler provisioning mechanism.
-
-This is the accepted target for #17, not the current implementation. Until the
-migration lands, the SQLite workflow below remains in effect.
+CI provides the equivalent `rank_vote_test` database through its native service
+mechanism and runs the same e2e runner through `pnpm test`.
 
 ---
 
@@ -122,40 +98,36 @@ not justified.
 
 ---
 
-## Current SQLite backup and migration
-
-This section applies only until backlog item #17 replaces the current SQLite
-implementation with PostgreSQL.
+## Current PostgreSQL schema and migration workflow
 
 ### Where the database lives
 
-- Single SQLite file: `apps/api/dev.db`.
-- The path comes from `DATABASE_URL` in `apps/api/.env` (`file:./dev.db`, resolved
-  relative to `apps/api/`) and is wired into Prisma via `apps/api/prisma.config.ts`.
-- The file is **not** committed (`*.db` is git-ignored), so it exists only on the
-  machine that ran the app. The **schema** is versioned separately under
-  `apps/api/prisma/migrations/` and can be reproduced anywhere.
+- Local data lives in the named Docker volume declared by
+  `docker-compose.yml`; replacing the container leaves that volume intact.
+- `apps/api/.env` supplies the development `DATABASE_URL` and
+  `apps/api/prisma.config.ts` supplies it to Prisma CLI commands.
+- The schema is versioned under `apps/api/prisma/migrations/`. The history was
+  regenerated for PostgreSQL in #17 because no production data existed.
 
-### Backup / dump
+### Apply the schema
 
-Run from `apps/api/`:
+Start PostgreSQL and apply development migrations from the repository root:
 
 ```bash
-sqlite3 dev.db .dump > backup.sql      # portable SQL dump
-sqlite3 dev.db ".backup backup.db"     # safe hot copy (works while the app runs)
-cp dev.db dev.db.bak                   # plain copy (app stopped)
+make db-up
+make db-migrate
 ```
 
-### Move to another machine or server
+On a fresh non-development database, set `DATABASE_URL` and run
+`pnpm --filter @rank-vote/api db:deploy` (`prisma migrate deploy`). This applies
+the committed history without creating a new migration.
 
-- **Schema only** (fresh, empty DB): copy `prisma/`, set `DATABASE_URL`, then run
-  `pnpm --filter @rank-vote/api db:deploy` (`prisma migrate deploy`).
-- **Schema + data**: copy the `dev.db` file directly, or restore a dump with
-  `sqlite3 new.db < backup.sql`.
+### Backup / restore
 
-For the move to PostgreSQL see [Migration path](#migration-path-sqlite--postgresql)
-above — swap the provider and `DATABASE_URL`, replace the SQLite driver adapter,
-then `db:deploy`.
+PostgreSQL data is transferred with logical `pg_dump` / `pg_restore` backups,
+not by copying the live Docker volume. The first production offsite dump and
+restore drill remains backlog #28, immediately after the first deployment; see
+[Production PostgreSQL backup and recovery](#production-postgresql-backup-and-recovery).
 
 ---
 

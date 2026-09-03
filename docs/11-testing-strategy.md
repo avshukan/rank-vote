@@ -43,23 +43,15 @@ Location: `apps/api/test/`
 
 Notes:
 
-- use a throwaway SQLite file for the test database
-- create the empty SQLite target before
-  `prisma db push`; Prisma 7 rejects a missing target during its connectivity
-  check
-- no external services are required by the current implementation
-
-Backlog #17 replaces that lifecycle with PostgreSQL under these settled rules:
-
 - local Compose provisions a fixed `rank_vote_test` database separate from the
   development database
-- every e2e run requires an explicit test-only `DATABASE_URL` pointing at
-  `rank_vote_test`; there is no fallback to the development URL
-- before Jest starts, `prisma db push --force-reset` recreates the test schema,
-  so consecutive runs cannot inherit state
-- the reset must never target the development database
-- CI supplies PostgreSQL; it may use a native database service rather than the
-  local-development Compose file
+- `apps/api/test/run-e2e.mjs` gives every e2e process an explicit test-only
+  `DATABASE_URL`; it reads only `TEST_DATABASE_URL` (or its fixed local test
+  default), validates that the database name is exactly `rank_vote_test`, and
+  never falls back to the development URL
+- before Jest starts, that runner executes `prisma db push --force-reset`, so
+  consecutive runs cannot inherit state
+- CI supplies the same PostgreSQL test database through a native service
 - unit tests continue to mock Prisma and remain database-free
 
 ---
