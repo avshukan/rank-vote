@@ -237,8 +237,8 @@ Chosen:
 - run PostgreSQL in Docker on the same DigitalOcean VPS as the application
 - store database data in persistent storage / a Docker volume whose lifecycle
   is independent of the PostgreSQL container
-- keep database backups outside both the current VPS and DigitalOcean, with an
-  independent provider
+- establish offsite recovery in stages: first a manual backup copied outside
+  the VPS and DigitalOcean, then automated backups to independent object storage
 
 Reason:
 
@@ -247,7 +247,7 @@ Reason:
   dedicated database VPS
 - persistent storage keeps data across routine container replacement or
   recreation
-- offsite backups preserve a recovery path even after complete loss of the VPS,
+- an offsite copy preserves a recovery path even after complete loss of the VPS,
   the DigitalOcean account, or DigitalOcean infrastructure
 
 Consequences:
@@ -256,15 +256,20 @@ Consequences:
   monitoring, and recovery testing
 - the application and database share a failure domain; persistent storage does
   not replace backups, and backups provide recovery rather than high availability
-- backup tooling, provider, schedule, retention, and restore-test cadence must be
-  selected before production deployment; requirements are in `docs/10-storage.md`
+- the first production deployment is followed immediately by a manual
+  `pg_dump`-style offsite copy and a restore drill (#28)
+- once that recovery path is proven, scheduled backups move to independent
+  object storage outside DigitalOcean (#32), with retention, RPO/RTO, encryption
+  and failed-backup monitoring defined there
 
-Next stage:
+Evolution:
 
-- when the project grows and reliability requirements justify the additional
-  cost, migrate to managed PostgreSQL
-- choose the managed database from a provider separate from application hosting,
-  so application-hosting and database infrastructure do not share a provider
+1. self-host PostgreSQL on the application VPS and prove manual offsite
+   backup/restore immediately after the first deployment
+2. automate scheduled offsite backups to independent object storage
+3. when reliability requirements justify the cost, migrate to managed
+   PostgreSQL from a provider separate from application hosting; keep
+   independent backups
 
 Rejected:
 
