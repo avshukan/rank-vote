@@ -170,8 +170,16 @@ offsite backup/restore), then #32 (automated offsite backups).
 - PostgreSQL migration (#17) is complete: the database-only local Compose file
   and `make db-up` provision separate development and `rank_vote_test`
   databases, e2e resets only the test schema, and CI supplies PostgreSQL
-- Add separate Docker images for `apps/web` and `apps/api`
-- Extend the #17 Compose stack with the application services in #27
+- Add separate multi-stage Docker images for `apps/web` and `apps/api`; build
+  from the workspace root so both consumers receive the correct half of
+  `@rank-vote/shared`
+- Require build-time `VITE_API_URL` for the nginx-served web bundle (local
+  Compose supplies the development value; #29 supplies production)
+- Extend the #17 Compose stack with `migrate`, `api` and `web`; gate API startup
+  on healthy PostgreSQL plus successful `prisma migrate deploy`
+- Add process-only `GET /api/v1/health` liveness for container healthchecks;
+  dependency-aware health and external monitoring stay in #33
+- Prove both clean image builds and the complete local container flow in #27
 - Configure application environment variables on the VPS
 - Add basic rate limiting for public write endpoints before public deployment
 - Perform the first production deployment
@@ -180,7 +188,8 @@ offsite backup/restore), then #32 (automated offsite backups).
 - Then automate scheduled offsite backups to independent object storage with a
   documented retention and restore-test policy
 
-Production monitoring/alerting is tracked separately as #33.
+Dependency-aware health, production monitoring/alerting and error tracking are
+tracked separately as #33.
 
 See `docs/06-decisions.md` for the accepted deployment and database-hosting
 decisions, and `docs/10-storage.md` for the staged backup and recovery plan.

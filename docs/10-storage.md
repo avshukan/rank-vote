@@ -122,6 +122,17 @@ On a fresh non-development database, set `DATABASE_URL` and run
 `pnpm --filter @rank-vote/api db:deploy` (`prisma migrate deploy`). This applies
 the committed history without creating a new migration.
 
+Backlog #27 packages that production-safe command into a one-shot Compose
+service named `migrate`. It reuses the API image, waits for the `postgres`
+healthcheck and must complete successfully before the API starts. The image
+therefore carries the Prisma CLI, schema, config and committed migration history
+in addition to the compiled runtime. The API entrypoint does not apply
+migrations itself, so scaling or restarting API replicas cannot start competing
+migration processes.
+
+This defines container startup ordering, not the production release ritual. #29
+decides how and when the production stack is built, configured and invoked.
+
 ### Backup / restore
 
 PostgreSQL data is transferred with logical `pg_dump` / `pg_restore` backups,

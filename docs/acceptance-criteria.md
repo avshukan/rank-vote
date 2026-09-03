@@ -216,15 +216,157 @@ the local provisioning and e2e isolation contract implemented by this slice.
 
 ---
 
+## #27 Dockerize web and api
+
+Accepted in `docs/06-decisions.md` (Deployment, Containerization) after #17
+shipped the PostgreSQL-only Compose stack. This slice packages the applications
+and proves that the complete stack can start locally; it does not deploy it.
+
+### Images and workspace build
+
+- [ ] `apps/web` and `apps/api` each have their own multi-stage Docker image,
+      built from the repository-root context so the workspace lockfile and
+      `@rank-vote/shared` are available
+- [ ] Build and API runtime stages use Node 22 Alpine plus the pnpm version
+      pinned in the root `package.json`; dependencies are installed from the
+      frozen lockfile
+- [ ] Maintained, explicit base-image tags are used instead of `latest`: Node 22
+      Alpine for build/API stages and nginx Alpine for the web runtime. Selecting
+      the exact patch tags is an implementation-time maintenance choice, not a
+      new architecture decision
+- [ ] A root `.dockerignore` excludes host `node_modules`, build output, Git
+      metadata, coverage, logs and local `.env` files, so both images build from
+      a clean checkout rather than accidentally copying host artifacts or secrets
+
+### Web image
+
+- [ ] The build requires `VITE_API_URL` as a Docker build argument and makes it
+      available to Vite only while producing the static bundle; a direct image
+      build without the argument fails instead of embedding the source fallback
+- [ ] Compose passes a local-development default of
+      `http://localhost:3000/api/v1`; #29 supplies the production value when it
+      builds the production web image
+- [ ] The builder produces the ESM half of `@rank-vote/shared` and
+      `apps/web/dist`; the nginx runtime contains only the static output and its
+      server configuration, not Node.js, pnpm or workspace source
+- [ ] nginx listens on container port `80`; `index.html` is the fallback for
+      client-side routes such as `/poll/:id` and `/poll/:id/results`
+- [ ] Vite's content-hashed `/assets/` files receive long-lived immutable cache
+      headers; `index.html` and unhashed root assets do not receive immutable
+      caching, so a new deployment can be discovered
+- [ ] nginx does not proxy the API and does not rewrite configuration at runtime;
+      the browser calls the absolute API URL embedded at build time
+
+### API image
+
+- [ ] The build explicitly generates the Prisma Client, builds the CommonJS half
+      of `@rank-vote/shared`, then builds `apps/api`; it does not depend on ignored
+      `dist` or generated files already existing on the host
+- [ ] The runtime starts the compiled Nest application with the production
+      command and is reachable on all container interfaces at `PORT` (default
+      `3000`)
+- [ ] The runtime contains the compiled API (including the generated Prisma
+      Client), the CommonJS shared-package output and required production
+      dependencies
+- [ ] The same API image also contains the Prisma CLI plus the committed schema,
+      config and migration history required for `prisma migrate deploy`; no
+      second migration image is introduced
+- [ ] `DATABASE_URL`, `PORT` and `CORS_ORIGIN` are runtime environment variables;
+      no database credentials or environment-specific API settings are baked
+      into the image
+
+### Compose and database migrations
+
+- [ ] The repository-root Compose file extends, rather than replaces, #17 with
+      services named `postgres`, `migrate`, `api` and `web` on the default
+      Compose network
+- [ ] The existing PostgreSQL 17 Alpine image, development/test initialization,
+      `pg_isready` healthcheck, `5432:5432` local port and
+      `rank_vote_postgres_data` named volume are preserved; routine stack
+      teardown does not delete the volume
+- [ ] The API connects to `postgres:5432` inside the Compose network and receives
+      local runtime values for `DATABASE_URL`, `PORT=3000` and
+      `CORS_ORIGIN=http://localhost:5173`
+- [ ] The one-shot `migrate` service reuses the API image, publishes no port,
+      waits for healthy PostgreSQL and runs `prisma migrate deploy`; rerunning an
+      already-applied migration history succeeds without changing data
+- [ ] `api` starts only after `migrate` completes successfully, and `web` starts
+      only after the API healthcheck passes. The API container itself does not
+      run migrations in its entrypoint
+- [ ] The local stack publishes nginx as `5173:80` and the API as `3000:3000`;
+      service-to-service traffic continues to use container ports and service
+      names
+- [ ] `make db-up` still starts only PostgreSQL for the existing host-native
+      development flow. Documented `make stack-up` / `make stack-down` targets
+      start or stop the complete containerized stack, wait for its health where
+      applicable and preserve the database volume
+
+### Operational liveness
+
+- [ ] `GET /api/v1/health` returns `200` with exactly `{ "status": "ok" }` and
+      has an API e2e contract test
+- [ ] The endpoint is operational liveness, not a fifth product endpoint: it
+      does not query PostgreSQL or any other dependency and does not promise
+      readiness
+- [ ] The route is implemented separately from the scaffold
+      `AppController`/`AppService` and needs no shared product DTO, so #30 can
+      remove `GET /api/v1` without changing the liveness contract
+- [ ] The API Compose healthcheck calls `/api/v1/health`; the web healthcheck
+      verifies that nginx serves the built application; PostgreSQL keeps its
+      existing `pg_isready` check
+- [ ] No healthcheck calls the scaffold `GET /api/v1` endpoint
+
+### Verification and documentation
+
+- [ ] Both images build from a clean checkout, the Compose model validates, and
+      an isolated-stack smoke check proves migrations, API liveness, a product
+      API request, the web root and a direct nested SPA route
+- [ ] CI exercises the image builds and container smoke check, while the existing
+      API e2e suite may continue to use CI's native PostgreSQL service
+- [ ] The manual end-to-end check runs create → share → vote → results through
+      the containerized web and API services
+- [ ] Runtime/build configuration and container commands are documented without
+      describing the not-yet-performed production deployment as current state
+
+### Out of Scope (tracked separately)
+
+- Rate limiting for public write endpoints → #31
+- VPS provisioning, registry/push policy, domain and TLS, production port
+  exposure, secret/env handling, production `VITE_API_URL`, release tags and the
+  deployment/migration release ritual → #29
+- Removing the scaffold `GET /api/v1` endpoint → #30
+- Dependency-aware readiness, external uptime monitoring, alerting and error
+  tracking → #33
+- Manual and automated offsite backups → #28 and #32 respectively
+
+### Readiness Decisions
+
+- `VITE_API_URL` is a required build argument because Vite substitutes it into
+  the static bundle. The local Compose default is development-only; #29 chooses
+  the production value. Runtime templating and an nginx API proxy are rejected
+  for this slice.
+- Migrations are a one-shot Compose job that reuses the API image. Ordering is
+  `postgres` healthy → `migrate` completed successfully → `api` healthy → `web`.
+  This makes a fresh local stack usable without coupling schema changes to every
+  API replica's entrypoint.
+- `/api/v1/health` is a minimal operational liveness contract only. It is
+  separate from the scaffold root, deliberately ignores dependencies and gives
+  #33 a stable process-level signal to consume or complement later.
+- #27 retains #17's local PostgreSQL contract and adds a complete local
+  container stack. #29 owns every production-host and release choice, so #27
+  neither deploys nor defines a production release ritual.
+- Multi-stage build layout, maintained base-image patch selection, static-asset
+  cache headers, container-internal wiring and the exact workspace-pruning
+  technique are engineering judgment calls within the contracts above.
+- No architectural or product questions remain open for #27.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
 run `task-readiness` when one is picked up.
 
-- **#27 Dockerize web and api** — the decision in `docs/06-decisions.md` fixes
-  the shape (one image per app, `docker-compose`), but base images, the nginx
-  configuration, build-time `VITE_API_URL` injection and health checks are all
-  unsettled.
 - **#31 Rate-limit write endpoints** — basic protection for the two public
   unauthenticated POST endpoints must be decided before the first public deploy.
 - **#29 First production deploy** — needs a host, a domain, TLS termination,
@@ -235,8 +377,9 @@ run `task-readiness` when one is picked up.
 - **#32 Automate offsite backups** — after #28 proves recovery, choose the
   independent object-storage provider, schedule, retention, encryption,
   monitoring and restore-test cadence.
-- **#33 Add production monitoring** — health, alerting and error tracking are
-  intentionally tracked separately from the first deployment.
+- **#33 Add production monitoring** — dependency-aware readiness, external
+  uptime monitoring, alerting and error tracking follow the first deployment;
+  #27 supplies only process-level liveness.
 - Everything else at `Medium`/`Low` priority — criteria are written when the
   item is picked up, not in advance.
 
