@@ -133,8 +133,9 @@ Frontend only — no API or shared-package change.
 ## #17 Migrate to PostgreSQL
 
 Accepted in `docs/06-decisions.md` (Storage, Database Hosting); requirements in
-`docs/10-storage.md`. Blocks #27. Written during the repository audit, so the
-boxes are unchecked and the open questions below still need answers.
+`docs/10-storage.md`. Blocks #27. The readiness decisions below settle local
+provisioning and e2e isolation; implementation can start once this docs PR is
+on `main`.
 
 ### Database
 
@@ -153,18 +154,27 @@ boxes are unchecked and the open questions below still need answers.
 
 ### Local development
 
-- [ ] A local PostgreSQL is reachable by `make api` / `pnpm dev` through one
-      documented command, and `make db-migrate` works against it
+- [ ] A repository-root `docker-compose.yml` contains a PostgreSQL service only;
+      container images and services for `web` and `api` are not introduced
+- [ ] `make db-up` starts that local PostgreSQL, after which `make api` /
+      `pnpm dev` can reach it and `make db-migrate` works against it
+- [ ] The local PostgreSQL provisions separate development and fixed
+      `rank_vote_test` databases; #27 later extends the Compose stack with
+      `web` and `api`
 - [ ] `apps/api/.env.example` carries a PostgreSQL `DATABASE_URL`, and
       `make setup` still yields a working `.env`
 
 ### Tests and CI
 
-- [ ] The e2e suite provisions its schema in PostgreSQL instead of a throwaway
-      SQLite file, and consecutive runs stay isolated from each other
+- [ ] Every e2e run receives an explicit test-only `DATABASE_URL` that points at
+      the dedicated `rank_vote_test` database; it must not fall back to or reset
+      the development database
+- [ ] Before Jest starts the e2e suite, `prisma db push --force-reset` recreates
+      the schema in `rank_vote_test`, so consecutive runs are isolated
 - [ ] Unit tests stay database-free (Prisma is mocked)
 - [ ] CI supplies a PostgreSQL instance so `pnpm test` is green on a clean
-      runner; `make verify` mirrors it locally
+      runner; CI may use its native service mechanism rather than Compose, and
+      `make verify` mirrors the same test contract locally
 
 ### Behaviour unchanged
 
@@ -178,7 +188,11 @@ boxes are unchecked and the open questions below still need answers.
 - [ ] `docs/10-storage.md`: the "Current SQLite backup and migration" section
       is replaced by its PostgreSQL equivalent
 - [ ] `docs/05-architecture.md` no longer names SQLite as the current
-      implementation; `README.md` and `AGENTS.md` env tables say PostgreSQL
+      implementation; `README.md`, `AGENTS.md`, `docs/08-known-limitations.md`
+      and the `new-slice` skill no longer describe SQLite or the absence of all
+      Compose infrastructure as the current state
+- [ ] `docs/11-testing-strategy.md` and `docs/implementation-plan.md` describe
+      the implemented PostgreSQL workflow rather than the pending target
 - [ ] `docs/backlog.md`: #17 moves to `## Done`
 
 ### Out of Scope (tracked separately)
@@ -188,18 +202,18 @@ boxes are unchecked and the open questions below still need answers.
 - Manual offsite backup and restore drill after deployment → #28
 - Automated offsite backups → #32
 
-### Open Questions (block implementation)
+### Readiness Decisions
 
-- **Where does the local database come from?** `docs/06-decisions.md` puts
-  application containers "just before the first deploy" (#27), but this item
-  needs PostgreSQL running in dev and CI now. Minimal answer: a database-only
-  `docker-compose.yml` lands with #17 and #27 extends it with the app services.
-  Needs the owner's confirmation because it moves the first container file
-  earlier than the current containerization decision says.
-- **How does the e2e suite isolate runs?** Today it deletes and recreates a
-  SQLite file. Minimal answer: keep the suite provisioning its own database and
-  reset the schema per run (`prisma db push --force-reset`) against a dedicated
-  test database.
+- #17 owns the first Compose file, but only for the local PostgreSQL service.
+  The standard repository entry point is `make db-up`. #27 later adds the
+  application images and the `web` / `api` services to the Compose stack.
+- CI must supply PostgreSQL but is not required to run this local-development
+  Compose file; a native CI service is acceptable.
+- The e2e suite uses the fixed `rank_vote_test` database. Its process must be
+  given an explicit test-only `DATABASE_URL` and must run
+  `prisma db push --force-reset` before Jest. The development database is never
+  a reset target.
+- No architectural or product questions remain open for #17.
 
 ---
 

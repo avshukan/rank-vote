@@ -47,6 +47,30 @@ the migration are in `docs/acceptance-criteria.md` (#17).
 
 ---
 
+## Development and test PostgreSQL contract
+
+Backlog #17 introduces a repository-root `docker-compose.yml` containing only
+the PostgreSQL service. `make db-up` is the standard command that starts it for
+local development. The Compose instance provisions separate development and
+fixed `rank_vote_test` databases. Application images and the `web` / `api`
+services remain out of scope until #27 extends the stack.
+
+The normal `apps/api/.env` points at the development database. Every e2e run
+must instead receive an explicit test-only `DATABASE_URL` pointing at
+`rank_vote_test`; the test harness must not fall back to the development URL.
+Before Jest starts, it runs `prisma db push --force-reset` against that test
+database so each run starts from a clean schema. The development database must
+never be reset by the test lifecycle.
+
+CI must provide an equivalent PostgreSQL test database, but it does not have to
+run the local Compose file. A native CI database service is an acceptable and
+simpler provisioning mechanism.
+
+This is the accepted target for #17, not the current implementation. Until the
+migration lands, the SQLite workflow below remains in effect.
+
+---
+
 ## Production PostgreSQL backup and recovery
 
 Backup capability is introduced in stages so the early project keeps operating

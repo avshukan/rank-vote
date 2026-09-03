@@ -39,11 +39,12 @@ infrastructure → presentation`):
    - Wire the feature module into `AppModule`; runtime config (prefix,
      `ValidationPipe`, CORS) goes through the shared `configureApp` in
      `src/app.setup.ts` so tests exercise what production runs.
-   - Tests: co-located `*.spec.ts` unit tests (mock Prisma) + `test/*.e2e-spec.ts`
-     (supertest against a throwaway SQLite db via non-destructive `prisma db
-push`; create the empty file first because Prisma 7 rejects a missing
-     SQLite target). e2e runs under `--experimental-vm-modules` (already in
-     `test:e2e`).
+   - Tests: co-located `*.spec.ts` unit tests (mock Prisma) +
+     `test/*.e2e-spec.ts` (Supertest against the isolated database defined in
+     `docs/10-storage.md`). Provision and reset the test target before the app
+     starts, and never reset the development database. For #17 itself, follow
+     its PostgreSQL lifecycle in `docs/acceptance-criteria.md`; e2e runs under
+     `--experimental-vm-modules` (already in `test:e2e`).
 
 4. **web** (`apps/web`). A feature folder under `src/features/`, calls through
    `src/shared/api/` (fetch client using the shared DTO types), routed from

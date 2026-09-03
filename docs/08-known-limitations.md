@@ -106,7 +106,8 @@ Nothing is deployed yet, and the repository contains no deployment
 infrastructure:
 
 - no container images, no `docker-compose`, no CD pipeline — CI builds and
-  tests, and stops there (backlog #27, #29)
+  tests, and stops there; #17 adds the database-only local Compose file, #27
+  adds the application images and services, and #29 deploys them
 - storage is still SQLite; PostgreSQL is accepted but not migrated
   (backlog #17)
 - no backups yet: the first manual offsite backup and restore drill is #28,
