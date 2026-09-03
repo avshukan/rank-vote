@@ -47,8 +47,20 @@ Notes:
 - create the empty SQLite target before
   `prisma db push`; Prisma 7 rejects a missing target during its connectivity
   check
-- no external services required — **this ends with backlog #17**: a
-  Postgres-backed suite needs a database instance locally and in CI
+- no external services are required by the current implementation
+
+Backlog #17 replaces that lifecycle with PostgreSQL under these settled rules:
+
+- local Compose provisions a fixed `rank_vote_test` database separate from the
+  development database
+- every e2e run requires an explicit test-only `DATABASE_URL` pointing at
+  `rank_vote_test`; there is no fallback to the development URL
+- before Jest starts, `prisma db push --force-reset` recreates the test schema,
+  so consecutive runs cannot inherit state
+- the reset must never target the development database
+- CI supplies PostgreSQL; it may use a native database service rather than the
+  local-development Compose file
+- unit tests continue to mock Prisma and remain database-free
 
 ---
 

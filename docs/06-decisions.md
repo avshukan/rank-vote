@@ -171,14 +171,21 @@ Chosen:
 
 - one image per app (`web`: nginx serving the static build; `api`: Node.js),
   orchestrated with `docker-compose`
-- introduced **just before the first deploy**, not during early development
+- backlog #17 introduces the repository-root `docker-compose.yml` with a
+  PostgreSQL service only, plus `make db-up` as the standard local entry point
+- backlog #27 later adds the `web` and `api` images and services, just before the
+  first deploy
+- CI supplies PostgreSQL independently and may use its native service mechanism
+  instead of the local-development Compose file
 
 Reason:
 
 - separate images give **independent scaling** of web and api
-- for this stack `pnpm dev` is enough locally, so early containers only slow
-  iteration; dockerizing a settled structure is cheaper and less churn
-- `docker-compose` also runs Postgres locally → dev/prod parity for free
+- the PostgreSQL migration needs a repeatable local database before application
+  containers are justified; the database-only Compose stage provides it
+- `pnpm dev` remains enough for the applications during local development, so
+  their images wait until the structure is settled
+- the same database engine runs in development and production
 
 Rejected:
 

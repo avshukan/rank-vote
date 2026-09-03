@@ -139,8 +139,12 @@ Accepted production target:
 - offsite backups outside the VPS and DigitalOcean
 
 The PostgreSQL migration is backlog item #17 and must land before the first
-deployment. See `docs/06-decisions.md` for the hosting and staged-backup decision
-and `docs/10-storage.md` for storage, backup, and recovery requirements.
+deployment. It also introduces a database-only Compose file for local
+development and the fixed PostgreSQL test database; CI may provide PostgreSQL
+through its native service mechanism. Backlog #27 later adds the `web` and `api`
+images and services to the Compose stack. See `docs/06-decisions.md` for the
+hosting and staged-containerization decisions and `docs/10-storage.md` for
+storage, testing, backup, and recovery requirements.
 
 ---
 

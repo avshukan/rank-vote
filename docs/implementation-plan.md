@@ -165,8 +165,12 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 | `apps/api` | Docker image (Node.js)       | Application VPS; set API environment vars |
 | Database   | PostgreSQL container         | Same VPS; persistent volume               |
 
+- Migrate from SQLite to PostgreSQL in #17: add a database-only local Compose
+  file and `make db-up`, provision separate development and `rank_vote_test`
+  databases, reset the test schema before e2e, and supply PostgreSQL in CI
+  (native CI service provisioning is allowed)
 - Add separate Docker images for `apps/web` and `apps/api`
-- Orchestrate the application and PostgreSQL with `docker-compose`
+- Extend the #17 Compose stack with the application services in #27
 - Configure application environment variables on the VPS
 - Add basic rate limiting for public write endpoints before public deployment
 - Perform the first production deployment
