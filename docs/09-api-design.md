@@ -8,7 +8,7 @@
 
 ---
 
-## Endpoints
+## Product Endpoints
 
 ### Create poll
 
@@ -137,13 +137,41 @@ Response `404 Not Found` if poll does not exist.
 
 ---
 
+## Operational Endpoint
+
+### Liveness
+
+```
+GET /health
+```
+
+Response `200 OK`:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+This public endpoint is served at `/api/v1/health`, but it is not a product
+endpoint. It reports only that the API process can answer HTTP requests: it does
+not query PostgreSQL or any other dependency and therefore does not promise
+readiness. Container orchestration may use it as a liveness signal. Backlog #33
+owns dependency-aware health, external monitoring and alerting.
+
+The scaffold `GET /api/v1` endpoint is not a health contract and remains tracked
+for removal in #30. The liveness route is implemented separately from that
+scaffold and does not add a shared product DTO.
+
+---
+
 ## Notes
 
 - All IDs are UUIDs
 - Timestamps are ISO 8601 (UTC)
 - Counting method is Borda in MVP
 - No authentication required
-- All endpoints are public
+- Product endpoints and the operational liveness endpoint are public
 
 ---
 

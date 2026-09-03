@@ -66,9 +66,9 @@ adapts to the column, never the column to the content.
 | 10  | Compare counting methods   | Value    | Medium   | Show different winners for same ballots                     |
 | 25  | Unify eslint and TS majors | Refactor | Medium   | web on eslint 10/TS 6, the rest on 9/TS 5; lock churn       |
 | 26  | Extract page fetch/retry   | Refactor | Medium   | BallotForm and ResultsView duplicate load/404/retry         |
-| 30  | Drop the scaffold endpoint | Quality  | Medium   | `GET /api/v1` returns Hello World; health fits #27          |
+| 30  | Drop the scaffold endpoint | Quality  | Medium   | `GET /api/v1` stays; liveness is separate in #27            |
 | 32  | Automate offsite backups   | Quality  | Medium   | Scheduled dumps to independent object storage; needs #28    |
-| 33  | Add production monitoring  | Quality  | Medium   | Health, alerting and error tracking after first deploy      |
+| 33  | Add production monitoring  | Quality  | Medium   | Dependency health, monitoring and alerts; needs #29         |
 | 11  | Add PWA support            | Quality  | Low      | Installable web app                                         |
 | 12  | Add poll editing           | Value    | Low      | Edit poll after creation                                    |
 | 13  | Add poll expiration        | Value    | Low      | Closing date/time                                           |

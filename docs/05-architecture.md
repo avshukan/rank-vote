@@ -148,6 +148,31 @@ testing, backup, and recovery requirements.
 
 ---
 
+## Accepted Container Topology
+
+Backlog #27 will extend the current local Compose model without replacing its
+PostgreSQL contract:
+
+```text
+postgres (healthy) → migrate (completed) → api (healthy) → web
+```
+
+- `migrate` is a one-shot `prisma migrate deploy` job using the same image as
+  `api`; migration is not part of each API replica's entrypoint
+- `api` receives `DATABASE_URL`, `PORT` and `CORS_ORIGIN` at runtime and reaches
+  PostgreSQL through `postgres:5432`
+- `web` is a Vite static build served by nginx on container port `80` with SPA
+  fallback; required `VITE_API_URL` is embedded at image build time
+- the local stack publishes web/API/PostgreSQL as `5173`/`3000`/`5432`; #29
+  decides production-facing ports, domain, TLS, secrets and release mechanics
+- `/api/v1/health` proves API-process liveness only. Dependency-aware readiness,
+  external monitoring and alerting remain #33
+
+The web and API images stay separate and independently scalable. nginx does not
+proxy API traffic, and no runtime frontend configuration layer is introduced.
+
+---
+
 ## Future Extensions
 
 Possible future additions:

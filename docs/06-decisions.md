@@ -177,6 +177,26 @@ Chosen:
   first deploy
 - CI supplies PostgreSQL independently and may use its native service mechanism
   instead of the local-development Compose file
+- #27 uses multi-stage builds from the repository-root context. Build stages
+  and the API runtime use Node 22 Alpine plus the repository's pinned pnpm
+  version; the web runtime is nginx Alpine. Maintained explicit image tags are
+  selected during implementation rather than using `latest`
+- the web Docker build requires `VITE_API_URL` and Vite embeds it into the static
+  bundle. Compose supplies the local-development URL; #29 supplies the
+  production value when building the production image. Runtime templating and
+  an nginx API proxy are not introduced
+- the API image contains both its production runtime and the Prisma CLI/schema/
+  migrations needed for a one-shot `migrate` Compose service. The job runs
+  `prisma migrate deploy` after PostgreSQL is healthy; API startup waits for the
+  job to succeed instead of running migrations in every API entrypoint
+- #27 adds a minimal public `GET /api/v1/health` operational liveness endpoint.
+  It returns `{ "status": "ok" }`, does not query dependencies and is not a
+  product endpoint or a readiness guarantee. Dependency-aware health, external
+  monitoring and alerting remain #33
+- the extended Compose file is a complete local container stack: nginx is
+  published on host port `5173`, the API on `3000`, and #17's PostgreSQL port
+  `5432` remains available to host-native development. #29 owns production port
+  exposure, networking, TLS and secrets
 
 Reason:
 
@@ -186,11 +206,23 @@ Reason:
 - `pnpm dev` remains enough for the applications during local development, so
   their images wait until the structure is settled
 - the same database engine runs in development and production
+- build-time web configuration is explicit, so a production bundle cannot
+  silently inherit the source-code localhost fallback
+- a single migration job avoids startup races when the API is scaled and makes
+  a clean Compose database usable without importing #29's release ritual
+- a process-only liveness signal is sufficient for container startup in #27;
+  deeper operational monitoring stays independently scoped
 
 Rejected:
 
 - single combined image (api also serving the frontend) — simpler to operate but
   couples web and api scaling, which contradicts the scaling goal
+- runtime substitution of `VITE_API_URL` — adds an nginx startup/template path
+  for a value Vite already models at build time
+- nginx proxying `/api/v1` to the API — changes the established browser-to-API
+  and CORS topology without a current need
+- running `prisma migrate deploy` in every API entrypoint — couples migrations
+  to replica startup and creates avoidable concurrency
 
 ---
 
