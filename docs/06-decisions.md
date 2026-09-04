@@ -173,14 +173,14 @@ Chosen:
   orchestrated with `docker-compose`
 - backlog #17 introduced the repository-root `docker-compose.yml` with a
   PostgreSQL service only, plus `make db-up` as the standard local entry point
-- backlog #27 later adds the `web` and `api` images and services, just before the
-  first deploy
+- backlog #27 added the `web` and `api` images and services before the first
+  deploy
 - CI supplies PostgreSQL independently and may use its native service mechanism
   instead of the local-development Compose file
-- #27 uses multi-stage builds from the repository-root context. Build stages
-  and the API runtime use Node 22 Alpine plus the repository's pinned pnpm
-  version; the web runtime is nginx Alpine. Maintained explicit image tags are
-  selected during implementation rather than using `latest`
+- #27 introduced multi-stage builds from the repository-root context. Build
+  stages and the API runtime use Node 22 Alpine plus the repository's pinned
+  pnpm version; the web runtime is nginx Alpine. Maintained explicit image tags
+  are selected during implementation rather than using `latest`
 - the web Docker build requires `VITE_API_URL` and Vite embeds it into the static
   bundle. Compose supplies the local-development URL; #29 supplies the
   production value when building the production image. Runtime templating and
@@ -189,7 +189,7 @@ Chosen:
   migrations needed for a one-shot `migrate` Compose service. The job runs
   `prisma migrate deploy` after PostgreSQL is healthy; API startup waits for the
   job to succeed instead of running migrations in every API entrypoint
-- #27 adds a minimal public `GET /api/v1/health` operational liveness endpoint.
+- #27 added a minimal public `GET /api/v1/health` operational liveness endpoint.
   It returns `{ "status": "ok" }`, does not query dependencies and is not a
   product endpoint or a readiness guarantee. Dependency-aware health, external
   monitoring and alerting remain #33

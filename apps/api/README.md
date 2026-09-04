@@ -6,6 +6,10 @@ endpoints under `/api/v1`; the current Nest scaffold also exposes
 [rank-vote](../../README.md) monorepo — run it from the repository root
 (`make api`), not from here.
 
+`GET /api/v1/health` is the separate process-liveness endpoint used by the
+container healthcheck. It returns `{"status":"ok"}` without querying the
+database; dependency-aware readiness remains backlog #33.
+
 ## Layout
 
 ```txt
@@ -29,6 +33,13 @@ pnpm test:e2e       # reset rank_vote_test, then run the API e2e suite
 pnpm db:migrate     # prisma migrate dev
 pnpm db:deploy      # prisma migrate deploy
 ```
+
+The multi-stage [`Dockerfile`](Dockerfile) builds from the repository-root
+context, generates the Prisma Client and CommonJS shared package, and starts the
+compiled API with Node. Its runtime also carries the Prisma CLI, schema, config
+and migration history, so Compose's one-shot `migrate` service can reuse the
+same image before the API starts. `DATABASE_URL`, `PORT` and `CORS_ORIGIN` are
+provided only at runtime.
 
 ## Database
 

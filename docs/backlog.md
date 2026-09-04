@@ -54,7 +54,6 @@ adapts to the column, never the column to the content.
 <!-- prettier-ignore -->
 | ID  | Title                      | Type     | Priority | Notes                                                       |
 | --- | -------------------------- | -------- | -------- | ----------------------------------------------------------- |
-| 27  | Dockerize web and api      | Quality  | High     | One image per app + compose; needs #17, blocks #29          |
 | 31  | Rate-limit write endpoints | Quality  | High     | Public POSTs are unthrottled; blocks #29                    |
 | 29  | First production deploy    | Quality  | High     | VPS stack, env config, release tag; needs #27 and #31       |
 | 28  | Manual offsite backup      | Quality  | High     | Local pg_dump + restore drill; needs #29, blocks #32        |
@@ -95,3 +94,4 @@ adapts to the column, never the column to the content.
 |  21 | Fix `pnpm dev` blank app   | Quality  | High     | shared builds ESM beside CJS; `exports` routes each one     |
 |   5 | Show results               | Value    | High     | Winner(s) and score table; `NotFound` (#18) if poll is gone |
 |  17 | Migrate to PostgreSQL      | Quality  | High     | PostgreSQL adapter, local Compose, isolated e2e + CI        |
+|  27 | Dockerize web and api      | Quality  | High     | Separate images + healthy local stack; blocks #29           |

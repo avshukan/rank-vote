@@ -12,7 +12,8 @@ API_URL  ?= http://localhost:$(API_PORT)/api/v1
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
 .PHONY: help setup verify format format-check lint typecheck test build \
-        web api seed render-app prune-merged down db-up db-migrate
+        web api seed render-app prune-merged down db-up db-migrate \
+        stack-up stack-down container-smoke
 
 help: ## List the available targets
 	@awk -F':.*## ' '/^[a-z][a-z-]*:.*## /{printf "  \033[36m%-13s\033[0m%s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -141,3 +142,14 @@ db-up: ## Start the local PostgreSQL development and test databases
 
 db-migrate: ## Apply Prisma migrations to the local database
 	pnpm --filter @rank-vote/api db:migrate
+
+# --- containers --------------------------------------------------------------
+
+stack-up: ## Build and start the complete container stack, waiting for health
+	docker compose up --build --detach --wait --wait-timeout 180
+
+stack-down: ## Stop the complete container stack, preserving PostgreSQL data
+	docker compose down
+
+container-smoke: ## Build and smoke-test an isolated stack with fresh storage
+	bash scripts/container-smoke.sh

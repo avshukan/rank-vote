@@ -156,10 +156,10 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 ## Phase 5 — Deployment & Recovery
 
-**Status:** PostgreSQL migration shipped; application containerization and
-deployment have not started. The remaining path is tracked as #27 (container
-images), #31 (write rate limiting), #29 (first production deploy), #28 (manual
-offsite backup/restore), then #32 (automated offsite backups).
+**Status:** PostgreSQL migration and application containerization shipped;
+production deployment has not started. The remaining path is #31 (write rate
+limiting), #29 (first production deploy), #28 (manual offsite backup/restore),
+then #32 (automated offsite backups).
 
 | App        | Platform                     | Notes                                     |
 | ---------- | ---------------------------- | ----------------------------------------- |
@@ -170,16 +170,17 @@ offsite backup/restore), then #32 (automated offsite backups).
 - PostgreSQL migration (#17) is complete: the database-only local Compose file
   and `make db-up` provision separate development and `rank_vote_test`
   databases, e2e resets only the test schema, and CI supplies PostgreSQL
-- Add separate multi-stage Docker images for `apps/web` and `apps/api`; build
+- Separate multi-stage Docker images for `apps/web` and `apps/api` build
   from the workspace root so both consumers receive the correct half of
   `@rank-vote/shared`
-- Require build-time `VITE_API_URL` for the nginx-served web bundle (local
+- The nginx-served web bundle requires build-time `VITE_API_URL` (local
   Compose supplies the development value; #29 supplies production)
-- Extend the #17 Compose stack with `migrate`, `api` and `web`; gate API startup
-  on healthy PostgreSQL plus successful `prisma migrate deploy`
-- Add process-only `GET /api/v1/health` liveness for container healthchecks;
+- The #17 Compose stack now includes `migrate`, `api` and `web`; API startup is
+  gated on healthy PostgreSQL plus successful `prisma migrate deploy`
+- Process-only `GET /api/v1/health` provides container liveness;
   dependency-aware health and external monitoring stay in #33
-- Prove both clean image builds and the complete local container flow in #27
+- CI and `make container-smoke` prove both clean image builds and the complete
+  local container flow
 - Configure application environment variables on the VPS
 - Add basic rate limiting for public write endpoints before public deployment
 - Perform the first production deployment
