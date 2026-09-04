@@ -25,11 +25,8 @@ ARG VITE_API_URL
 
 RUN test -n "${VITE_API_URL:-}" || \
       { echo "VITE_API_URL build argument is required" >&2; exit 1; }; \
-    node node_modules/typescript/bin/tsc -p packages/shared/tsconfig.build.esm.json && \
-    echo '{"type":"module"}' > packages/shared/dist/esm/package.json && \
-    cd apps/web && \
-    node node_modules/typescript/bin/tsc -b && \
-    VITE_API_URL="$VITE_API_URL" node node_modules/vite/bin/vite.js build
+    pnpm --filter @rank-vote/shared run build:esm && \
+    VITE_API_URL="$VITE_API_URL" pnpm --filter @rank-vote/web run build
 
 FROM nginx:1.31.4-alpine3.24 AS runtime
 

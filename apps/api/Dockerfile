@@ -25,12 +25,9 @@ FROM build-dependencies AS build
 COPY apps/api apps/api
 COPY packages/shared packages/shared
 
-RUN cd apps/api && \
-    node node_modules/prisma/build/index.js generate && \
-    cd /workspace && \
-    node node_modules/typescript/bin/tsc -p packages/shared/tsconfig.build.json && \
-    cd apps/api && \
-    node node_modules/@nestjs/cli/bin/nest.js build
+RUN pnpm --filter @rank-vote/api run prisma:generate && \
+    pnpm --filter @rank-vote/shared run build:cjs && \
+    pnpm --filter @rank-vote/api run build
 
 FROM base AS production-dependencies
 
@@ -45,7 +42,7 @@ FROM base AS runtime
 
 ENV NODE_ENV=production
 
-COPY --chown=node:node package.json /workspace/package.json
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml /workspace/
 COPY --from=production-dependencies --chown=node:node /workspace/node_modules /workspace/node_modules
 COPY --from=production-dependencies --chown=node:node /workspace/apps/api/node_modules /workspace/apps/api/node_modules
 COPY --from=build --chown=node:node /workspace/apps/api/dist /workspace/apps/api/dist
