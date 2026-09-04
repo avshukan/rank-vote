@@ -54,6 +54,20 @@ Notes:
 - CI supplies the same PostgreSQL test database through a native service
 - unit tests continue to mock Prisma and remain database-free
 
+### Rate limiting
+
+Backlog #31 adds API-level tests for both protected POST routes. Tests exercise
+the first allowed requests and the first `429`, independent route buckets and
+client IPs, counting of invalid attempts, fixed-window expiry, non-extension by
+rejected attempts, and the `Retry-After`/Nest error contract. They also prove
+that representative product GETs and `/api/v1/health` remain unthrottled.
+
+Time and production limits are injected or otherwise controlled in tests; the
+suite uses a fake clock and small test-only limits instead of waiting or sending
+hundreds of requests. Proxy tests cover both the zero-trust default (a supplied
+forwarding header cannot select a key) and the explicitly configured trusted-hop
+mode.
+
 ---
 
 ## Frontend

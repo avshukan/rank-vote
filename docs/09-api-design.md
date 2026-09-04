@@ -41,6 +41,9 @@ Response `201 Created`:
 }
 ```
 
+Response `429 Too Many Requests` when the client IP has exhausted the
+poll-creation bucket described under [Write rate limits](#write-rate-limits).
+
 ---
 
 ### Get poll
@@ -101,6 +104,37 @@ Response `201 Created`:
 
 Response `400 Bad Request` if validation fails.
 Response `404 Not Found` if poll does not exist.
+Response `429 Too Many Requests` when the client IP has exhausted the
+ballot-submission bucket described below.
+
+---
+
+### Write rate limits
+
+The two public anonymous write endpoints have independent fixed-window buckets:
+
+| Endpoint                  | Limit per client IP | Window     |
+| ------------------------- | ------------------- | ---------- |
+| `POST /polls`             | 5 requests          | 60 minutes |
+| `POST /polls/:id/ballots` | 300 requests        | 60 minutes |
+
+The ballot bucket spans all poll IDs. Each window starts with the first request
+for that client and route bucket and expires 3,600 seconds later. The first N
+requests pass the limiter; N+1 receives `429`. Attempts count before validation
+and application handling, so requests that return `400` or `404` consume
+capacity. Rejected `429` attempts do not extend the window. The next request
+after expiry starts a fresh window.
+
+A `429` response includes `Retry-After` as an integer number of seconds until
+the current window expires, rounded up. Its JSON body follows the common Nest
+error shape with `statusCode: 429` and string `message` and `error` fields. No
+`RateLimit-*` or `X-RateLimit-*` headers are part of the contract.
+
+Client identity comes from the HTTP framework's client IP. Forwarding headers
+are not trusted by default. Production may enable an exact trusted-proxy hop
+count only when direct API access is blocked; the first deployment uses one
+trusted reverse proxy hop and one API replica. Rate-limit counters are held in
+process memory and may reset on restart.
 
 ---
 

@@ -54,7 +54,7 @@ adapts to the column, never the column to the content.
 <!-- prettier-ignore -->
 | ID  | Title                      | Type     | Priority | Notes                                                       |
 | --- | -------------------------- | -------- | -------- | ----------------------------------------------------------- |
-| 31  | Rate-limit write endpoints | Quality  | High     | Public POSTs are unthrottled; blocks #29                    |
+| 31  | Rate-limit write endpoints | Quality  | High     | Criteria settled; blocks #29                                |
 | 29  | First production deploy    | Quality  | High     | VPS stack, env config, release tag; needs #27 and #31       |
 | 28  | Manual offsite backup      | Quality  | High     | Local pg_dump + restore drill; needs #29, blocks #32        |
 | 6   | Mobile responsive layout   | Quality  | Medium   | Basic responsive UI                                         |
@@ -68,6 +68,7 @@ adapts to the column, never the column to the content.
 | 30  | Drop the scaffold endpoint | Quality  | Medium   | `GET /api/v1` stays; liveness is separate in #27            |
 | 32  | Automate offsite backups   | Quality  | Medium   | Scheduled dumps to independent object storage; needs #28    |
 | 33  | Add production monitoring  | Quality  | Medium   | Dependency health, monitoring and alerts; needs #29         |
+| 34  | Share rate-limit state     | Quality  | Low      | Shared counters before API replicas >1; needs #31           |
 | 11  | Add PWA support            | Quality  | Low      | Installable web app                                         |
 | 12  | Add poll editing           | Value    | Low      | Edit poll after creation                                    |
 | 13  | Add poll expiration        | Value    | Low      | Closing date/time                                           |

@@ -96,20 +96,22 @@ MVP is intentionally lightweight and does not yet include:
 
 The public write endpoints (`POST /polls`, `POST /polls/:id/ballots`) are
 unauthenticated and unthrottled. Basic rate limiting is required before the
-first public deployment and is tracked as backlog #31.
+first public deployment and is specified by backlog #31. Its accepted
+process-local design requires exactly one API replica until #34 adds shared
+counters.
 
 ---
 
 ## Operations
 
-Nothing is deployed yet. The repository contains a database-only Compose stack
-for local PostgreSQL, but no application deployment infrastructure:
+Nothing is deployed yet. The repository contains a complete local Compose stack
+for PostgreSQL, migrations, the API and the web application, but no production
+deployment infrastructure:
 
-- no `web` / `api` container images and no CD pipeline — CI builds and tests,
-  and stops there; #27 adds the application images and Compose services, and
-  #29 deploys them
-- PostgreSQL runs locally through the database-only Compose service and in CI;
-  no production database exists until #29
+- `web` / `api` images and container smoke tests exist, but there is no CD
+  pipeline — CI builds and tests, then stops; #29 deploys them
+- PostgreSQL runs locally through Compose and in CI; no production database
+  exists until #29
 - no backups yet: the first manual offsite backup and restore drill is #28,
   followed by automated offsite backups in #32
 - no production monitoring, alerting, or error tracking; tracked as #33
