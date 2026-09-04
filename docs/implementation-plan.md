@@ -181,8 +181,13 @@ then #32 (automated offsite backups).
   dependency-aware health and external monitoring stay in #33
 - CI and `make container-smoke` prove both clean image builds and the complete
   local container flow
-- Configure application environment variables on the VPS
-- Add basic rate limiting for public write endpoints before public deployment
+- Implement #31's independent in-memory fixed-window limits: 5 poll creations
+  and 300 ballot submissions per client IP per 60 minutes
+- Configure application environment variables on the VPS; keep forwarding
+  headers untrusted until #29 places the API behind one trusted proxy hop and
+  blocks direct access
+- Run one API replica for the first deployment; shared limiter state before
+  horizontal scaling is #34
 - Perform the first production deployment
 - Immediately prove recovery with a manual logical dump copied outside
   DigitalOcean and restored into clean PostgreSQL

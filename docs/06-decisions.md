@@ -224,6 +224,53 @@ Rejected:
 - running `prisma migrate deploy` in every API entrypoint — couples migrations
   to replica startup and creates avoidable concurrency
 
+### In-memory rate limiting for the first deployment
+
+Status:
+
+- accepted for backlog #31
+
+Chosen:
+
+- limit anonymous writes by framework-derived client IP, with separate fixed
+  60-minute buckets for poll creation (5 requests) and ballot submission (300
+  requests across all polls)
+- count invalid attempts; do not extend a window when returning `429`
+- keep counters in API-process memory and deploy one API replica initially;
+  restarts may clear counters
+- distrust forwarding headers by default. #31 makes an exact proxy-hop count
+  configurable; #29 may set one trusted hop only after direct API access is
+  blocked
+- return the existing Nest error shape with `429` and mandatory `Retry-After`;
+  do not add rate-limit metadata headers or a shared error DTO
+
+Reason:
+
+- groups often share a public IP in offices, classrooms, events and homes, so
+  300 ballots per hour avoids an undue false-positive risk while still stopping
+  simple automated abuse
+- poll creation has much lower legitimate volume and can use the stricter limit
+- process-local state adds no new persistence or service before the first
+  deployment and matches its single-replica topology
+- an explicit proxy trust boundary prevents clients from selecting arbitrary
+  limiter keys through forwarding headers
+
+Deferred:
+
+- #29 owns the production reverse proxy, direct-access firewalling and runtime
+  hop-count value
+- #34 replaces process-local counters before horizontal API scaling
+- #33 owns limiter metrics and alerting with the rest of production monitoring
+
+Rejected for #31:
+
+- PostgreSQL or Redis-backed counters — unnecessary infrastructure for the
+  single-replica first deployment
+- trusting forwarding headers unconditionally — clients could bypass limits by
+  choosing their apparent address
+- one shared write bucket — poll creation and group voting have materially
+  different legitimate traffic profiles
+
 ---
 
 ## Storage
