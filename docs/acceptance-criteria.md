@@ -224,108 +224,108 @@ and proves that the complete stack can start locally; it does not deploy it.
 
 ### Images and workspace build
 
-- [ ] `apps/web` and `apps/api` each have their own multi-stage Docker image,
+- [x] `apps/web` and `apps/api` each have their own multi-stage Docker image,
       built from the repository-root context so the workspace lockfile and
       `@rank-vote/shared` are available
-- [ ] Build and API runtime stages use Node 22 Alpine plus the pnpm version
+- [x] Build and API runtime stages use Node 22 Alpine plus the pnpm version
       pinned in the root `package.json`; dependencies are installed from the
       frozen lockfile
-- [ ] Maintained, explicit base-image tags are used instead of `latest`: Node 22
+- [x] Maintained, explicit base-image tags are used instead of `latest`: Node 22
       Alpine for build/API stages and nginx Alpine for the web runtime. Selecting
       the exact patch tags is an implementation-time maintenance choice, not a
       new architecture decision
-- [ ] A root `.dockerignore` excludes host `node_modules`, build output, Git
+- [x] A root `.dockerignore` excludes host `node_modules`, build output, Git
       metadata, coverage, logs and local `.env` files, so both images build from
       a clean checkout rather than accidentally copying host artifacts or secrets
 
 ### Web image
 
-- [ ] The build requires `VITE_API_URL` as a Docker build argument and makes it
+- [x] The build requires `VITE_API_URL` as a Docker build argument and makes it
       available to Vite only while producing the static bundle; a direct image
       build without the argument fails instead of embedding the source fallback
-- [ ] Compose passes a local-development default of
+- [x] Compose passes a local-development default of
       `http://localhost:3000/api/v1`; #29 supplies the production value when it
       builds the production web image
-- [ ] The builder produces the ESM half of `@rank-vote/shared` and
+- [x] The builder produces the ESM half of `@rank-vote/shared` and
       `apps/web/dist`; the nginx runtime contains only the static output and its
       server configuration, not Node.js, pnpm or workspace source
-- [ ] nginx listens on container port `80`; `index.html` is the fallback for
+- [x] nginx listens on container port `80`; `index.html` is the fallback for
       client-side routes such as `/poll/:id` and `/poll/:id/results`
-- [ ] Vite's content-hashed `/assets/` files receive long-lived immutable cache
+- [x] Vite's content-hashed `/assets/` files receive long-lived immutable cache
       headers; `index.html` and unhashed root assets do not receive immutable
       caching, so a new deployment can be discovered
-- [ ] nginx does not proxy the API and does not rewrite configuration at runtime;
+- [x] nginx does not proxy the API and does not rewrite configuration at runtime;
       the browser calls the absolute API URL embedded at build time
 
 ### API image
 
-- [ ] The build explicitly generates the Prisma Client, builds the CommonJS half
+- [x] The build explicitly generates the Prisma Client, builds the CommonJS half
       of `@rank-vote/shared`, then builds `apps/api`; it does not depend on ignored
       `dist` or generated files already existing on the host
-- [ ] The runtime starts the compiled Nest application with the production
+- [x] The runtime starts the compiled Nest application with the production
       command and is reachable on all container interfaces at `PORT` (default
       `3000`)
-- [ ] The runtime contains the compiled API (including the generated Prisma
+- [x] The runtime contains the compiled API (including the generated Prisma
       Client), the CommonJS shared-package output and required production
       dependencies
-- [ ] The same API image also contains the Prisma CLI plus the committed schema,
+- [x] The same API image also contains the Prisma CLI plus the committed schema,
       config and migration history required for `prisma migrate deploy`; no
       second migration image is introduced
-- [ ] `DATABASE_URL`, `PORT` and `CORS_ORIGIN` are runtime environment variables;
+- [x] `DATABASE_URL`, `PORT` and `CORS_ORIGIN` are runtime environment variables;
       no database credentials or environment-specific API settings are baked
       into the image
 
 ### Compose and database migrations
 
-- [ ] The repository-root Compose file extends, rather than replaces, #17 with
+- [x] The repository-root Compose file extends, rather than replaces, #17 with
       services named `postgres`, `migrate`, `api` and `web` on the default
       Compose network
-- [ ] The existing PostgreSQL 17 Alpine image, development/test initialization,
+- [x] The existing PostgreSQL 17 Alpine image, development/test initialization,
       `pg_isready` healthcheck, `5432:5432` local port and
       `rank_vote_postgres_data` named volume are preserved; routine stack
       teardown does not delete the volume
-- [ ] The API connects to `postgres:5432` inside the Compose network and receives
+- [x] The API connects to `postgres:5432` inside the Compose network and receives
       local runtime values for `DATABASE_URL`, `PORT=3000` and
       `CORS_ORIGIN=http://localhost:5173`
-- [ ] The one-shot `migrate` service reuses the API image, publishes no port,
+- [x] The one-shot `migrate` service reuses the API image, publishes no port,
       waits for healthy PostgreSQL and runs `prisma migrate deploy`; rerunning an
       already-applied migration history succeeds without changing data
-- [ ] `api` starts only after `migrate` completes successfully, and `web` starts
+- [x] `api` starts only after `migrate` completes successfully, and `web` starts
       only after the API healthcheck passes. The API container itself does not
       run migrations in its entrypoint
-- [ ] The local stack publishes nginx as `5173:80` and the API as `3000:3000`;
+- [x] The local stack publishes nginx as `5173:80` and the API as `3000:3000`;
       service-to-service traffic continues to use container ports and service
       names
-- [ ] `make db-up` still starts only PostgreSQL for the existing host-native
+- [x] `make db-up` still starts only PostgreSQL for the existing host-native
       development flow. Documented `make stack-up` / `make stack-down` targets
       start or stop the complete containerized stack, wait for its health where
       applicable and preserve the database volume
 
 ### Operational liveness
 
-- [ ] `GET /api/v1/health` returns `200` with exactly `{ "status": "ok" }` and
+- [x] `GET /api/v1/health` returns `200` with exactly `{ "status": "ok" }` and
       has an API e2e contract test
-- [ ] The endpoint is operational liveness, not a fifth product endpoint: it
+- [x] The endpoint is operational liveness, not a fifth product endpoint: it
       does not query PostgreSQL or any other dependency and does not promise
       readiness
-- [ ] The route is implemented separately from the scaffold
+- [x] The route is implemented separately from the scaffold
       `AppController`/`AppService` and needs no shared product DTO, so #30 can
       remove `GET /api/v1` without changing the liveness contract
-- [ ] The API Compose healthcheck calls `/api/v1/health`; the web healthcheck
+- [x] The API Compose healthcheck calls `/api/v1/health`; the web healthcheck
       verifies that nginx serves the built application; PostgreSQL keeps its
       existing `pg_isready` check
-- [ ] No healthcheck calls the scaffold `GET /api/v1` endpoint
+- [x] No healthcheck calls the scaffold `GET /api/v1` endpoint
 
 ### Verification and documentation
 
-- [ ] Both images build from a clean checkout, the Compose model validates, and
+- [x] Both images build from a clean checkout, the Compose model validates, and
       an isolated-stack smoke check proves migrations, API liveness, a product
       API request, the web root and a direct nested SPA route
-- [ ] CI exercises the image builds and container smoke check, while the existing
+- [x] CI exercises the image builds and container smoke check, while the existing
       API e2e suite may continue to use CI's native PostgreSQL service
-- [ ] The manual end-to-end check runs create → share → vote → results through
+- [x] The manual end-to-end check runs create → share → vote → results through
       the containerized web and API services
-- [ ] Runtime/build configuration and container commands are documented without
+- [x] Runtime/build configuration and container commands are documented without
       describing the not-yet-performed production deployment as current state
 
 ### Out of Scope (tracked separately)

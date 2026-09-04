@@ -28,11 +28,12 @@ PostgreSQL `init` migration. Models and HTTP contracts did not change.
 
 ## Development and test PostgreSQL contract
 
-The repository-root `docker-compose.yml` contains only the PostgreSQL service.
-`make db-up` is the standard command that starts it for local development. The
-Compose instance provisions separate `rank_vote` development and fixed
-`rank_vote_test` databases. Application images and the `web` / `api` services
-remain out of scope until #27 extends the stack.
+The repository-root `docker-compose.yml` defines PostgreSQL plus the complete
+containerized application stack. `make db-up` remains the standard command that
+starts only PostgreSQL for host-native development. The Compose instance
+provisions separate `rank_vote` development and fixed `rank_vote_test`
+databases; `make stack-up` additionally builds and starts `migrate`, `api` and
+`web`, and `make stack-down` preserves the named database volume.
 
 The normal `apps/api/.env` points at `rank_vote`. `pnpm test:e2e` runs
 `apps/api/test/run-e2e.mjs`, which gives Prisma and Jest an explicit test-only
@@ -122,7 +123,7 @@ On a fresh non-development database, set `DATABASE_URL` and run
 `pnpm --filter @rank-vote/api db:deploy` (`prisma migrate deploy`). This applies
 the committed history without creating a new migration.
 
-Backlog #27 packages that production-safe command into a one-shot Compose
+Backlog #27 packaged that production-safe command into a one-shot Compose
 service named `migrate`. It reuses the API image, waits for the `postgres`
 healthcheck and must complete successfully before the API starts. The image
 therefore carries the Prisma CLI, schema, config and committed migration history

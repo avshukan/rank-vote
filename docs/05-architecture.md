@@ -130,7 +130,8 @@ apps/web/src/
 Current implementation:
 
 - PostgreSQL (via Prisma)
-- database-only Compose service for local development
+- complete local Compose stack, with `make db-up` retaining the
+  PostgreSQL-only host-native development path
 - separate `rank_vote` development and `rank_vote_test` e2e databases
 
 Accepted production target:
@@ -141,16 +142,16 @@ Accepted production target:
 
 Backlog #17 introduced the database-only Compose file and the fixed PostgreSQL
 test database; CI provides PostgreSQL through its native service mechanism.
-Backlog #27 later adds the `web` and `api` images and services to the Compose
-stack. See `docs/06-decisions.md` for the hosting and
-staged-containerization decisions and `docs/10-storage.md` for storage,
+Backlog #27 added separate `web` and `api` images plus `migrate`, `api` and
+`web` services to the Compose stack. See `docs/06-decisions.md` for the hosting
+and staged-containerization decisions and `docs/10-storage.md` for storage,
 testing, backup, and recovery requirements.
 
 ---
 
 ## Accepted Container Topology
 
-Backlog #27 will extend the current local Compose model without replacing its
+Backlog #27 extended the local Compose model without replacing its
 PostgreSQL contract:
 
 ```text

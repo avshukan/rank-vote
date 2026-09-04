@@ -4,6 +4,17 @@ Simple web app for group decisions using ranked voting (Borda count).
 
 ## Quick Start
 
+Run the complete application in containers:
+
+```bash
+make stack-up       # web: http://localhost:5173, API: http://localhost:3000
+make stack-down     # stops containers and preserves PostgreSQL data
+```
+
+The first command builds both application images, applies committed migrations
+through the one-shot `migrate` service and waits for PostgreSQL, API and web
+healthchecks. To work on the applications with native watchers instead:
+
 ```bash
 # Install dependencies and create the .env files from the examples
 make setup
@@ -21,9 +32,15 @@ make web        # http://localhost:5173
 package in watch mode under one supervisor; the split targets exist so that
 restarting the web half does not take the API down with it.
 
+`make db-up` continues to start only PostgreSQL. `make container-smoke` builds
+both images and exercises an isolated stack with fresh temporary storage.
+
 ## Stopping and Restarting
 
-To stop the local app cleanly:
+For the container stack, use `make stack-down`; the named PostgreSQL volume is
+preserved. Run `make stack-up` again for the next session.
+
+To stop the host-native app cleanly:
 
 1. Press `Ctrl+C` in both terminals running `make api` and `make web`.
 2. From the repository root, run `make down`. This stops anything still
@@ -59,6 +76,13 @@ again after pulling or creating new database migrations.
 | `PORT`         | api | `3000`                                                                    | API listen port            |
 | `CORS_ORIGIN`  | api | `http://localhost:5173`                                                   | Allowed frontend origin    |
 | `VITE_API_URL` | web | `http://localhost:3000/api/v1`                                            | Backend API base URL       |
+
+For Docker, `VITE_API_URL` is a required web-image build argument because Vite
+embeds it in the static bundle. Compose supplies the local default above.
+`DATABASE_URL`, `PORT` and `CORS_ORIGIN` remain runtime settings for the API.
+The optional `RANK_VOTE_POSTGRES_PORT`, `RANK_VOTE_API_PORT` and
+`RANK_VOTE_WEB_PORT` variables override Compose's published host ports while
+leaving container-to-container ports unchanged.
 
 ## Docs
 

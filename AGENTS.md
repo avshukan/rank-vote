@@ -43,8 +43,10 @@ Target one package with `pnpm --filter <name>`, e.g. `pnpm --filter @rank-vote/a
 The `Makefile` wraps the multi-step rituals; `make help` lists them. Worth
 knowing: `make setup` (install + `.env` files), `make db-up` (local PostgreSQL),
 `make verify` (the full gate below), and `make web` / `make api` / `make seed` /
-`make down` for running the app. `make render-app` renders a local `URL` through
-an installed Chromium-compatible browser. `make prune-merged` deletes
+`make down` for running the app. `make stack-up` / `make stack-down` run the
+complete container stack, while `make container-smoke` tests it with fresh,
+isolated storage. `make render-app` renders a local `URL` through an installed
+Chromium-compatible browser. `make prune-merged` deletes
 local branches whose PR is merged — squash merges leave no trace for
 `git branch --merged`, so it asks GitHub instead. Anything that is a single
 pnpm script stays a pnpm script.
@@ -85,8 +87,9 @@ Before declaring any task complete, run:
 make verify   # pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
-and report the results. This mirrors the CI job exactly (same steps, same
-order), so a green local run means a green CI. Re-run a single step with
+and report the results. This mirrors the CI `checks` job exactly (same steps,
+same order); container changes must additionally pass `make container-smoke`,
+as the separate `containers` job does. Re-run a single step with
 `make lint`, `make test`, … while fixing. A change without a passing
 verification run is not done. New behavior requires new tests.
 

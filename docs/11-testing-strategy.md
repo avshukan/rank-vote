@@ -106,7 +106,7 @@ not automated end-to-end tests.
 
 ## Containerization
 
-Backlog #27 adds infrastructure checks at the boundary where unit and existing
+Backlog #27 added infrastructure checks at the boundary where unit and existing
 API integration tests cannot catch packaging errors:
 
 - build both application images from a clean checkout, with an explicit local
@@ -117,7 +117,9 @@ API integration tests cannot catch packaging errors:
 - smoke-check `/api/v1/health`, one existing product API request, the web root
   and a direct nested SPA route
 
-CI runs the same image-build and container smoke path. The existing API e2e
+`make container-smoke` runs this check locally with isolated published ports
+and removes its temporary database volume afterward. CI's `containers` job
+runs the same image-build and container smoke path. The existing API e2e
 suite may continue using CI's native PostgreSQL service; the container check is
 about image contents, migration/startup ordering and networking rather than a
 second exhaustive API suite. Manual browser verification still covers the full
