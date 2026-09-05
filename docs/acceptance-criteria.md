@@ -364,94 +364,93 @@ and proves that the complete stack can start locally; it does not deploy it.
 
 ## #31 Rate-limit write endpoints
 
-Blocks the first production deployment (#29). This slice adds basic abuse
-protection to the two anonymous write endpoints without changing the product's
-no-authentication contract. Implementation can start after this readiness PR is
-on `main`.
+Implemented by backlog #31. This slice adds basic abuse protection to the two
+anonymous write endpoints without changing the product's no-authentication
+contract and unblocks the first production deployment (#29).
 
 ### Endpoint scope and limits
 
-- [ ] `POST /api/v1/polls` allows 5 requests per client IP in a 60-minute
+- [x] `POST /api/v1/polls` allows 5 requests per client IP in a 60-minute
       window
-- [ ] `POST /api/v1/polls/:id/ballots` allows 300 requests per client IP in a
+- [x] `POST /api/v1/polls/:id/ballots` allows 300 requests per client IP in a
       separate 60-minute window; one IP's ballot bucket is shared across all
       poll IDs
-- [ ] The poll-creation and ballot-submission buckets are independent: traffic
+- [x] The poll-creation and ballot-submission buckets are independent: traffic
       to one does not consume capacity from the other
-- [ ] The first N requests in a bucket reach the existing endpoint pipeline;
+- [x] The first N requests in a bucket reach the existing endpoint pipeline;
       request N+1 and later requests before expiry receive HTTP `429`
-- [ ] `GET /api/v1/polls/:id`, `GET /api/v1/polls/:id/results`, the scaffold
+- [x] `GET /api/v1/polls/:id`, `GET /api/v1/polls/:id/results`, the scaffold
       `GET /api/v1`, `GET /api/v1/health` and CORS preflight are not rate-limited
 
 ### Window and counting behaviour
 
-- [ ] Each bucket uses a fixed 3,600-second window that begins with its first
+- [x] Each bucket uses a fixed 3,600-second window that begins with its first
       request; it is not aligned to wall-clock hour boundaries
-- [ ] Every attempt that reaches a protected route consumes capacity before
+- [x] Every attempt that reaches a protected route consumes capacity before
       validation or application logic, so requests that later return `400`,
       `404` or another non-`429` response still count
-- [ ] A rejected `429` attempt neither consumes additional capacity nor extends
+- [x] A rejected `429` attempt neither consumes additional capacity nor extends
       or restarts the current window
-- [ ] After expiry, the next request starts a fresh window and is its first
+- [x] After expiry, the next request starts a fresh window and is its first
       allowed request
 
 ### Client identity and proxy trust
 
-- [ ] Buckets are keyed by the client IP exposed by the HTTP framework; no
+- [x] Buckets are keyed by the client IP exposed by the HTTP framework; no
       cookie, browser-generated identifier, poll ID or global shared bucket is
       used
-- [ ] Proxy trust is disabled by default, so a direct client cannot choose its
+- [x] Proxy trust is disabled by default, so a direct client cannot choose its
       limiter key by sending `X-Forwarded-For` or another forwarding header
-- [ ] #31 adds runtime configuration for an exact trusted-proxy hop count while
+- [x] #31 adds runtime configuration for an exact trusted-proxy hop count while
       keeping the default at zero trusted hops. #29 must make the API reachable
       only through one trusted reverse proxy hop before it enables a hop count
       of one; selecting Caddy or another concrete proxy remains #29's decision
 
 ### State and deployment constraint
 
-- [ ] Counters live in API-process memory; no PostgreSQL table, Redis service or
+- [x] Counters live in API-process memory; no PostgreSQL table, Redis service or
       other shared store is added
-- [ ] A process restart clears all counters. Multiple API processes would have
+- [x] A process restart clears all counters. Multiple API processes would have
       independent counters, so #29 must deploy exactly one API replica
-- [ ] A shared limiter store is required before the API can run more than one
+- [x] A shared limiter store is required before the API can run more than one
       replica and is tracked separately as #34
 
 ### `429` contract and frontend behaviour
 
-- [ ] A limited request returns HTTP `429 Too Many Requests` with a mandatory
+- [x] A limited request returns HTTP `429 Too Many Requests` with a mandatory
       `Retry-After` response header containing the integer number of seconds
       until its fixed window expires, rounded up so retrying that many seconds
       later is not early
-- [ ] The JSON body keeps the Nest error shape: `statusCode` is `429`, while
+- [x] The JSON body keeps the Nest error shape: `statusCode` is `429`, while
       `message` and `error` are strings. No shared error DTO is introduced
-- [ ] `RateLimit-*` and `X-RateLimit-*` response headers are not introduced
-- [ ] No dedicated rate-limit UI is added: the create and ballot forms surface
+- [x] `RateLimit-*` and `X-RateLimit-*` response headers are not introduced
+- [x] No dedicated rate-limit UI is added: the create and ballot forms surface
       the API message through their existing inline error/retry behaviour and
       keep their existing form-state guarantees
 
 ### Automated verification
 
-- [ ] Deterministic API tests use controlled time and configurable test-only
+- [x] Deterministic API tests use controlled time and configurable test-only
       limits rather than sleeping for a production window
-- [ ] Tests cover requests below each limit, the first rejected request, the
+- [x] Tests cover requests below each limit, the first rejected request, the
       exact `429` body and `Retry-After`, and a newly allowed request after
       expiry
-- [ ] Tests prove that invalid attempts count, rejected attempts do not extend
+- [x] Tests prove that invalid attempts count, rejected attempts do not extend
       the window, the two route buckets are independent, and different client
       IPs have independent counters
-- [ ] Tests prove that protected routes cannot evade the default configuration
+- [x] Tests prove that protected routes cannot evade the default configuration
       with a client-supplied forwarding header and that configured trusted-proxy
       mode uses the forwarded client IP
-- [ ] Tests prove representative read and operational endpoints remain usable
+- [x] Tests prove representative read and operational endpoints remain usable
       after both write buckets are exhausted
 
 ### Documentation
 
-- [ ] API runtime configuration and the zero-hop development default are added
+- [x] API runtime configuration and the zero-hop development default are added
       to the environment example and API documentation
-- [ ] Deployment documentation carries the one-replica/direct-access constraint
+- [x] Deployment documentation carries the one-replica/direct-access constraint
       forward to #29
-- [ ] `docs/08-known-limitations.md` describes rate limiting as implemented, not
+- [x] `docs/08-known-limitations.md` describes rate limiting as implemented, not
       pending, once #31 ships; `docs/backlog.md` moves #31 to `Done`
 
 ### Out of Scope (tracked separately)

@@ -9,6 +9,15 @@ import type {
 } from '@rank-vote/shared';
 import { AppModule } from './../src/app.module';
 import { configureApp } from './../src/app.setup';
+import {
+  RATE_LIMIT_POLICIES,
+  type RateLimitPolicies,
+} from './../src/presentation/rate-limit/rate-limit.config';
+
+const NON_LIMITING_TEST_POLICIES: RateLimitPolicies = {
+  pollCreation: { limit: 1_000, windowMs: 60 * 60 * 1000 },
+  ballotSubmission: { limit: 1_000, windowMs: 60 * 60 * 1000 },
+};
 
 /** Narrows supertest's `any` body to the poll API contract for assertions. */
 const asPoll = (res: request.Response): PollResponseDto =>
@@ -28,7 +37,10 @@ describe('Polls (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(RATE_LIMIT_POLICIES)
+      .useValue(NON_LIMITING_TEST_POLICIES)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     configureApp(app);

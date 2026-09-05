@@ -174,13 +174,13 @@ proxy API traffic, and no runtime frontend configuration layer is introduced.
 
 ### Accepted write-limiter boundary
 
-Backlog #31 adds per-client-IP, in-memory rate limits to the two anonymous write
-routes. Forwarding headers remain untrusted by default. For the first production
-deployment, #29 must place the API behind exactly one trusted reverse proxy hop,
-block direct API access, configure that hop count explicitly and run exactly one
-API replica. A restart may clear counters. Horizontal API scaling requires #34
-to replace the per-process counters with shared state; the application images
-remain independently scalable once that follow-up lands.
+Backlog #31 implemented per-client-IP, in-memory rate limits on the two
+anonymous write routes. Forwarding headers remain untrusted by default. For the
+first production deployment, #29 must place the API behind exactly one trusted
+reverse proxy hop, block direct API access, configure that hop count explicitly
+and run exactly one API replica. A restart may clear counters. Horizontal API
+scaling requires #34 to replace the per-process counters with shared state; the
+application images remain independently scalable once that follow-up lands.
 
 ---
 
