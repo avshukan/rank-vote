@@ -94,11 +94,13 @@ MVP is intentionally lightweight and does not yet include:
 - private polls
 - role management
 
-The public write endpoints (`POST /polls`, `POST /polls/:id/ballots`) are
-unauthenticated and unthrottled. Basic rate limiting is required before the
-first public deployment and is specified by backlog #31. Its accepted
-process-local design requires exactly one API replica until #34 adds shared
-counters.
+The public write endpoints (`POST /polls`, `POST /polls/:id/ballots`) remain
+unauthenticated, but basic per-client-IP rate limiting is implemented: 5 poll
+creations and 300 ballot submissions per 60-minute fixed window. The counters
+are process-local and reset on restart, so the first deployment requires
+exactly one API replica until #34 adds shared counters. This is a basic abuse
+guardrail, not DDoS protection, authentication or strong duplicate-vote
+prevention.
 
 ---
 

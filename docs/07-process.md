@@ -109,8 +109,8 @@ Examples:
   the `checks` job runs format, lint, typecheck, test and build; the `containers`
   job builds both application images and smoke-tests an isolated Compose stack
 - **CD does not exist yet.** Images are verified but are not pushed, deployed or
-  released on merge. The remaining first-deploy path is #31 (write rate
-  limiting) then #29 (first production deployment); recovery then proceeds
+  released on merge. Write rate limiting (#31) is complete; the remaining
+  first-deploy step is #29 (first production deployment), then recovery proceeds
   through #28 (manual offsite backup and restore drill) and #32 (automated
   offsite backups)
 - each merge should be production-ready

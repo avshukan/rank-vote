@@ -70,16 +70,20 @@ again after pulling or creating new database migrations.
 
 ## Environment Variables
 
-| Variable       | App | Default                                                                   | Description                |
-| -------------- | --- | ------------------------------------------------------------------------- | -------------------------- |
-| `DATABASE_URL` | api | `postgresql://rank_vote:rank_vote@localhost:5432/rank_vote?schema=public` | PostgreSQL development URL |
-| `PORT`         | api | `3000`                                                                    | API listen port            |
-| `CORS_ORIGIN`  | api | `http://localhost:5173`                                                   | Allowed frontend origin    |
-| `VITE_API_URL` | web | `http://localhost:3000/api/v1`                                            | Backend API base URL       |
+| Variable             | App | Default                                                                   | Description                        |
+| -------------------- | --- | ------------------------------------------------------------------------- | ---------------------------------- |
+| `DATABASE_URL`       | api | `postgresql://rank_vote:rank_vote@localhost:5432/rank_vote?schema=public` | PostgreSQL development URL         |
+| `PORT`               | api | `3000`                                                                    | API listen port                    |
+| `CORS_ORIGIN`        | api | `http://localhost:5173`                                                   | Allowed frontend origin            |
+| `TRUSTED_PROXY_HOPS` | api | `0`                                                                       | Exact number of trusted proxy hops |
+| `VITE_API_URL`       | web | `http://localhost:3000/api/v1`                                            | Backend API base URL               |
 
 For Docker, `VITE_API_URL` is a required web-image build argument because Vite
 embeds it in the static bundle. Compose supplies the local default above.
-`DATABASE_URL`, `PORT` and `CORS_ORIGIN` remain runtime settings for the API.
+`DATABASE_URL`, `PORT`, `CORS_ORIGIN` and `TRUSTED_PROXY_HOPS` remain runtime
+settings for the API. Keep `TRUSTED_PROXY_HOPS=0` whenever clients connect to
+the API directly; #29 may set it to `1` only after placing the API exclusively
+behind one reverse proxy hop.
 The optional `RANK_VOTE_POSTGRES_PORT`, `RANK_VOTE_API_PORT` and
 `RANK_VOTE_WEB_PORT` variables override Compose's published host ports while
 leaving container-to-container ports unchanged.

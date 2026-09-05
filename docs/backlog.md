@@ -54,7 +54,6 @@ adapts to the column, never the column to the content.
 <!-- prettier-ignore -->
 | ID  | Title                      | Type     | Priority | Notes                                                       |
 | --- | -------------------------- | -------- | -------- | ----------------------------------------------------------- |
-| 31  | Rate-limit write endpoints | Quality  | High     | Criteria settled; blocks #29                                |
 | 29  | First production deploy    | Quality  | High     | VPS stack, env config, release tag; needs #27 and #31       |
 | 28  | Manual offsite backup      | Quality  | High     | Local pg_dump + restore drill; needs #29, blocks #32        |
 | 6   | Mobile responsive layout   | Quality  | Medium   | Basic responsive UI                                         |
@@ -96,3 +95,4 @@ adapts to the column, never the column to the content.
 |   5 | Show results               | Value    | High     | Winner(s) and score table; `NotFound` (#18) if poll is gone |
 |  17 | Migrate to PostgreSQL      | Quality  | High     | PostgreSQL adapter, local Compose, isolated e2e + CI        |
 |  27 | Dockerize web and api      | Quality  | High     | Separate images + healthy local stack; blocks #29           |
+|  31 | Rate-limit write endpoints | Quality  | High     | Per-IP fixed windows on both public write endpoints         |
