@@ -228,7 +228,7 @@ Rejected:
 
 Status:
 
-- accepted for backlog #31
+- implemented by backlog #31
 
 Chosen:
 

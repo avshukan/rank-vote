@@ -38,8 +38,14 @@ The multi-stage [`Dockerfile`](Dockerfile) builds from the repository-root
 context, generates the Prisma Client and CommonJS shared package, and starts the
 compiled API with Node. Its runtime also carries the Prisma CLI, schema, config
 and migration history, so Compose's one-shot `migrate` service can reuse the
-same image before the API starts. `DATABASE_URL`, `PORT` and `CORS_ORIGIN` are
-provided only at runtime.
+same image before the API starts. `DATABASE_URL`, `PORT`, `CORS_ORIGIN` and
+`TRUSTED_PROXY_HOPS` are provided only at runtime.
+
+`TRUSTED_PROXY_HOPS` is the exact number of reverse-proxy hops trusted by
+Express when it derives `request.ip`. It defaults to `0`, as does local Compose,
+so client-supplied forwarding headers are ignored. Set it to `1` only after the
+API is reachable exclusively through one trusted proxy; that production
+network boundary belongs to backlog #29.
 
 ## Database
 

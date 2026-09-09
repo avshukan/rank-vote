@@ -156,10 +156,10 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 ## Phase 5 — Deployment & Recovery
 
-**Status:** PostgreSQL migration and application containerization shipped;
-production deployment has not started. The remaining path is #31 (write rate
-limiting), #29 (first production deploy), #28 (manual offsite backup/restore),
-then #32 (automated offsite backups).
+**Status:** PostgreSQL migration, application containerization and write rate
+limiting shipped; production deployment has not started. The remaining path is
+#29 (first production deploy), #28 (manual offsite backup/restore), then #32
+(automated offsite backups).
 
 | App        | Platform                     | Notes                                     |
 | ---------- | ---------------------------- | ----------------------------------------- |
@@ -181,8 +181,8 @@ then #32 (automated offsite backups).
   dependency-aware health and external monitoring stay in #33
 - CI and `make container-smoke` prove both clean image builds and the complete
   local container flow
-- Implement #31's independent in-memory fixed-window limits: 5 poll creations
-  and 300 ballot submissions per client IP per 60 minutes
+- #31's independent in-memory fixed-window limits are implemented: 5 poll
+  creations and 300 ballot submissions per client IP per 60 minutes
 - Configure application environment variables on the VPS; keep forwarding
   headers untrusted until #29 places the API behind one trusted proxy hop and
   blocks direct access

@@ -38,6 +38,7 @@ services:
       DATABASE_URL: postgresql://rank_vote:rank_vote@postgres:5432/rank_vote?schema=public
       PORT: '3000'
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      TRUSTED_PROXY_HOPS: '0'
     ports:
       - '${RANK_VOTE_API_PORT:-3000}:3000'
     depends_on:

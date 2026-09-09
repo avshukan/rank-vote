@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import type {
   BallotResponseDto,
   PollResponseDto,
@@ -7,6 +7,8 @@ import type {
 import { BallotService } from '../../application/ballot/ballot.service';
 import { PollService } from '../../application/poll/poll.service';
 import { ResultService } from '../../application/result/result.service';
+import { RateLimit } from '../rate-limit/rate-limit.decorator';
+import { RateLimitGuard } from '../rate-limit/rate-limit.guard';
 import { CreatePollBodyDto } from './dto/create-poll.dto';
 import { SubmitBallotBodyDto } from './dto/submit-ballot.dto';
 
@@ -20,6 +22,8 @@ export class PollsController {
 
   /** POST /api/v1/polls → 201 Created */
   @Post()
+  @RateLimit('pollCreation')
+  @UseGuards(RateLimitGuard)
   createPoll(@Body() body: CreatePollBodyDto): Promise<PollResponseDto> {
     return this.pollService.createPoll(body);
   }
@@ -38,6 +42,8 @@ export class PollsController {
 
   /** POST /api/v1/polls/:id/ballots → 201 Created, 400 invalid, 404 no poll */
   @Post(':id/ballots')
+  @RateLimit('ballotSubmission')
+  @UseGuards(RateLimitGuard)
   submitBallot(
     @Param('id') id: string,
     @Body() body: SubmitBallotBodyDto,

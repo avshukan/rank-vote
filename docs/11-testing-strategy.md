@@ -56,7 +56,7 @@ Notes:
 
 ### Rate limiting
 
-Backlog #31 adds API-level tests for both protected POST routes. Tests exercise
+Backlog #31 added API-level tests for both protected POST routes. Tests exercise
 the first allowed requests and the first `429`, independent route buckets and
 client IPs, counting of invalid attempts, fixed-window expiry, non-extension by
 rejected attempts, and the `Retry-After`/Nest error contract. They also prove

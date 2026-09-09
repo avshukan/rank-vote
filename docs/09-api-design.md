@@ -130,11 +130,14 @@ the current window expires, rounded up. Its JSON body follows the common Nest
 error shape with `statusCode: 429` and string `message` and `error` fields. No
 `RateLimit-*` or `X-RateLimit-*` headers are part of the contract.
 
-Client identity comes from the HTTP framework's client IP. Forwarding headers
-are not trusted by default. Production may enable an exact trusted-proxy hop
-count only when direct API access is blocked; the first deployment uses one
-trusted reverse proxy hop and one API replica. Rate-limit counters are held in
-process memory and may reset on restart.
+Client identity comes from the HTTP framework's client IP. The API configures
+Express proxy trust from `TRUSTED_PROXY_HOPS`, which must be an exact
+non-negative integer and defaults to `0`. Local development and Compose keep
+the zero-hop value, so client-supplied forwarding headers are ignored.
+Production may set the value to `1` only when direct API access is blocked and
+all traffic crosses exactly one trusted reverse proxy hop. The first deployment
+uses one API replica. Rate-limit counters are held in process memory and may
+reset on restart.
 
 ---
 

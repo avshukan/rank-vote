@@ -70,12 +70,13 @@ after changing its config in `package.json`, re-run `pnpm simple-git-hooks`.
 
 Copy `.env.example` to `.env` in each app before running locally.
 
-| Variable       | App        | Description                                    |
-| -------------- | ---------- | ---------------------------------------------- |
-| `DATABASE_URL` | `apps/api` | PostgreSQL URL (development DB is `rank_vote`) |
-| `PORT`         | `apps/api` | API listen port (default `3000`)               |
-| `CORS_ORIGIN`  | `apps/api` | Allowed frontend origin                        |
-| `VITE_API_URL` | `apps/web` | Backend API base URL                           |
+| Variable             | App        | Description                                           |
+| -------------------- | ---------- | ----------------------------------------------------- |
+| `DATABASE_URL`       | `apps/api` | PostgreSQL URL (development DB is `rank_vote`)        |
+| `PORT`               | `apps/api` | API listen port (default `3000`)                      |
+| `CORS_ORIGIN`        | `apps/api` | Allowed frontend origin                               |
+| `TRUSTED_PROXY_HOPS` | `apps/api` | Exact trusted proxy hops (default `0`, direct client) |
+| `VITE_API_URL`       | `apps/web` | Backend API base URL                                  |
 
 ---
 
