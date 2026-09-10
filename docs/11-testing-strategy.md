@@ -139,6 +139,34 @@ about image contents, migration/startup ordering and networking rather than a
 second exhaustive API suite. Manual browser verification still covers the full
 create → share → vote → results flow through the containerized services.
 
+### Production deployment verification
+
+Backlog #29 extends container verification at the production boundary without
+turning the shared VPS into a general test environment. Before a release is
+recorded as current:
+
+- inspect the resolved production Compose model, external-network membership,
+  published ports and VPS listeners/firewall for both IPv4 and IPv6
+- verify Caddy's validated configuration, HTTPS/certificate state, forwarding
+  header normalization and the one-hop `TRUSTED_PROXY_HOPS=1` boundary
+- exercise `/api/v1/health`, the HTTPS frontend, a direct SPA results route and
+  one complete public poll → ballot → Borda-results flow
+- restart/recreate the application and PostgreSQL containers with the existing
+  external volume and prove the smoke record persists
+- verify that public connections to API `3000` and PostgreSQL `5432` fail and
+  that existing sites behind the separately managed Caddy still respond
+
+The proxy/rate-limit check uses controlled invalid requests and then restarts
+the single API container to clear only that test bucket before the user-flow
+smoke. It must not consume the bucket of an unrelated production user. The
+smoke poll is retained and its ID recorded so #28 can verify that the first
+offsite dump and restore contains known application data.
+
+Backlog #35 separately adds automated signal-lifecycle coverage: a real Nest
+process receives `SIGTERM` while a request is active, drains it, invokes the
+Prisma destroy hook and exits before the container grace period. #29 consumes
+that behavior rather than reimplementing it.
+
 ---
 
 ## What Is NOT Tested in MVP

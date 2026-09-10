@@ -157,6 +157,79 @@ Notes:
 
 - no Kubernetes, no Redis in MVP
 
+### First production release on the shared VPS
+
+Status:
+
+- accepted for backlog #29; implementation has not started
+
+Chosen:
+
+- deploy from `/opt/apps/rank-vote` on the existing Ubuntu DigitalOcean VPS
+  (`pet-projects-1`, `165.22.91.190`) with the fixed Compose project name
+  `rank-vote-prod`
+- keep the existing Caddy Compose project at `/opt/infrastructure/caddy` as the
+  TLS terminator and public reverse proxy; it routes the `/api/v1` prefix to API
+  and every other path to web for `https://rank-vote.avshukan.com`
+- connect web to Caddy through the existing external `web` network, API to Caddy
+  through the dedicated external `rank-vote-api-proxy` network, and
+  PostgreSQL/migrate/API through the internal `rank-vote-prod-db` network
+- publish no Ranking Vote host ports and trust exactly one proxy hop only after
+  the Caddy-only API boundary is verified; run exactly one API process
+- store PostgreSQL in the explicitly named external volume
+  `rank_vote_prod_postgres_data`; use database `rank_vote_prod` and one
+  non-superuser owner/runtime/migration role, `rank_vote_app`
+- keep production configuration in root-only `/etc/rank-vote/prod.env`, with
+  explicit values and no development fallbacks
+- build web/API images on the VPS from one validated full commit SHA and tag
+  them with that SHA; record current and previous SHA, image tags and immutable
+  image IDs for release identification and recovery
+- accept brief downtime: build first, stop web/API, leave PostgreSQL running,
+  apply migrations once, then start and verify one API plus web
+- cut annotated tag `v0.1.0` and start the changelog only after the first public
+  deployment passes smoke verification
+
+Reason:
+
+- one origin keeps the browser, CORS and TLS contracts small while the existing
+  Caddy can route the API prefix independently from static web traffic
+- separate proxy networks let Ranking Vote coexist with other Compose projects
+  without making the trusted API reachable to every container on the shared
+  `web` network
+- a stable checkout, Compose identity and external named volume prevent a path
+  or project-name change from silently selecting empty PostgreSQL storage
+- building on the VPS avoids introducing a registry or CD pipeline for the
+  first pet-project release, while the SHA plus immutable image IDs still make
+  the running artifact identifiable
+- stopping the old API before migration avoids requiring every schema change to
+  remain compatible with two application versions; bounded downtime is
+  acceptable at current scale
+
+Consequences:
+
+- the existing Caddy remains outside the Ranking Vote lifecycle and must be
+  validated/reloaded without disrupting its other sites
+- application rollback is allowed only when the previous image is compatible
+  with the schema already applied; database rollback is never automatic
+- #35 must provide graceful `SIGTERM` handling before #29 starts, and the
+  `containers` CI job must be required by the `protect-main` ruleset before the
+  #29 implementation PR merges
+- after the first release, #28 immediately proves offsite logical backup and
+  restore; monitoring, automated backups and multi-replica limiter state remain
+  #33, #32 and #34 respectively
+
+Rejected for the first release:
+
+- separate frontend/API domains — they add DNS, TLS and cross-origin state with
+  no current benefit
+- exposing API or PostgreSQL on host ports — it breaks the proxy trust and
+  database isolation boundaries
+- putting API on the shared `web` network — other pet-project containers would
+  become part of its trusted network boundary
+- per-SHA checkout directories, an image registry, a CD pipeline,
+  zero-downtime deployment and automatic database rollback — each adds
+  operational machinery that the first single-host deployment does not need
+
 ---
 
 ## Containerization

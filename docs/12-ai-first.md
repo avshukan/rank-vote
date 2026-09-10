@@ -37,6 +37,9 @@ for deepening that setup. Agents in use: **Claude Code**, **OpenAI Codex**,
   `retro` skill (`.claude/skills/retro/SKILL.md`)
 
 Manual (repo settings): ruleset on `main` requiring PR + green `checks`.
+Backlog #29 additionally requires `containers` to become a required status check
+before its production implementation PR may merge; the workflow job already
+exists, but the repository setting has not yet been updated.
 
 ---
 

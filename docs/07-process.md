@@ -37,7 +37,8 @@ Versioning follows SemVer.
 
 No release has been cut yet: there are no tags and no changelog file, because
 nothing is deployed. Both start with the first production deployment
-(backlog #29).
+(backlog #29). That first verified release is tagged `v0.1.0`; the annotated tag
+is created on the deployed commit only after its production smoke check passes.
 
 ---
 
@@ -108,6 +109,9 @@ Examples:
 - CI (`.github/workflows/ci.yml`) runs on every PR and on pushes to `main`:
   the `checks` job runs format, lint, typecheck, test and build; the `containers`
   job builds both application images and smoke-tests an isolated Compose stack
+- the current `protect-main` ruleset requires `checks` but not `containers`.
+  Adding `containers` as a required status check is a repository-setting
+  prerequisite before the production implementation PR for #29 may merge
 - **CD does not exist yet.** Images are verified but are not pushed, deployed or
   released on merge. Write rate limiting (#31) is complete; the remaining
   first-deploy step is #29 (first production deployment), then recovery proceeds
@@ -115,6 +119,13 @@ Examples:
   offsite backups)
 - each merge should be production-ready
 - releases will be tagged manually once there is something to release
+
+For the first production deployment (#29), the infrastructure/tooling PR is
+reviewed and merged before the shared VPS is changed. Deployment then uses that
+exact CI-green `main` SHA. Because the deploy is the behavior that completes the
+item, a small post-deploy record PR moves #29 to `Done`; the immediately required
+#28 backup/restore drill starts after the verified deployment and does not wait
+for that record PR to merge.
 
 ---
 

@@ -480,13 +480,371 @@ contract and unblocks the first production deployment (#29).
 
 ---
 
+## #35 Graceful API Shutdown
+
+Filed by the readiness work for #29 and implemented in its own prerequisite PR.
+This item closes the API lifecycle gap before any production deployment work
+begins.
+
+### Runtime lifecycle
+
+- [ ] The production Nest application enables shutdown hooks for `SIGTERM`
+- [ ] On `SIGTERM`, the API stops accepting new connections, lets active HTTP
+      requests finish within the configured container grace period, and runs the
+      Nest application shutdown lifecycle
+- [ ] `PrismaService.onModuleDestroy()` runs during that lifecycle and closes
+      the PostgreSQL client/pool before the process exits
+- [ ] A normal Docker stop/redeploy exits within the grace period without Docker
+      escalating to `SIGKILL`
+- [ ] Existing startup, application behaviour and test teardown remain unchanged
+
+### Automated verification
+
+- [ ] An automated lifecycle test starts the real Nest HTTP application, keeps
+      a request active, sends `SIGTERM`, and proves that the request drains and
+      the process exits successfully before a short test timeout
+- [ ] Automated verification proves that the Prisma destroy hook is invoked by
+      signal-driven application shutdown
+- [ ] Container verification proves a normal `docker stop` does not end through
+      `SIGKILL`; the exact test harness and observability mechanism are
+      implementation judgment calls
+
+### Out of Scope (tracked separately)
+
+- Production Compose, stop grace period and the actual VPS deployment → #29
+- Dependency-aware readiness, monitoring and alerts → #33
+- The host-native `pnpm dev` watcher orphan described by #24
+
+### Readiness Decisions
+
+- #35 is a small API lifecycle fix and must merge before implementation of #29
+  begins. It is not folded into the production deployment PR.
+- Nest owns signal handling and application shutdown; Prisma remains attached to
+  that lifecycle through its existing `OnModuleDestroy` implementation.
+- The tests must exercise a real process signal and an active request. A unit
+  test that only asserts that `enableShutdownHooks()` was called is insufficient.
+- No architectural or product questions remain open for #35.
+
+---
+
+## #29 First Production Deploy
+
+This slice creates the first reproducible production release on the owner's
+existing DigitalOcean VPS. It uses the images and one-shot migration contract
+from #27, the single-replica proxy boundary from #31, and the graceful shutdown
+lifecycle from #35. The readiness PR documents the contract only; the production
+Compose, deploy tooling, Caddy change and deployment are implemented later in
+the #29 PR.
+
+### Prerequisites
+
+- [ ] #35 is merged before implementation of #29 begins
+- [ ] Before the implementation PR for #29 merges, the `protect-main` repository
+      ruleset requires both CI jobs, `checks` and `containers`; changing the
+      GitHub repository setting is an owner action and does not need a backlog
+      item
+- [ ] The target commit is on `main`, both required CI jobs succeeded for that
+      exact commit, and the production checkout is clean and detached at its
+      full SHA before images are built
+- [ ] A read-only VPS preflight through SSH alias `pet-projects-1` verifies that
+      `165.22.91.190` is the intended Ubuntu host, records the installed Docker
+      Engine / Compose / Caddy versions and available disk and memory, and
+      inspects the current Caddy networks, published ports, firewall and IPv4 /
+      IPv6 exposure before any production state is changed
+
+### Host layout and stable identity
+
+- [ ] Ranking Vote uses the stable checkout `/opt/apps/rank-vote`; release
+      directories with one checkout per SHA are not introduced
+- [ ] Production is defined in a separate repository-owned Compose file and is
+      always invoked with the explicit project name `rank-vote-prod`; the local
+      `docker-compose.yml` and its development defaults remain local tooling
+- [ ] The single production entry point is
+      `make prod-deploy RELEASE_SHA=<full-sha>` and refuses a short, missing,
+      dirty, non-`main`, or failed-CI target; concurrent deploys are serialized
+      or rejected
+- [ ] Caddy remains a separately managed Compose project under
+      `/opt/infrastructure/caddy`; Ranking Vote neither recreates nor stops it
+- [ ] Root-only release manifests under
+      `/opt/apps/rank-vote/deploy-state/current.env` and `previous.env` record
+      the full commit SHA, application image tags and immutable image IDs,
+      release tag when present, production URL and deployment timestamp
+- [ ] The manifests are updated atomically only after successful public smoke
+      verification; the current and previous application images remain present
+      for recovery
+
+### Public URL, reverse proxy and TLS
+
+- [ ] The only public application origin is
+      `https://rank-vote.avshukan.com`
+- [ ] Caddy routes the `/api/v1` prefix, including the exact path and all
+      descendants, to the production API on container port `3000`; every other
+      path goes to the production web container on port `80`
+- [ ] The production services have stable, project-unique Caddy upstream names
+      (`rank-vote-api:3000` and `rank-vote-web:80`) so another Compose project
+      cannot capture a generic `api` or `web` network alias
+- [ ] Caddy terminates TLS and retains ownership of automatic certificate
+      issuance, renewal and certificate storage; Ranking Vote serves plain HTTP
+      only on Docker networks
+- [ ] DNS resolves the production hostname directly to the VPS. Adding a CDN or
+      another public proxy later requires a new proxy-trust decision before it
+      is enabled
+- [ ] The Caddy configuration is validated before a graceful reload, preserves
+      every existing site, and is rolled back to its previous valid config if
+      the new route cannot be loaded
+- [ ] `VITE_API_URL=https://rank-vote.avshukan.com/api/v1` is passed explicitly
+      while building the production web image and is verified in the served
+      bundle; changing it requires a new web image
+- [ ] The API receives
+      `CORS_ORIGIN=https://rank-vote.avshukan.com`; no development origin or
+      wildcard is accepted in production
+
+### Docker networks and public exposure
+
+- [ ] The web service joins the existing external Docker network `web`, where
+      Caddy reaches only its project-unique alias `rank-vote-web`
+- [ ] The API does not join `web`; it and Caddy are the only members of the
+      stable external network `rank-vote-api-proxy`, where Caddy reaches the
+      project-unique alias `rank-vote-api`
+- [ ] PostgreSQL, migrate and API share a Ranking Vote network with the explicit
+      stable name `rank-vote-prod-db` and `internal: true`; PostgreSQL joins no
+      Caddy or shared application network
+- [ ] PostgreSQL, API and web declare no host `ports`, use no host networking and
+      are unreachable through the VPS public or loopback interfaces. Container
+      ports `5432`, `3000` and `80` are reachable only by services granted the
+      corresponding Docker-network membership
+- [ ] VPS firewall and Docker networking expose only the already intended host
+      services such as SSH and Caddy's public `80`/`443`; checks cover both IPv4
+      and IPv6 and do not assume CORS provides a security boundary
+- [ ] The production API runs exactly one container and one Node process. Any
+      move to multiple API replicas waits for shared limiter state in #34
+
+### Trusted client IP boundary
+
+- [ ] The API receives `TRUSTED_PROXY_HOPS=1` only after inspection proves that
+      all browser traffic has exactly one hop, Caddy, and no direct API route
+      exists
+- [ ] Caddy replaces or safely normalizes client-supplied forwarding headers and
+      sends the real peer address upstream; a caller cannot select a rate-limit
+      identity with a forged `X-Forwarded-For`
+- [ ] Post-deploy verification combines network inspection with an external
+      request probe to prove that Caddy supplies the real client IP, spoofed
+      forwarding values are ignored, and the API cannot be reached around Caddy
+- [ ] A rate-limit probe uses controlled invalid requests and restarts the single
+      API container afterward to clear its test-only in-memory bucket before the
+      user-flow smoke test; it does not exhaust a real user's production bucket
+
+### Production PostgreSQL
+
+- [ ] Production uses PostgreSQL 17 with database `rank_vote_prod` and role
+      `rank_vote_app`; that role owns the application database/schema and has
+      the DDL/DML rights needed by committed migrations and runtime, but is not
+      a superuser and cannot create roles or databases
+- [ ] A separate bootstrap/admin credential creates the database and application
+      role only during first initialization. It is never passed to API or migrate
+      and its handling is documented as part of the initial provisioning ritual
+- [ ] API and the one-shot migrate service receive the same production
+      `DATABASE_URL`, pointing to `rank_vote_app@postgres:5432/rank_vote_prod`
+      with `schema=public`; passwords are generated, not repository defaults,
+      and are percent-encoded correctly in the URL
+- [ ] Production does not mount or run the development
+      `init-test-database.sql`, does not create `rank_vote_test`, and does not
+      use development/test reset or migration commands
+- [ ] PostgreSQL data is mounted at `/var/lib/postgresql/data` from the external
+      Docker volume `rank_vote_prod_postgres_data`. Initial setup creates that
+      exact volume explicitly, and every deployment refuses to continue if it
+      is absent instead of silently creating an empty replacement
+- [ ] Recreating PostgreSQL with that external volume preserves the smoke poll,
+      ballot and results; no deploy or rollback command invokes Compose with
+      `--volumes` or otherwise deletes the production volume
+
+### Secrets and configuration
+
+- [ ] Production configuration lives outside the repository and Docker build
+      context at `/etc/rank-vote/prod.env`; `/etc/rank-vote` is `root:root`
+      mode `0700` and `prod.env` is `root:root` mode `0600`
+- [ ] The production Compose invocation explicitly reads that file for
+      interpolation and passes each service only the settings it needs; it does
+      not load the entire file into every container
+- [ ] At minimum the file supplies `DATABASE_URL`, `PORT=3000`,
+      `CORS_ORIGIN=https://rank-vote.avshukan.com` and
+      `TRUSTED_PROXY_HOPS=1`, together with the production PostgreSQL bootstrap
+      and application secrets required by the chosen initialization mechanism
+- [ ] Production Compose fails before changing running services when any
+      required value is absent or still equals a repository development
+      credential/origin; no `${VAR:-development-default}` form is used
+- [ ] `VITE_API_URL=https://rank-vote.avshukan.com/api/v1` is an explicit,
+      non-secret build input to the deploy command rather than a runtime setting
+- [ ] Secrets never enter git, image layers, image metadata, release manifests,
+      command-line arguments, CI output or deployment logs
+
+### Build and release identity
+
+- [ ] The implementation PR adds the production Compose/config validation,
+      deploy and rollback entry points, tests and operator documentation, then
+      stops at green CI for owner review without changing VPS state or marking
+      #29 Done
+- [ ] After the owner merges that PR, production deployment runs from its exact
+      CI-green `main` SHA. A small post-deploy documentation PR records the
+      deployed release and moves #29 to `Done`; the operational start of #28
+      does not wait for that record PR to merge
+- [ ] Images are built on the VPS, sequentially if host resources require it,
+      from the clean checkout at `RELEASE_SHA`; no registry or CD pipeline is
+      introduced
+- [ ] Images are tagged `rank-vote-api:<full-sha>` and
+      `rank-vote-web:<full-sha>`. Production Compose references these immutable
+      release tags and never `latest` or the local `:local` tags
+- [ ] The build finishes and both images pass their preflight checks before the
+      running web/API containers are stopped; a build failure leaves the current
+      release untouched
+- [ ] The release manifest makes the deployed version answerable from the full
+      source SHA plus immutable image IDs, even if rebuilding the same SHA later
+      would resolve a changed upstream base image
+- [ ] #29 adds the first changelog entry. After successful deployment and smoke
+      verification, annotated SemVer tag `v0.1.0` is created on the deployed
+      commit and pushed; the manifest is amended with that tag without changing
+      its recorded SHA/image IDs
+
+### Migrations and deployment ritual
+
+- [ ] First deploy order is: validate host/DNS/config and create the external
+      networks/volume → build both images → start and verify PostgreSQL → run the
+      one-time database bootstrap → run migrate once → start one API → start web
+      → validate/reload Caddy → run internal and public smoke verification
+- [ ] Redeploy order is: fetch and validate `RELEASE_SHA` → build/check images →
+      stop old web and API while leaving PostgreSQL running → run the one-shot
+      migrate service → start and health-check one new API → start web → run
+      smoke verification
+- [ ] The API image entrypoint never runs migrations. The migrate service uses
+      the exact API image selected for the release, runs
+      `prisma migrate deploy` once and has `restart: "no"`
+- [ ] A failed migration stops the release with PostgreSQL left running and the
+      application stopped. The deploy command preserves diagnostics and does not
+      automatically retry, mark the migration resolved, reset/restore the
+      database, or start either application version against uncertain schema
+- [ ] The public route may briefly return an error while web/API are stopped;
+      this bounded downtime is accepted for the MVP and zero-downtime deployment
+      is not implied
+- [ ] Production deploy and rollback commands never stop, recreate or otherwise
+      take ownership of the existing Caddy service
+
+### Restart and shutdown lifecycle
+
+- [ ] PostgreSQL, API and web use `restart: unless-stopped`; migrate remains a
+      completed one-shot service with `restart: "no"` and is not rerun merely
+      because Docker or the VPS restarts
+- [ ] API has an explicit stop grace period long enough for the #35 SIGTERM
+      lifecycle to drain active requests and close Prisma before Docker may send
+      `SIGKILL`
+- [ ] Controlled container stop/recreate checks confirm the long-running
+      services recover and the database remains intact. A shared-VPS host reboot
+      is not forced solely for #29; restart policies and dependency recovery are
+      verified without disrupting unrelated projects, then confirmed at the
+      next planned reboot
+- [ ] If API starts while PostgreSQL is still unavailable after a Docker restart,
+      it is retried or otherwise recovers automatically once PostgreSQL is ready;
+      operator intervention is not the normal reboot path
+
+### Post-deploy verification
+
+- [ ] Internal health checks pass before public routing is considered ready;
+      public `GET https://rank-vote.avshukan.com/api/v1/health` returns
+      `{ "status": "ok" }`
+- [ ] The frontend loads over HTTPS with a valid certificate, no mixed content
+      or browser console errors, and a direct request to
+      `/poll/<known-id>/results` returns the SPA rather than a proxy 404
+- [ ] Through the public origin, a uniquely named smoke poll is created, loaded,
+      ranked with one full ballot and shown with the expected Borda results; its
+      ID is recorded for persistence and #28 verification
+- [ ] The same poll, ballot and results remain available after controlled API,
+      web and PostgreSQL container restart/recreation using the existing volume
+- [ ] The client-IP/proxy checks above pass, while direct connections to API
+      port `3000` and PostgreSQL port `5432` fail through both the VPS IPv4 and
+      IPv6 addresses
+- [ ] Existing Caddy-hosted projects still respond after its validated reload;
+      deployment logs and `docker compose ps` show no unhealthy or restarting
+      Ranking Vote service
+
+### Rollback and failure recovery
+
+- [ ] `make prod-rollback` selects the `previous.env` image IDs/tags, refuses to
+      build replacement images, and requires an explicit operator confirmation
+      that the previous application is compatible with every applied migration
+- [ ] Application rollback repeats the controlled web/API stop and health/smoke
+      sequence while leaving PostgreSQL and its volume in place; it never claims
+      or attempts an automatic database rollback
+- [ ] If the previous version is not schema-compatible, the documented response
+      is continued downtime plus a reviewed forward fix or a separately chosen
+      restore procedure; the deploy tool does not guess
+- [ ] A failed first deployment has no previous application to restore. Caddy's
+      prior valid configuration is restored if necessary, PostgreSQL and its
+      volume are preserved, and the failure is resolved before publishing a
+      release tag
+
+### Handoff to recovery
+
+- [ ] After #29 succeeds and `v0.1.0` identifies the verified deployment, the
+      immediate next operational step is #28: create an offsite logical
+      `pg_dump`, copy it outside both the VPS and DigitalOcean, restore it into a
+      clean PostgreSQL instance, and verify the recorded smoke poll through the
+      restored application data
+- [ ] #29 does not claim production recovery is proven until #28 completes; the
+      persistent Docker volume is explicitly treated as data storage, not backup
+
+### Out of Scope (tracked separately)
+
+- Graceful API shutdown implementation → prerequisite #35
+- Manual offsite backup and restore drill → #28
+- Automated offsite backups, retention and restore-test scheduling → #32
+- Dependency-aware readiness, external monitoring, alerts and error tracking → #33
+- Shared rate-limit state and more than one API replica → #34
+- Removal of the scaffold `GET /api/v1` endpoint → #30
+- Kubernetes, Redis, a registry/CD pipeline, zero-downtime deployment, WAF,
+  enterprise secret management and automated database rollback remain outside
+  the MVP and have no backlog item until a concrete need appears
+
+### Readiness Decisions
+
+- The production origin is `https://rank-vote.avshukan.com`; Caddy splits the
+  `/api/v1` prefix to API and all other paths to web. The Vite API URL is baked
+  into the release image, while CORS permits exactly that one origin.
+- The existing Caddy remains independently operated. Web shares its external
+  `web` network; API uses the Caddy-only `rank-vote-api-proxy`; database traffic
+  stays on internal `rank-vote-prod-db`. No application service publishes a host
+  port.
+- Production lives at `/opt/apps/rank-vote` under Compose project
+  `rank-vote-prod`, with PostgreSQL data in the explicitly named external volume
+  `rank_vote_prod_postgres_data` and release state in root-only current/previous
+  manifests.
+- PostgreSQL database `rank_vote_prod` is owned and used by the non-superuser
+  `rank_vote_app` for runtime and migrations. A separate bootstrap credential is
+  never supplied to the application services.
+- Root manages `/etc/rank-vote/prod.env`. Production inputs are explicit and
+  fail closed; the web API URL is a required build input.
+- A full-SHA checkout is built on the VPS into full-SHA image tags. The deployed
+  SHA plus immutable image IDs identifies a release; the first successful
+  release becomes annotated tag `v0.1.0` and starts the changelog.
+- Repository review precedes production mutation: the implementation PR merges,
+  its exact `main` SHA is deployed, and a post-deploy record PR moves #29 to
+  `Done`. #28 starts immediately after the verified deployment rather than
+  waiting for that record PR.
+- Brief downtime is accepted. The old application stops before migration; a
+  migration failure leaves it stopped for diagnosis. Application rollback uses
+  saved images only when schema compatibility has been established and never
+  rolls the database back automatically.
+- Long-running containers restart unless explicitly stopped, migrate never
+  becomes a daemon, and the first deployment runs exactly one API process.
+- #35 and required `containers` status are prerequisites rather than hidden work
+  inside #29. Once this documentation lands and those prerequisites are met, no
+  architectural or product questions remain open for implementation of #29.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
 run `task-readiness` when one is picked up.
 
-- **#29 First production deploy** — needs a host, a domain, TLS termination,
-  secret handling and a release ritual; it needs #27 and #31.
 - **#28 Manual offsite backup** — after #29, create a logical dump, copy it to
   the owner's local machine outside DigitalOcean, restore it into clean
   PostgreSQL and verify the application can use the restored database.
