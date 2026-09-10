@@ -182,6 +182,41 @@ and run exactly one API replica. A restart may clear counters. Horizontal API
 scaling requires #34 to replace the per-process counters with shared state; the
 application images remain independently scalable once that follow-up lands.
 
+### Accepted first-production topology
+
+Backlog #29 targets the existing Ubuntu DigitalOcean VPS reached as
+`pet-projects-1` (`165.22.91.190`). Ranking Vote lives at
+`/opt/apps/rank-vote` under the fixed Compose project `rank-vote-prod`; the
+existing Caddy stack under `/opt/infrastructure/caddy` remains separately
+managed.
+
+```text
+Internet
+   │ HTTPS :443
+   ▼
+existing Caddy
+   ├── /api/v1... ── rank-vote-api-proxy ──► rank-vote-api:3000
+   └── all other paths ── web ─────────────► rank-vote-web:80
+
+rank-vote-api ─────── rank-vote-prod-db ───► postgres:5432
+migrate ───────────── rank-vote-prod-db ───► postgres:5432
+```
+
+The public origin is `https://rank-vote.avshukan.com` and the web image embeds
+`https://rank-vote.avshukan.com/api/v1` at build time. Caddy terminates TLS and
+is the API's only trusted proxy hop. Web alone joins the existing external
+`web` network; API and Caddy alone join the external
+`rank-vote-api-proxy` network; database traffic stays on the internal
+`rank-vote-prod-db` network. Stable, project-unique aliases avoid collisions
+with the other Compose projects on the VPS.
+
+Ranking Vote services publish no host ports. PostgreSQL data lives in the
+explicitly named external volume `rank_vote_prod_postgres_data`, independent of
+the checkout and Compose project lifecycle. Production runs exactly one API
+container until #34 supplies shared rate-limit state. See the full operational
+contract and verification requirements under #29 in
+`docs/acceptance-criteria.md`.
+
 ---
 
 ## Future Extensions

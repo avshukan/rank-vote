@@ -55,9 +55,20 @@ cost and complexity low while still proving that recovery works.
 
 ### Data persistence
 
-- PostgreSQL data must live in persistent storage / a Docker volume whose
-  lifecycle is independent of the database container.
+- Production PostgreSQL uses database `rank_vote_prod`, owned by the
+  non-superuser runtime/migration role `rank_vote_app`. API and migrate use the
+  same `DATABASE_URL`; a separate bootstrap/admin credential is never supplied
+  to either application service.
+- PostgreSQL data lives in the external Docker volume
+  `rank_vote_prod_postgres_data`, mounted at `/var/lib/postgresql/data`. Its name
+  and lifecycle are independent of `/opt/apps/rank-vote` and the fixed Compose
+  project `rank-vote-prod`.
 - Replacing or recreating the PostgreSQL container must not delete the database.
+- Production mounts no development initialization script, creates no
+  `rank_vote_test` database and never runs `prisma db push --force-reset` or
+  `prisma migrate dev`.
+- PostgreSQL publishes no host port and is attached only to the internal
+  `rank-vote-prod-db` network with API and migrate.
 - The volume remains part of the VPS failure domain and is **not** a backup.
 
 ### Stage 1 — manual offsite backup and restore
@@ -105,8 +116,15 @@ not justified.
 
 - Local data lives in the named Docker volume declared by
   `docker-compose.yml`; replacing the container leaves that volume intact.
+- Production data lives in the explicitly provisioned external volume
+  `rank_vote_prod_postgres_data`. Production deployment must fail when that
+  volume is missing rather than silently initialize an empty replacement.
 - `apps/api/.env` supplies the development `DATABASE_URL` and
   `apps/api/prisma.config.ts` supplies it to Prisma CLI commands.
+- `/etc/rank-vote/prod.env` supplies the production `DATABASE_URL` to both API
+  and the one-shot migrate service. It points to
+  `rank_vote_app@postgres:5432/rank_vote_prod?schema=public`; its generated
+  password is URL-encoded as required and never committed.
 - The schema is versioned under `apps/api/prisma/migrations/`. The history was
   regenerated for PostgreSQL in #17 because no production data existed.
 

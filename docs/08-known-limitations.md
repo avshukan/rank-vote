@@ -107,8 +107,9 @@ prevention.
 ## Operations
 
 Nothing is deployed yet. The repository contains a complete local Compose stack
-for PostgreSQL, migrations, the API and the web application, but no production
-deployment infrastructure:
+for PostgreSQL, migrations, the API and the web application. The single-VPS
+production contract is specified under #29 in `docs/acceptance-criteria.md`, but
+its Compose/deploy tooling and Caddy route do not exist yet:
 
 - `web` / `api` images and container smoke tests exist, but there is no CD
   pipeline — CI builds and tests, then stops; #29 deploys them
@@ -117,5 +118,10 @@ deployment infrastructure:
 - no backups yet: the first manual offsite backup and restore drill is #28,
   followed by automated offsite backups in #32
 - no production monitoring, alerting, or error tracking; tracked as #33
+- API shutdown hooks do not yet process Docker `SIGTERM`; #35 is a prerequisite
+  for implementing #29
+- the `containers` CI job passes on `main` but is not yet required by the
+  `protect-main` ruleset; it must become required before the #29 implementation
+  PR merges
 - results are recalculated on every request, with no caching — deliberate at
   MVP scale, see `docs/09-api-design.md`

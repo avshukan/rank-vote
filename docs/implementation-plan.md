@@ -157,8 +157,9 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 ## Phase 5 — Deployment & Recovery
 
 **Status:** PostgreSQL migration, application containerization and write rate
-limiting shipped; production deployment has not started. The remaining path is
-#29 (first production deploy), #28 (manual offsite backup/restore), then #32
+limiting shipped; the production contract is decided, but deployment has not
+started. #35 (graceful API shutdown) and the required `containers` check precede
+#29, followed immediately by #28 (manual offsite backup/restore) and then #32
 (automated offsite backups).
 
 | App        | Platform                     | Notes                                     |
@@ -188,7 +189,24 @@ limiting shipped; production deployment has not started. The remaining path is
   blocks direct access
 - Run one API replica for the first deployment; shared limiter state before
   horizontal scaling is #34
-- Perform the first production deployment
+- Merge #35 so Docker `SIGTERM` drains active requests and closes Prisma before
+  implementation of #29 begins
+- Require both `checks` and `containers` in the `protect-main` repository
+  ruleset before the #29 implementation PR merges
+- Deploy from `/opt/apps/rank-vote` on `pet-projects-1` under Compose project
+  `rank-vote-prod`, using the separately managed Caddy at
+  `/opt/infrastructure/caddy`
+- Serve one origin, `https://rank-vote.avshukan.com`: Caddy sends `/api/v1` to
+  the single API through `rank-vote-api-proxy` and all other paths to web through
+  the existing external `web` network; application services publish no host
+  ports
+- Keep production PostgreSQL on the internal `rank-vote-prod-db` network, using
+  database `rank_vote_prod`, non-superuser role `rank_vote_app` and external
+  volume `rank_vote_prod_postgres_data`
+- Build SHA-tagged images on the VPS from one CI-green `main` commit, deploy via
+  the documented one-shot migration ritual and record current/previous SHA plus
+  immutable image IDs for recovery
+- After the first public smoke passes, cut `v0.1.0` and start the changelog
 - Immediately prove recovery with a manual logical dump copied outside
   DigitalOcean and restored into clean PostgreSQL
 - Then automate scheduled offsite backups to independent object storage with a
