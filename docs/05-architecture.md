@@ -172,6 +172,18 @@ postgres (healthy) → migrate (completed) → api (healthy) → web
 The web and API images stay separate and independently scalable. nginx does not
 proxy API traffic, and no runtime frontend configuration layer is introduced.
 
+### API shutdown lifecycle
+
+`configureApp` enables Nest shutdown hooks for `SIGTERM`. Nest 11 destroys the
+root `AppModule` before its imported modules; that root destroy hook closes the
+HTTP adapter and waits for active requests before `PrismaService` destroys its
+pool. Nest's later adapter close remains safe after this earlier drain.
+Response-finish handling closes connections that become idle during shutdown,
+so an active keep-alive request does not delay exit by its idle timeout. The
+existing Prisma destroy hook remains the single disconnect path. Nest owns
+signal handling and final process termination; #29 owns the production grace
+period, including Docker's timeout fallback for requests that never finish.
+
 ### Accepted write-limiter boundary
 
 Backlog #31 implemented per-client-IP, in-memory rate limits on the two

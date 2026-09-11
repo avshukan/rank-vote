@@ -95,4 +95,26 @@ echo 'container smoke: check the web runtime contains static files only'
 compose exec --no-TTY web sh -c \
   'test ! -e /workspace && ! command -v node >/dev/null && ! command -v pnpm >/dev/null'
 
+echo 'container smoke: ordinary Docker stop finishes before the 10-second grace period'
+API_CONTAINER=$(compose ps --quiet api)
+test -n "$API_CONTAINER"
+STOP_STARTED=$SECONDS
+docker stop --timeout 10 "$API_CONTAINER" >/dev/null
+STOP_ELAPSED=$((SECONDS - STOP_STARTED))
+API_EXIT_CODE=$(docker inspect --format '{{.State.ExitCode}}' "$API_CONTAINER")
+test "$(docker inspect --format '{{.State.Status}}' "$API_CONTAINER")" = 'exited'
+test "$(docker inspect --format '{{.State.OOMKilled}}' "$API_CONTAINER")" = 'false'
+# Nest completes its hooks and re-raises SIGTERM (128 + 15); a natural zero
+# exit is also clean. SIGKILL (137), lifecycle errors and timeout stops fail.
+case "$API_EXIT_CODE" in
+  0|143) ;;
+  *) echo "API stop failed: exit $API_EXIT_CODE" >&2; exit 1 ;;
+esac
+test "$STOP_ELAPSED" -lt 10
+echo "container smoke: API stopped in ${STOP_ELAPSED}s, exit $API_EXIT_CODE"
+
+echo 'container smoke: API restarts healthy after graceful stop'
+compose up --detach --no-deps --wait --wait-timeout 60 api
+test "$(curl --fail --silent --show-error "$HEALTH_URL")" = '{"status":"ok"}'
+
 echo 'container smoke: passed'

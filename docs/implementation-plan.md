@@ -157,9 +157,10 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 ## Phase 5 — Deployment & Recovery
 
 **Status:** PostgreSQL migration, application containerization and write rate
-limiting shipped; the production contract is decided, but deployment has not
-started. #35 (graceful API shutdown) and the required `containers` check precede
-#29, followed immediately by #28 (manual offsite backup/restore) and then #32
+limiting shipped; graceful API shutdown (#35) is implemented. The production
+contract is decided, but deployment has not started. #35 must merge before #29
+starts, and `containers` must become required before #29 merges. #29 is followed
+immediately by #28 (manual offsite backup/restore) and then #32
 (automated offsite backups).
 
 | App        | Platform                     | Notes                                     |
@@ -189,8 +190,9 @@ started. #35 (graceful API shutdown) and the required `containers` check precede
   blocks direct access
 - Run one API replica for the first deployment; shared limiter state before
   horizontal scaling is #34
-- Merge #35 so Docker `SIGTERM` drains active requests and closes Prisma before
-  implementation of #29 begins
+- #35 implements Docker `SIGTERM` handling: drain active HTTP requests, including
+  keep-alive connections, before destroying Prisma; real-process lifecycle and
+  ordinary Docker stop/restart checks cover it. Merge #35 before #29 begins
 - Require both `checks` and `containers` in the `protect-main` repository
   ruleset before the #29 implementation PR merges
 - Deploy from `/opt/apps/rank-vote` on `pet-projects-1` under Compose project
