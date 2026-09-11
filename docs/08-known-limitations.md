@@ -118,8 +118,9 @@ its Compose/deploy tooling and Caddy route do not exist yet:
 - no backups yet: the first manual offsite backup and restore drill is #28,
   followed by automated offsite backups in #32
 - no production monitoring, alerting, or error tracking; tracked as #33
-- API shutdown hooks do not yet process Docker `SIGTERM`; #35 is a prerequisite
-  for implementing #29
+- API handles Docker `SIGTERM`, drains HTTP and closes Prisma (#35); #29 still
+  owns the production stop grace period. Requests exceeding that period may be
+  killed by Docker
 - the `containers` CI job passes on `main` but is not yet required by the
   `protect-main` ruleset; it must become required before the #29 implementation
   PR merges

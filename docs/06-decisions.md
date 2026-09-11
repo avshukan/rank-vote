@@ -211,7 +211,7 @@ Consequences:
   validated/reloaded without disrupting its other sites
 - application rollback is allowed only when the previous image is compatible
   with the schema already applied; database rollback is never automatic
-- #35 must provide graceful `SIGTERM` handling before #29 starts, and the
+- #35 implements graceful `SIGTERM` handling and must merge before #29 starts; the
   `containers` CI job must be required by the `protect-main` ruleset before the
   #29 implementation PR merges
 - after the first release, #28 immediately proves offsite logical backup and

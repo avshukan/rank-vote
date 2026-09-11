@@ -50,9 +50,33 @@ Notes:
   default), validates that the database name is exactly `rank_vote_test`, and
   never falls back to the development URL
 - before Jest starts, that runner executes `prisma db push --force-reset`, so
-  consecutive runs cannot inherit state
+  consecutive runs cannot inherit state; it also builds the API so lifecycle
+  tests execute fresh production JavaScript
 - CI supplies the same PostgreSQL test database through a native service
 - unit tests continue to mock Prisma and remain database-free
+
+### Graceful shutdown
+
+`shutdown.e2e-spec.ts` forks an isolated HTTP/IPC fixture using the compiled
+production `AppModule` and `configureApp`, with the real Prisma PostgreSQL
+adapter and the same isolated test database. It exercises both real `SIGTERM`
+and explicit `app.close()`:
+
+- an active keep-alive HTTP request waits on an IPC barrier; no timing sleeps
+- after HTTP closing begins, a fresh connection is refused and Prisma's destroy
+  hook has not yet run
+- releasing the request lets it query PostgreSQL again and return its full body
+- an observer around the original `PrismaService.onModuleDestroy()` proves one
+  invocation and completion; `pg_stat_activity` confirms the child's uniquely
+  tagged connections exist before shutdown and are gone before process exit
+- the final Nest hook reports the signal; the parent releases its test-only
+  barrier and observes Nest's normal re-raised `SIGTERM`, or natural exit `0`
+  for `app.close()`, within a five-second shutdown deadline
+
+Forced child termination is failure cleanup only and cannot make an assertion
+pass. The fixture and its route are excluded from the production build/image.
+The keep-alive client remains open until after exit, so closing the client in
+the harness cannot hide an HTTP draining regression.
 
 ### Rate limiting
 
@@ -130,6 +154,12 @@ API integration tests cannot catch packaging errors:
   `migrate`, API and web health conditions
 - smoke-check `/api/v1/health`, one existing product API request, the web root
   and a direct nested SPA route
+- run ordinary `docker stop --timeout 10` against the production API container;
+  require a stopped, non-OOM container with exit `143` (Nest re-raises SIGTERM)
+  or `0`, and elapsed time below ten seconds. Exit `137` (SIGKILL), other error
+  exits and reaching the grace deadline fail the check
+- restart the stopped API and require its Docker healthcheck and HTTP liveness
+  to pass again
 
 `make container-smoke` runs this check locally with isolated published ports
 and removes its temporary database volume afterward. CI's `containers` job
@@ -162,10 +192,8 @@ smoke. It must not consume the bucket of an unrelated production user. The
 smoke poll is retained and its ID recorded so #28 can verify that the first
 offsite dump and restore contains known application data.
 
-Backlog #35 separately adds automated signal-lifecycle coverage: a real Nest
-process receives `SIGTERM` while a request is active, drains it, invokes the
-Prisma destroy hook and exits before the container grace period. #29 consumes
-that behavior rather than reimplementing it.
+Backlog #35 provides the signal-lifecycle and Docker stop coverage described
+above. #29 consumes that behavior and configures the production grace period.
 
 ---
 
