@@ -1,0 +1,95 @@
+# Invoke through `make prod-*`: validation is deliberately stricter than Compose.
+name: rank-vote-prod
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: rank_vote_bootstrap
+      POSTGRES_PASSWORD: ${POSTGRES_BOOTSTRAP_PASSWORD:?required}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?required}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-production.sql:/docker-entrypoint-initdb.d/10-production.sql:ro
+    networks: [db]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U rank_vote_bootstrap -d postgres']
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  migrate:
+    image: rank-vote-api:${RELEASE_SHA:?full release SHA required}
+    pull_policy: never
+    restart: 'no'
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?required}
+    command: ['pnpm', 'run', 'db:deploy']
+    networks: [db]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    image: rank-vote-api:${RELEASE_SHA:?full release SHA required}
+    pull_policy: never
+    restart: unless-stopped
+    scale: 1
+    stop_grace_period: 30s
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?required}
+      PORT: ${PORT:?required}
+      CORS_ORIGIN: ${CORS_ORIGIN:?required}
+      TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:?required}
+    networks:
+      db:
+      api_proxy:
+        aliases: [rank-vote-api]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/v1/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  web:
+    image: rank-vote-web:${RELEASE_SHA:?full release SHA required}
+    pull_policy: never
+    restart: unless-stopped
+    networks:
+      web:
+        aliases: [rank-vote-web]
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1/ | grep -q ''<div id="root"></div>''']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+networks:
+  web:
+    name: web
+    external: true
+  api_proxy:
+    name: rank-vote-api-proxy
+    external: true
+  db:
+    name: rank-vote-prod-db
+    internal: true
+
+volumes:
+  postgres_data:
+    name: rank_vote_prod_postgres_data
+    external: true

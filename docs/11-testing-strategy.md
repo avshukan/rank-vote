@@ -171,6 +171,18 @@ create → share → vote → results flow through the containerized services.
 
 ### Production deployment verification
 
+`pnpm test:tools` includes Python standard-library tests for production config,
+rendered-model validation, exact SHA/CI identity, missing-volume refusal,
+cross-process locking, manifests, migration failure and rollback. No VPS or
+production credentials are used. `make prod-check` also renders the real Compose
+definition with disposable dummy credentials. `make prod-smoke` validates that
+model, substitutes randomly named local networks/volume, then exercises real
+PostgreSQL bootstrap privileges, offline migrations, Caddy routing/spoofed
+headers, separate peer buckets, the complete vote flow, graceful stop,
+database-unavailable startup recovery and persistence across recreation. CI's
+`containers` job runs both targets after the unchanged `make container-smoke`.
+Python 3.9+ is required for tooling tests; no Python packages are installed.
+
 Backlog #29 extends container verification at the production boundary without
 turning the shared VPS into a general test environment. Before a release is
 recorded as current:

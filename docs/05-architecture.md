@@ -231,6 +231,12 @@ contract and verification requirements under #29 in
 
 ---
 
+Repository implementation is in `docker-compose.prod.yml` and the Python
+standard-library CLI under `scripts/production/`; the operator sequence is in
+`docs/production.md`. API has a 30-second stop grace period. The CLI validates
+and builds a clean archived SHA before downtime, runs migrations once, then
+records a release after public smoke. Production is not live yet.
+
 ## Future Extensions
 
 Possible future additions:

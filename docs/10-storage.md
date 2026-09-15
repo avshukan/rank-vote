@@ -149,8 +149,13 @@ in addition to the compiled runtime. The API entrypoint does not apply
 migrations itself, so scaling or restarting API replicas cannot start competing
 migration processes.
 
-This defines container startup ordering, not the production release ritual. #29
-decides how and when the production stack is built, configured and invoked.
+This defines local container startup ordering. The #29 repository tooling adds
+a separate production Compose and the operator ritual in `docs/production.md`.
+Its first-initialization SQL hook creates the non-superuser app/database owner
+using a separate bootstrap credential; normal deploy requires the existing
+external volume. Prisma's schema engine is preloaded during image build, since
+the migration container's internal database network has no internet access.
+Production remains undeployed until the reviewed release is operated on the VPS.
 
 ### Backup / restore
 

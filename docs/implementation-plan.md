@@ -158,8 +158,9 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 **Status:** PostgreSQL migration, application containerization and write rate
 limiting shipped; graceful API shutdown (#35) is implemented. The production
-contract is decided, but deployment has not started. #35 must merge before #29
-starts, and `containers` must become required before #29 merges. #29 is followed
+contract and repository tooling are implemented, but production is not deployed.
+#35 is merged; `containers` must become required before #29's implementation PR
+merges. The operator runbook is `docs/production.md`. #29 is followed
 immediately by #28 (manual offsite backup/restore) and then #32
 (automated offsite backups).
 
@@ -208,7 +209,8 @@ immediately by #28 (manual offsite backup/restore) and then #32
 - Build SHA-tagged images on the VPS from one CI-green `main` commit, deploy via
   the documented one-shot migration ritual and record current/previous SHA plus
   immutable image IDs for recovery
-- After the first public smoke passes, cut `v0.1.0` and start the changelog
+- The implementation PR prepares an Unreleased changelog entry; after the first
+  public smoke passes, cut `v0.1.0` on the verified deployed SHA
 - Immediately prove recovery with a manual logical dump copied outside
   DigitalOcean and restored into clean PostgreSQL
 - Then automate scheduled offsite backups to independent object storage with a

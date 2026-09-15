@@ -1,0 +1,10 @@
+# Owner-managed overlay for the existing Caddy project, after merge only.
+# Merge with that project's existing Compose files; keep all existing networks.
+services:
+  caddy:
+    networks:
+      rank_vote_api_proxy:
+networks:
+  rank_vote_api_proxy:
+    name: rank-vote-api-proxy
+    external: true

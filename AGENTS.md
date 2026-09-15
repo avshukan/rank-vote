@@ -51,6 +51,14 @@ local branches whose PR is merged — squash merges leave no trace for
 `git branch --merged`, so it asks GitHub instead. Anything that is a single
 pnpm script stays a pnpm script.
 
+Production tooling lives in `scripts/production/` (Python 3.9+ standard library)
+and `docker-compose.prod.yml`; see `docs/production.md`. `make prod-check`
+validates the model with dummy credentials and `make prod-smoke` exercises it
+with isolated local Docker resources. Both are part of CI's `containers` job.
+Host-changing `make prod-*` commands are owner-operated only after the
+implementation PR is reviewed/merged and both CI jobs pass on its exact `main`
+SHA. Repository preparation alone does not complete #29.
+
 `packages/shared` builds twice — CommonJS for the API to `require`, ESM for
 Vite and the browser to `import` — and its `exports` map routes each consumer
 to the right one. A CommonJS-only build is what used to leave `pnpm dev`
@@ -93,6 +101,9 @@ same order); container changes must additionally pass `make container-smoke`,
 as the separate `containers` job does. Re-run a single step with
 `make lint`, `make test`, … while fixing. A change without a passing
 verification run is not done. New behavior requires new tests.
+
+Production tooling/container changes also require `make prod-check` and
+`make prod-smoke`; these never use production networks, data or secrets.
 
 ---
 
