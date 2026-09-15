@@ -1,4 +1,5 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Server, IncomingMessage, ServerResponse } from 'node:http';
 
 export const TRUSTED_PROXY_HOPS_ENV = 'TRUSTED_PROXY_HOPS';
 
@@ -27,7 +28,7 @@ export function parseTrustedProxyHops(
 /**
  * Runtime configuration shared by main.ts and the e2e tests, so what the tests
  * exercise matches what production runs: API version prefix, strict input
- * validation, CORS, and Express proxy trust.
+ * validation, CORS, Express proxy trust and graceful SIGTERM shutdown.
  */
 export function configureApp(
   app: INestApplication,
@@ -50,4 +51,16 @@ export function configureApp(
   app.enableCors({
     origin: environment.CORS_ORIGIN ?? 'http://localhost:5173',
   });
+  const server = app.getHttpServer() as Server;
+  app.use(
+    (_request: IncomingMessage, response: ServerResponse, next: () => void) => {
+      // Node closes already-idle sockets on server.close(), but an active
+      // keep-alive response can become idle later. Reap it once fully written.
+      response.once('finish', () => {
+        if (!server.listening) server.closeIdleConnections();
+      });
+      next();
+    },
+  );
+  app.enableShutdownHooks(['SIGTERM']);
 }

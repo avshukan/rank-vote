@@ -54,7 +54,6 @@ adapts to the column, never the column to the content.
 <!-- prettier-ignore -->
 | ID  | Title                      | Type     | Priority | Notes                                                       |
 | --- | -------------------------- | -------- | -------- | ----------------------------------------------------------- |
-| 35  | Graceful API shutdown      | Quality  | High     | SIGTERM closes Nest/Prisma cleanly; blocks #29              |
 | 29  | First production deploy    | Quality  | High     | VPS release through Caddy; needs #27, #31 and #35           |
 | 28  | Manual offsite backup      | Quality  | High     | Local pg_dump + restore drill; needs #29, blocks #32        |
 | 6   | Mobile responsive layout   | Quality  | Medium   | Basic responsive UI                                         |
@@ -97,3 +96,4 @@ adapts to the column, never the column to the content.
 |  17 | Migrate to PostgreSQL      | Quality  | High     | PostgreSQL adapter, local Compose, isolated e2e + CI        |
 |  27 | Dockerize web and api      | Quality  | High     | Separate images + healthy local stack; blocks #29           |
 |  31 | Rate-limit write endpoints | Quality  | High     | Per-IP fixed windows on both public write endpoints         |
+| 35  | Graceful API shutdown      | Quality  | High     | SIGTERM drains HTTP, closes Prisma; process + Docker tests  |

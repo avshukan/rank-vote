@@ -54,6 +54,8 @@ function main() {
     cwd: apiDirectory,
     env: environment,
   });
+  // The shutdown fixture runs the compiled production modules in a real child.
+  run('pnpm', ['run', 'build'], { cwd: apiDirectory, env: environment });
   run('pnpm', ['exec', 'jest', '--config', './test/jest-e2e.json'], {
     cwd: apiDirectory,
     env: environment,

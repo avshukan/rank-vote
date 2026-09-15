@@ -488,24 +488,24 @@ begins.
 
 ### Runtime lifecycle
 
-- [ ] The production Nest application enables shutdown hooks for `SIGTERM`
-- [ ] On `SIGTERM`, the API stops accepting new connections, lets active HTTP
+- [x] The production Nest application enables shutdown hooks for `SIGTERM`
+- [x] On `SIGTERM`, the API stops accepting new connections, lets active HTTP
       requests finish within the configured container grace period, and runs the
       Nest application shutdown lifecycle
-- [ ] `PrismaService.onModuleDestroy()` runs during that lifecycle and closes
+- [x] `PrismaService.onModuleDestroy()` runs during that lifecycle and closes
       the PostgreSQL client/pool before the process exits
-- [ ] A normal Docker stop/redeploy exits within the grace period without Docker
+- [x] A normal Docker stop/redeploy exits within the grace period without Docker
       escalating to `SIGKILL`
-- [ ] Existing startup, application behaviour and test teardown remain unchanged
+- [x] Existing startup, application behaviour and test teardown remain unchanged
 
 ### Automated verification
 
-- [ ] An automated lifecycle test starts the real Nest HTTP application, keeps
+- [x] An automated lifecycle test starts the real Nest HTTP application, keeps
       a request active, sends `SIGTERM`, and proves that the request drains and
       the process exits successfully before a short test timeout
-- [ ] Automated verification proves that the Prisma destroy hook is invoked by
+- [x] Automated verification proves that the Prisma destroy hook is invoked by
       signal-driven application shutdown
-- [ ] Container verification proves a normal `docker stop` does not end through
+- [x] Container verification proves a normal `docker stop` does not end through
       `SIGKILL`; the exact test harness and observability mechanism are
       implementation judgment calls
 
