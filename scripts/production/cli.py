@@ -44,7 +44,8 @@ def dry_run(root):
 
 
 def public_verification(runner, sha, recreate_check=True):
-    print("First deployment: apply the reviewed Caddy route from a second SSH session now (docs/production.md).")
+    print("For the first deployment only, apply the reviewed Caddy route from a second SSH session "
+          "if it is still absent (docs/production.md). Redeploy and rollback reuse the existing route.")
     confirm(f"PROXY VERIFIED {sha}", "Complete the external proxy + second-peer + IPv4/IPv6 port checks. "
             "Confirm Caddy uses the actual socket peer and existing sites still respond.")
     # Clear only the single API's process-local test buckets, before user smoke.

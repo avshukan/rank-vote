@@ -123,8 +123,5 @@ Actual VPS/public deployment and recovery remain pending:
 - API handles Docker `SIGTERM`, drains HTTP and closes Prisma (#35); the
   production Compose declares a 30-second stop grace period. Requests exceeding
   that period may be killed by Docker
-- the `containers` CI job passes on `main` but is not yet required by the
-  `protect-main` ruleset; it must become required before the #29 implementation
-  PR merges
 - results are recalculated on every request, with no caching — deliberate at
   MVP scale, see `docs/09-api-design.md`

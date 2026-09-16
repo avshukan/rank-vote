@@ -36,10 +36,10 @@ retain their development behavior.
 
 - Base `main`: `cc65f4c0ed269bdee4f6e50a86fc604b228012ea`; #35 is merged
   (PR #50).
-- Read-only GitHub inspection: `protect-main` is active and requires only
-  `checks`. **Owner must add `containers` before this implementation PR may
-  merge.** Deployment tooling independently refuses unless both are required
-  and successful. Do not bypass this prerequisite.
+- On 2026-09-16, the owner authorized adding `containers` to the active
+  `protect-main` ruleset. Both `checks` and `containers` are now required;
+  the remaining ruleset settings were preserved. Deployment tooling also
+  requires both jobs to succeed on the exact release SHA.
 - SSH alias `pet-projects-1` did not resolve in the implementation environment;
   no VPS inspection or mutation took place. The following host audit is
   mandatory before provisioning. No VPS resource/version/DNS result is implied

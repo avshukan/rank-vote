@@ -540,7 +540,7 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 ### Prerequisites
 
 - [x] #35 is merged before implementation of #29 begins
-- [ ] Before the implementation PR for #29 merges, the `protect-main` repository
+- [x] Before the implementation PR for #29 merges, the `protect-main` repository
       ruleset requires both CI jobs, `checks` and `containers`; changing the
       GitHub repository setting is an owner action and does not need a backlog
       item

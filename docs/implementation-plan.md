@@ -159,8 +159,8 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 **Status:** PostgreSQL migration, application containerization and write rate
 limiting shipped; graceful API shutdown (#35) is implemented. The production
 contract and repository tooling are implemented, but production is not deployed.
-#35 is merged; `containers` must become required before #29's implementation PR
-merges. The operator runbook is `docs/production.md`. #29 is followed
+#35 is merged; both `checks` and `containers` are required by `protect-main`.
+The operator runbook is `docs/production.md`. #29 is followed
 immediately by #28 (manual offsite backup/restore) and then #32
 (automated offsite backups).
 
