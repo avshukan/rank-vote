@@ -35,10 +35,11 @@ A deployed increment with:
 
 Versioning follows SemVer.
 
-No release has been cut yet: there are no tags and no changelog file, because
-nothing is deployed. Both start with the first production deployment
-(backlog #29). That first verified release is tagged `v0.1.0`; the annotated tag
-is created on the deployed commit only after its production smoke check passes.
+No release has been cut yet and nothing is deployed. `CHANGELOG.md` contains an
+Unreleased preparation entry for #29. The first verified release is tagged
+`v0.1.0`; the annotated tag is created on the deployed commit only after its
+production smoke check passes. See `docs/production.md` for the reviewed tooling
+and operator sequence.
 
 ---
 
@@ -108,10 +109,10 @@ Examples:
 
 - CI (`.github/workflows/ci.yml`) runs on every PR and on pushes to `main`:
   the `checks` job runs format, lint, typecheck, test and build; the `containers`
-  job builds both application images and smoke-tests an isolated Compose stack
-- the current `protect-main` ruleset requires `checks` but not `containers`.
-  Adding `containers` as a required status check is a repository-setting
-  prerequisite before the production implementation PR for #29 may merge
+  job builds both application images, smoke-tests the local Compose stack and
+  runs `make prod-check` plus the separate isolated `make prod-smoke`
+- the active `protect-main` ruleset requires both `checks` and `containers`;
+  the owner-authorized setting update for #29 was applied on 2026-09-16
 - **CD does not exist yet.** Images are verified but are not pushed, deployed or
   released on merge. Write rate limiting (#31) is complete; the remaining
   first-deploy step is #29 (first production deployment), then recovery proceeds

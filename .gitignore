@@ -144,3 +144,8 @@ vite.config.ts.timestamp-*
 
 # Generated AI prompt bundle (scripts/make-prompt.mjs)
 prompt.txt
+
+# Production operator state is root-only and must never enter git.
+deploy-state/
+__pycache__/
+*.pyc

@@ -532,14 +532,15 @@ begins.
 This slice creates the first reproducible production release on the owner's
 existing DigitalOcean VPS. It uses the images and one-shot migration contract
 from #27, the single-replica proxy boundary from #31, and the graceful shutdown
-lifecycle from #35. The readiness PR documents the contract only; the production
-Compose, deploy tooling, Caddy change and deployment are implemented later in
-the #29 PR.
+lifecycle from #35. Repository tooling is implemented in the separate production
+Compose and `scripts/production/`; see `docs/production.md` for evidence and the
+operator sequence. Actual VPS/public deployment remains pending after review
+and merge. Repository-only tests do not complete the runtime criteria below.
 
 ### Prerequisites
 
-- [ ] #35 is merged before implementation of #29 begins
-- [ ] Before the implementation PR for #29 merges, the `protect-main` repository
+- [x] #35 is merged before implementation of #29 begins
+- [x] Before the implementation PR for #29 merges, the `protect-main` repository
       ruleset requires both CI jobs, `checks` and `containers`; changing the
       GitHub repository setting is an owner action and does not need a backlog
       item

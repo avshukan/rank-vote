@@ -13,7 +13,8 @@ API_URL  ?= http://localhost:$(API_PORT)/api/v1
 .NOTPARALLEL:
 .PHONY: help setup verify format format-check lint typecheck test build \
         web api seed render-app prune-merged down db-up db-migrate \
-        stack-up stack-down container-smoke
+        stack-up stack-down container-smoke prod-check prod-config prod-preflight \
+        prod-provision prod-deploy prod-rollback prod-caddy prod-smoke
 
 help: ## List the available targets
 	@awk -F':.*## ' '/^[a-z][a-z-]*:.*## /{printf "  \033[36m%-13s\033[0m%s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -153,3 +154,29 @@ stack-down: ## Stop the complete container stack, preserving PostgreSQL data
 
 container-smoke: ## Build and smoke-test an isolated stack with fresh storage
 	bash scripts/container-smoke.sh
+
+# --- production (owner-operated after review/merge; docs/production.md) --------
+
+prod-check: ## Render and validate production Compose with disposable dummy config
+	python3 -m scripts.production.cli check
+
+prod-config: ## Generate root-only production config on the intended VPS (once)
+	python3 -m scripts.production.cli config
+
+prod-preflight: ## Read-only host/config/network preflight (BEFORE_PROVISION=1 initially)
+	python3 -m scripts.production.cli preflight $(if $(BEFORE_PROVISION),--before-provision,)
+
+prod-provision: ## Explicit first-only external production volume/network creation
+	python3 -m scripts.production.cli provision
+
+prod-deploy: ## Deploy exact RELEASE_SHA from clean CI-green main on the VPS
+	python3 -m scripts.production.cli deploy
+
+prod-rollback: ## Restore saved previous application after schema compatibility confirmation
+	python3 -m scripts.production.cli rollback
+
+prod-caddy: ## Owner-only: validate and apply the reviewed route to existing Caddy
+	python3 -m scripts.production.cli caddy
+
+prod-smoke: ## Test production bootstrap/lifecycle in disposable LOCAL Docker resources
+	python3 -m scripts.production.container_smoke

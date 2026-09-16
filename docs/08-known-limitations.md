@@ -108,8 +108,10 @@ prevention.
 
 Nothing is deployed yet. The repository contains a complete local Compose stack
 for PostgreSQL, migrations, the API and the web application. The single-VPS
-production contract is specified under #29 in `docs/acceptance-criteria.md`, but
-its Compose/deploy tooling and Caddy route do not exist yet:
+production contract is specified under #29 in `docs/acceptance-criteria.md`.
+Its separate Compose, deploy/rollback tooling, PostgreSQL bootstrap and reviewed
+Caddy snippet now exist; `docs/production.md` documents the operator sequence.
+Actual VPS/public deployment and recovery remain pending:
 
 - `web` / `api` images and container smoke tests exist, but there is no CD
   pipeline — CI builds and tests, then stops; #29 deploys them
@@ -118,11 +120,8 @@ its Compose/deploy tooling and Caddy route do not exist yet:
 - no backups yet: the first manual offsite backup and restore drill is #28,
   followed by automated offsite backups in #32
 - no production monitoring, alerting, or error tracking; tracked as #33
-- API handles Docker `SIGTERM`, drains HTTP and closes Prisma (#35); #29 still
-  owns the production stop grace period. Requests exceeding that period may be
-  killed by Docker
-- the `containers` CI job passes on `main` but is not yet required by the
-  `protect-main` ruleset; it must become required before the #29 implementation
-  PR merges
+- API handles Docker `SIGTERM`, drains HTTP and closes Prisma (#35); the
+  production Compose declares a 30-second stop grace period. Requests exceeding
+  that period may be killed by Docker
 - results are recalculated on every request, with no caching — deliberate at
   MVP scale, see `docs/09-api-design.md`

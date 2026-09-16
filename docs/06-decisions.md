@@ -161,7 +161,7 @@ Notes:
 
 Status:
 
-- accepted for backlog #29; implementation has not started
+- accepted for backlog #29; repository tooling implemented, deployment pending
 
 Chosen:
 
@@ -186,8 +186,8 @@ Chosen:
   image IDs for release identification and recovery
 - accept brief downtime: build first, stop web/API, leave PostgreSQL running,
   apply migrations once, then start and verify one API plus web
-- cut annotated tag `v0.1.0` and start the changelog only after the first public
-  deployment passes smoke verification
+- prepare an Unreleased changelog entry in the implementation PR; cut annotated
+  tag `v0.1.0` only after the first public deployment passes smoke verification
 
 Reason:
 
@@ -217,6 +217,14 @@ Consequences:
 - after the first release, #28 immediately proves offsite logical backup and
   restore; monitoring, automated backups and multi-replica limiter state remain
   #33, #32 and #34 respectively
+
+Implementation uses Python standard-library validation/state helpers, a kernel
+file lock, sequential builds from `git archive`, atomic manifest replacement,
+and PostgreSQL's first-initialization SQL hook. Prisma's schema engine is
+downloaded into the API image during build so the one-shot migration can run on
+the internal database network without internet access. The Caddy snippet and
+validate/reload command preserve the independently managed proxy lifecycle.
+See `docs/production.md`; actual host and public verification remain pending.
 
 Rejected for the first release:
 

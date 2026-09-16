@@ -1,0 +1,14 @@
+rank-vote.avshukan.com {
+    @api path /api/v1 /api/v1/*
+    handle @api {
+        reverse_proxy rank-vote-api:3000 {
+            # Exactly one proxy: use the socket peer, never a supplied header.
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Real-IP {remote_host}
+            header_up -Forwarded
+        }
+    }
+    handle {
+        reverse_proxy rank-vote-web:80
+    }
+}

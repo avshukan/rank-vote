@@ -35,8 +35,11 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/shared/package.json packages/shared/package.json
 
+# Migrate has only an internal DB network in production. Download its schema
+# engine during build, so Prisma never needs internet at deployment time.
 RUN --mount=type=cache,id=rank-vote-pnpm,target=/pnpm/store,sharing=locked \
-    pnpm install --filter @rank-vote/api... --prod --frozen-lockfile --ignore-scripts --store-dir /pnpm/store
+    pnpm install --filter @rank-vote/api... --prod --frozen-lockfile --ignore-scripts --store-dir /pnpm/store && \
+    pnpm --filter @rank-vote/api exec prisma --version
 
 FROM base AS runtime
 

@@ -54,7 +54,7 @@ adapts to the column, never the column to the content.
 <!-- prettier-ignore -->
 | ID  | Title                      | Type     | Priority | Notes                                                       |
 | --- | -------------------------- | -------- | -------- | ----------------------------------------------------------- |
-| 29  | First production deploy    | Quality  | High     | VPS release through Caddy; needs #27, #31 and #35           |
+| 29  | First production deploy    | Quality  | High     | Tooling prepared; VPS deploy waits for review/merge         |
 | 28  | Manual offsite backup      | Quality  | High     | Local pg_dump + restore drill; needs #29, blocks #32        |
 | 6   | Mobile responsive layout   | Quality  | Medium   | Basic responsive UI                                         |
 | 19  | Explain score calculation  | Value    | Medium   | How the points produced the ranking, per method; needs #5   |
