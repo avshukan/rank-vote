@@ -199,7 +199,7 @@ immediately by #28 (manual offsite backup/restore) and then #32
 - Deploy from `/opt/apps/rank-vote` on `pet-projects-1` under Compose project
   `rank-vote-prod`, using the separately managed Caddy at
   `/opt/infrastructure/caddy`
-- Serve one origin, `https://rank-vote.avshukan.com`: Caddy sends `/api/v1` to
+- Serve one origin, `https://rankvote.avshukan.com`: Caddy sends `/api/v1` to
   the single API through `rank-vote-api-proxy` and all other paths to web through
   the existing external `web` network; application services publish no host
   ports

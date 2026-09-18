@@ -8,17 +8,17 @@ implementation PR and successful `checks` **and** `containers` on that exact
 
 ## Fixed contract and prerequisites
 
-| Item                          | Value                                                      |
-| ----------------------------- | ---------------------------------------------------------- |
-| SSH / host / user             | `pet-projects-1` / `165.22.91.190` / `root`                |
-| Checkout / Compose project    | `/opt/apps/rank-vote` / `rank-vote-prod`                   |
-| Compose definition            | `docker-compose.prod.yml`                                  |
-| Origin / API                  | `https://rank-vote.avshukan.com` / same origin + `/api/v1` |
-| Independent Caddy project     | `/opt/infrastructure/caddy`                                |
-| Configuration                 | `/etc/rank-vote/prod.env`                                  |
-| PostgreSQL 17 database / role | `rank_vote_prod` / `rank_vote_app`                         |
-| External data volume          | `rank_vote_prod_postgres_data`                             |
-| Verified release state        | `deploy-state/current.env`, `deploy-state/previous.env`    |
+| Item                          | Value                                                     |
+| ----------------------------- | --------------------------------------------------------- |
+| SSH / host / user             | `pet-projects-1` / `165.22.91.190` / `root`               |
+| Checkout / Compose project    | `/opt/apps/rank-vote` / `rank-vote-prod`                  |
+| Compose definition            | `docker-compose.prod.yml`                                 |
+| Origin / API                  | `https://rankvote.avshukan.com` / same origin + `/api/v1` |
+| Independent Caddy project     | `/opt/infrastructure/caddy`                               |
+| Configuration                 | `/etc/rank-vote/prod.env`                                 |
+| PostgreSQL 17 database / role | `rank_vote_prod` / `rank_vote_app`                        |
+| External data volume          | `rank_vote_prod_postgres_data`                            |
+| Verified release state        | `deploy-state/current.env`, `deploy-state/previous.env`   |
 
 Ubuntu needs Python 3.9+, Git, Make, `tar`, Docker Engine 24+, Compose 2.20+,
 `gh` authenticated for read-only repository/Actions/rules access, `ip`, `ss`,

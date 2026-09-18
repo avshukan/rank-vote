@@ -214,8 +214,8 @@ rank-vote-api ─────── rank-vote-prod-db ───► postgres:5432
 migrate ───────────── rank-vote-prod-db ───► postgres:5432
 ```
 
-The public origin is `https://rank-vote.avshukan.com` and the web image embeds
-`https://rank-vote.avshukan.com/api/v1` at build time. Caddy terminates TLS and
+The public origin is `https://rankvote.avshukan.com` and the web image embeds
+`https://rankvote.avshukan.com/api/v1` at build time. Caddy terminates TLS and
 is the API's only trusted proxy hop. Web alone joins the existing external
 `web` network; API and Caddy alone join the external
 `rank-vote-api-proxy` network; database traffic stays on the internal

@@ -577,7 +577,7 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 ### Public URL, reverse proxy and TLS
 
 - [ ] The only public application origin is
-      `https://rank-vote.avshukan.com`
+      `https://rankvote.avshukan.com`
 - [ ] Caddy routes the `/api/v1` prefix, including the exact path and all
       descendants, to the production API on container port `3000`; every other
       path goes to the production web container on port `80`
@@ -593,11 +593,11 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 - [ ] The Caddy configuration is validated before a graceful reload, preserves
       every existing site, and is rolled back to its previous valid config if
       the new route cannot be loaded
-- [ ] `VITE_API_URL=https://rank-vote.avshukan.com/api/v1` is passed explicitly
+- [ ] `VITE_API_URL=https://rankvote.avshukan.com/api/v1` is passed explicitly
       while building the production web image and is verified in the served
       bundle; changing it requires a new web image
 - [ ] The API receives
-      `CORS_ORIGIN=https://rank-vote.avshukan.com`; no development origin or
+      `CORS_ORIGIN=https://rankvote.avshukan.com`; no development origin or
       wildcard is accepted in production
 
 ### Docker networks and public exposure
@@ -668,13 +668,13 @@ and merge. Repository-only tests do not complete the runtime criteria below.
       interpolation and passes each service only the settings it needs; it does
       not load the entire file into every container
 - [ ] At minimum the file supplies `DATABASE_URL`, `PORT=3000`,
-      `CORS_ORIGIN=https://rank-vote.avshukan.com` and
+      `CORS_ORIGIN=https://rankvote.avshukan.com` and
       `TRUSTED_PROXY_HOPS=1`, together with the production PostgreSQL bootstrap
       and application secrets required by the chosen initialization mechanism
 - [ ] Production Compose fails before changing running services when any
       required value is absent or still equals a repository development
       credential/origin; no `${VAR:-development-default}` form is used
-- [ ] `VITE_API_URL=https://rank-vote.avshukan.com/api/v1` is an explicit,
+- [ ] `VITE_API_URL=https://rankvote.avshukan.com/api/v1` is an explicit,
       non-secret build input to the deploy command rather than a runtime setting
 - [ ] Secrets never enter git, image layers, image metadata, release manifests,
       command-line arguments, CI output or deployment logs
@@ -749,7 +749,7 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 ### Post-deploy verification
 
 - [ ] Internal health checks pass before public routing is considered ready;
-      public `GET https://rank-vote.avshukan.com/api/v1/health` returns
+      public `GET https://rankvote.avshukan.com/api/v1/health` returns
       `{ "status": "ok" }`
 - [ ] The frontend loads over HTTPS with a valid certificate, no mixed content
       or browser console errors, and a direct request to
@@ -806,7 +806,7 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 
 ### Readiness Decisions
 
-- The production origin is `https://rank-vote.avshukan.com`; Caddy splits the
+- The production origin is `https://rankvote.avshukan.com`; Caddy splits the
   `/api/v1` prefix to API and all other paths to web. The Vite API URL is baked
   into the release image, while CORS permits exactly that one origin.
 - The existing Caddy remains independently operated. Web shares its external
