@@ -374,11 +374,11 @@ class SequenceTests(unittest.TestCase):
             path.write_text(previous)
             operations = []
             class Fake:
-                 def run(self, args, input_text, **kwargs):
-                     action = "reload" if "reload" in args else "validate"
-                     operations.append((action, input_text))
-                     if action == failure and snippet in input_text:
-                         raise Refused("candidate failed")
+                def run(self, args, input_text, **kwargs):
+                    action = "reload" if "reload" in args else "validate"
+                    operations.append((action, input_text))
+                    if action == failure and snippet in input_text:
+                        raise Refused("candidate failed")
             caddy = {"Id": "test-caddy", "Mounts": [{"Source": str(path), "Destination": "/etc/caddy/Caddyfile"}]}
             with patch("scripts.production.caddy.local_host"), \
                  patch("scripts.production.caddy.caddy_container", return_value=caddy), self.assertRaises(Refused):
