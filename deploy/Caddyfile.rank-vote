@@ -1,4 +1,4 @@
-rank-vote.avshukan.com {
+rankvote.avshukan.com {
     @api path /api/v1 /api/v1/*
     handle @api {
         reverse_proxy rank-vote-api:3000 {

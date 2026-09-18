@@ -170,7 +170,7 @@ Chosen:
   `rank-vote-prod`
 - keep the existing Caddy Compose project at `/opt/infrastructure/caddy` as the
   TLS terminator and public reverse proxy; it routes the `/api/v1` prefix to API
-  and every other path to web for `https://rank-vote.avshukan.com`
+  and every other path to web for `https://rankvote.avshukan.com`
 - connect web to Caddy through the existing external `web` network, API to Caddy
   through the dedicated external `rank-vote-api-proxy` network, and
   PostgreSQL/migrate/API through the internal `rank-vote-prod-db` network

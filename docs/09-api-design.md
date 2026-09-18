@@ -7,7 +7,7 @@
 ```
 
 Backlog #29 publishes this prefix at
-`https://rank-vote.avshukan.com/api/v1`. That production URL is an accepted
+`https://rankvote.avshukan.com/api/v1`. That production URL is an accepted
 deployment contract, not a statement that the service is live yet.
 
 ---

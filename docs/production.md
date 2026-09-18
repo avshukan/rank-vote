@@ -13,7 +13,7 @@ implementation PR and successful `checks` **and** `containers` on that exact
 | SSH / host / user             | `pet-projects-1` / `165.22.91.190` / `root`                |
 | Checkout / Compose project    | `/opt/apps/rank-vote` / `rank-vote-prod`                   |
 | Compose definition            | `docker-compose.prod.yml`                                  |
-| Origin / API                  | `https://rank-vote.avshukan.com` / same origin + `/api/v1` |
+| Origin / API                  | `https://rankvote.avshukan.com` / same origin + `/api/v1` |
 | Independent Caddy project     | `/opt/infrastructure/caddy`                                |
 | Configuration                 | `/etc/rank-vote/prod.env`                                  |
 | PostgreSQL 17 database / role | `rank_vote_prod` / `rank_vote_app`                         |

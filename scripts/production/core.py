@@ -10,7 +10,7 @@ import stat
 import tempfile
 from urllib.parse import quote, unquote, urlsplit
 
-ORIGIN = "https://rank-vote.avshukan.com"
+ORIGIN = "https://rankvote.avshukan.com"
 API_URL = ORIGIN + "/api/v1"
 HOST_IP = "165.22.91.190"
 ROOT = Path("/opt/apps/rank-vote")

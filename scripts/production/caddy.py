@@ -7,7 +7,7 @@ from .runtime import caddy_container, local_host
 
 
 def candidate_config(previous, snippet):
-    require("rank-vote.avshukan.com" not in previous, "Ranking Vote domain already configured; review the existing route")
+    require("rankvote.avshukan.com" not in previous, "Ranking Vote domain already configured; review the existing route")
     return previous.rstrip() + "\n\n" + snippet
 
 

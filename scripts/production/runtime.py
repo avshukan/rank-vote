@@ -148,7 +148,7 @@ def preflight(runner, provisioned=True):
               if line.startswith(("MemAvailable:", "SwapFree:"))}
     require(free >= 5 * 1024**3, "At least 5 GiB free Docker disk required before building")
     require(sum(memory.values()) >= 1024**2, "At least 1 GiB available RAM + swap required")
-    addresses = {entry[4][0] for entry in socket.getaddrinfo("rank-vote.avshukan.com", 443, type=socket.SOCK_STREAM)}
+    addresses = {entry[4][0] for entry in socket.getaddrinfo("rankvote.avshukan.com", 443, type=socket.SOCK_STREAM)}
     require(HOST_IP in addresses and all("." not in address or address == HOST_IP for address in addresses),
             "Production A record must point directly to the intended VPS")
     caddy = caddy_container(runner)

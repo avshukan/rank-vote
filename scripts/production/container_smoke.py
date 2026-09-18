@@ -37,7 +37,7 @@ def main():
         caddy_path = directory / "Caddyfile"
         snippet = (root / "deploy/Caddyfile.rank-vote").read_text()
         caddy_path.write_text("http://existing.test:80 {\n respond existing-site\n}\n\n" +
-                              snippet.replace("rank-vote.avshukan.com", ":80"))
+                              snippet.replace("rankvote.avshukan.com", ":80"))
         model["services"]["caddy"] = {
             "image": "caddy:2.10.2-alpine", "networks": {"web": {}, "api_proxy": {}},
             "volumes": [{"type": "bind", "source": str(caddy_path), "target": "/etc/caddy/Caddyfile", "read_only": True}],
