@@ -156,13 +156,12 @@ Iteration planning is done flexibly per Agile principles. Current priorities are
 
 ## Phase 5 — Deployment & Recovery
 
-**Status:** PostgreSQL migration, application containerization and write rate
-limiting shipped; graceful API shutdown (#35) is implemented. The production
-contract and repository tooling are implemented, but production is not deployed.
-#35 is merged; both `checks` and `containers` are required by `protect-main`.
-The operator runbook is `docs/production.md`. #29 is followed
-immediately by #28 (manual offsite backup/restore) and then #32
-(automated offsite backups).
+**Status:** PostgreSQL migration, application containerization, write rate
+limiting and graceful API shutdown (#35) shipped. The owner operated verified
+release `v0.1.0`, while #29 still awaits its separate post-deployment record.
+The #28 manual offsite backup/restore drill completed on 2026-09-19; #32
+(automated offsite backups) is next. Both `checks` and `containers` are required
+by `protect-main`, and the operator runbook is `docs/production.md`.
 
 | App        | Platform                     | Notes                                     |
 | ---------- | ---------------------------- | ----------------------------------------- |
@@ -211,9 +210,9 @@ immediately by #28 (manual offsite backup/restore) and then #32
   immutable image IDs for recovery
 - The implementation PR prepares an Unreleased changelog entry; after the first
   public smoke passes, cut `v0.1.0` on the verified deployed SHA
-- Immediately prove recovery with a manual logical dump copied outside
-  DigitalOcean and restored into clean PostgreSQL
-- Then automate scheduled offsite backups to independent object storage with a
+- Recovery was proven through a manual logical dump copied outside DigitalOcean
+  and restored into clean PostgreSQL (#28)
+- Next automate scheduled offsite backups to independent object storage with a
   documented retention and restore-test policy
 
 Dependency-aware health, production monitoring/alerting and error tracking are

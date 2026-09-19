@@ -1,10 +1,10 @@
 # Production operator runbook (#29)
 
-**Repository implementation only: production is not live.** #29 remains Todo.
-Run the host-changing commands below only after owner review/merge of the
-implementation PR and successful `checks` **and** `containers` on that exact
-`main` SHA. Never deploy the PR branch. No backup/recovery has been proven;
-#28 begins immediately after the verified first deployment and `v0.1.0`.
+**This runbook records the repository implementation for #29, which remains
+Todo pending its separate post-deployment documentation closure.** Host-changing
+commands require owner operation from a reviewed, merged `main` SHA with
+successful `checks` **and** `containers`; never deploy a PR branch. The owner
+completed the #28 offsite backup and recovery drill for `v0.1.0` on 2026-09-19.
 
 ## Fixed contract and prerequisites
 
@@ -355,11 +355,12 @@ git push origin v0.1.0
 python3 -m scripts.production.cli tag --tag v0.1.0
 ```
 
-This updates tag metadata without changing recorded image IDs/SHA. Immediately
-start #28: offsite logical dump, copy outside VPS/DigitalOcean, restore into a
-clean PostgreSQL instance, verify the recorded smoke poll. The volume is storage,
-**not backup**. A small later docs PR records the release, dates the changelog,
-checks actual host/public AC and moves #29 to Done. It does not delay #28.
+This updates tag metadata without changing recorded image IDs/SHA. The owner
+then completed #28: an offsite logical dump was copied outside
+VPS/DigitalOcean, restored into clean PostgreSQL 17 and verified through the
+recorded smoke poll. The volume is storage, **not backup**. A separate docs PR
+still records the release, dates the changelog, checks actual host/public AC
+and moves #29 to Done; #28 did not wait for that record.
 
 ## Repository evidence and pending AC
 
@@ -371,11 +372,12 @@ offline migrations, production-URL images, Caddy routes/header probes, a full
 vote and recreation/recovery. It never depends on production resources.
 `make container-smoke` continues to verify the separate local development stack.
 
-Actual VPS identity/resources, firewall/DNS/IPv6, installed Caddy layout and
-existing sites, production secrets/storage, exact merged-SHA build, external
-HTTPS/browser/client-IP proof, production persistence, manifests and tag remain
-pending deployment. Their AC boxes stay unchecked. The repository-only evidence
-does not complete #29 or begin #28.
+The repository tests alone do not establish actual VPS identity/resources,
+firewall/DNS/IPv6, installed Caddy layout and existing sites, production
+secrets/storage, exact merged-SHA build, external HTTPS/browser/client-IP proof,
+production persistence, manifests or tag. Their #29 runtime evidence remains a
+separate documentation task. The owner-supplied evidence for completed #28 is
+recorded in `docs/acceptance-criteria.md`.
 
 Reference semantics: [Docker Compose services](https://docs.docker.com/reference/compose-file/services/),
 [Caddy CLI validation/reload](https://caddyserver.com/docs/command-line),

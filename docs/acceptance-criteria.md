@@ -844,9 +844,10 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 ## #28 Manual offsite backup
 
 This owner-operated runtime drill proves one complete recovery path for the
-first production deployment. This readiness PR specifies the drill only: it
-does not access production, create or transfer a dump, perform a restore, or
-complete #28.
+first production deployment. The owner completed the production dump, offsite
+transfer, isolated restore and application-level recovery check on 2026-09-19.
+This documentation PR records that supplied evidence only; it did not access or
+mutate production and did not repeat any part of the drill.
 
 The owner-supplied recovery target is release `v0.1.0` at
 `7021f3137b597119e39ca13e6a86275da58b28e1`, served from
@@ -855,75 +856,102 @@ The owner-supplied recovery target is release `v0.1.0` at
 
 ### Source backup
 
-- [ ] The operator creates a logical backup of production database
+- [x] The operator creates a logical backup of production database
       `rank_vote_prod` with PostgreSQL `pg_dump` in custom format (`-Fc`) while
       the production PostgreSQL service and application remain online
-- [ ] The dump reads the running database through the PostgreSQL container; it
+- [x] The dump reads the running database through the PostgreSQL container; it
       does not stop or recreate a production service, copy PostgreSQL data
       files or the Docker volume, or mutate
       `rank_vote_prod_postgres_data`
-- [ ] The backup filename includes a UTC timestamp and contains no database
+- [x] The backup filename includes a UTC timestamp and contains no database
       URL, username, password or other production secret
-- [ ] A SHA-256 checksum is calculated for the completed source artifact before
+- [x] A SHA-256 checksum is calculated for the completed source artifact before
       transfer, and the dump and checksum file are readable only by the
       operator while staged on the VPS
-- [ ] The dump command neither prints a production password nor places one in a
+- [x] The dump command neither prints a production password nor places one in a
       command argument or shell history; repository files, logs and evidence
       contain no production credential
 
 ### Offsite transfer and integrity
 
-- [ ] The dump and its checksum are copied over an authenticated encrypted
+- [x] The dump and its checksum are copied over an authenticated encrypted
       channel from the DigitalOcean VPS to the owner's local WSL machine; that
       local destination is outside the VPS and outside DigitalOcean
-- [ ] SHA-256 is recalculated or checked on the local machine, and the local
+- [x] SHA-256 is recalculated or checked on the local machine, and the local
       digest exactly matches the digest calculated on the VPS before any
       restore is attempted
-- [ ] A matching checksum is necessary but not sufficient recovery proof: the
+- [x] A matching checksum is necessary but not sufficient recovery proof: the
       drill continues through restore and application reads
-- [ ] After the drill, the verified dump and checksum remain retained in an
+- [x] After the drill, the verified dump and checksum remain retained in an
       owner-only offsite location; cleanup of the disposable restore resources
       must not remove this retained copy
 
 ### Isolated restore
 
-- [ ] Restore uses a fresh PostgreSQL 17 container, empty database, dedicated
+- [x] Restore uses a fresh PostgreSQL 17 container, empty database, dedicated
       Docker network and dedicated temporary storage on the local WSL machine
-- [ ] The restore target does not reuse, reset, mount or connect to the normal
+- [x] The restore target does not reuse, reset, mount or connect to the normal
       development database, `rank_vote_test`, any of their existing volumes, or
       production storage
-- [ ] The local restore uses newly chosen local-only credentials. Production
+- [x] The local restore uses newly chosen local-only credentials. Production
       database passwords are neither needed nor copied, and `pg_restore` uses
       `--no-owner --no-acl` so the restored objects belong to the chosen local
       restore role instead of requiring production roles or grants
-- [ ] `pg_restore` reads the custom-format artifact, targets the clean database,
+- [x] `pg_restore` reads the custom-format artifact, targets the clean database,
       uses `--exit-on-error`, and exits successfully without ignored restore
       errors
 
 ### Recovery proof
 
-- [ ] Direct SQL inspection after restore can read the Prisma migration table
+- [x] Direct SQL inspection after restore can read the Prisma migration table
       and all four application tables (`Poll`, `PollOption`, `Ballot` and
       `BallotEntry`), including their restored rows and relationships
-- [ ] A locally built instance of the API from the recorded release SHA starts
+- [x] A locally built instance of the API from the recorded release SHA starts
       with its `DATABASE_URL` pointing only at the isolated restore database;
       successful process startup alone is not sufficient
-- [ ] Through that restored API, `GET /api/v1/polls/4647e500-8940-41a2-9b25-6261d82e9ace`
+- [x] Through that restored API, `GET /api/v1/polls/4647e500-8940-41a2-9b25-6261d82e9ace`
       returns a `Production smoke ...` poll with the three ordered options
       `Alpha`, `Beta` and `Gamma`
-- [ ] Through that restored API, `GET /api/v1/polls/4647e500-8940-41a2-9b25-6261d82e9ace/results`
+- [x] Through that restored API, `GET /api/v1/polls/4647e500-8940-41a2-9b25-6261d82e9ace/results`
       reports method `BORDA`, one ballot, scores `2`, `1`, `0` for those options
       in order, and `Alpha` as the sole winner; this proves the ballot and its
       entries were restored, not only the poll row
-- [ ] The operator records the UTC backup time, artifact name, matching source
+- [x] The operator records the UTC backup time, artifact name, matching source
       and local SHA-256, PostgreSQL major version, successful restore and SQL / API
       checks, cleanup result and retained offsite location without recording a
       secret
-- [ ] After verification, the temporary API and PostgreSQL containers, network,
+- [x] After verification, the temporary API and PostgreSQL containers, network,
       restore database and temporary restore volume can be removed without
       touching normal development/test resources or the retained dump
-- [ ] #28 moves to `Done` only after the owner-operated production dump,
+- [x] #28 moves to `Done` only after the owner-operated production dump,
       transfer, restore, recovery proof and evidence record all succeed
+
+### Completion evidence
+
+- At `2026-09-19T14:01:18Z`, PostgreSQL 17 (`postgres:17-alpine`) produced the
+  custom-format artifact `rank-vote-20260919T140118Z.dump` through the running
+  production PostgreSQL container while production remained online; no service
+  or live volume was stopped, recreated, copied or mutated. `umask 077` and
+  mode `600` kept the staged dump and checksum owner-only. The command used the
+  container's `POSTGRES_PASSWORD` environment variable without printing or
+  embedding the production password in the shell command. `pg_restore --list`
+  parsed the archive successfully. Its source and local SHA-256 both equal
+  `3c69d345cf3eceb4ecad1b6acade8cc01567e59567400c70b9416ecc7352ab99`.
+- `pg_restore --no-owner --no-acl --exit-on-error` completed with exit code 0
+  against fresh isolated PostgreSQL 17. SQL verification found one Prisma
+  migration, one poll, three options, one ballot and three ballot entries.
+- The API image built from exact release `v0.1.0` at
+  `7021f3137b597119e39ca13e6a86275da58b28e1` was connected only to the restored
+  database. Health passed, and smoke poll
+  `4647e500-8940-41a2-9b25-6261d82e9ace` returned ordered options
+  `Alpha`/`Beta`/`Gamma` plus one `BORDA` ballot scoring `2`/`1`/`0`, with
+  `Alpha` as sole winner.
+- Disposable API/PostgreSQL containers, network, volume, local credentials,
+  release worktree and API image were removed; VPS staging files were removed.
+  The checksum was still valid afterward, and the dump plus checksum remain
+  offsite on the owner's WSL machine under `~/backups/rank-vote/`. That
+  directory was created mode `700`, and both retained files were observed as
+  mode `600`. No credential is included in this evidence record.
 
 ### Out of Scope (tracked separately)
 

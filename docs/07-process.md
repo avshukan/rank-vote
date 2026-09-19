@@ -35,11 +35,10 @@ A deployed increment with:
 
 Versioning follows SemVer.
 
-No release has been cut yet and nothing is deployed. `CHANGELOG.md` contains an
-Unreleased preparation entry for #29. The first verified release is tagged
-`v0.1.0`; the annotated tag is created on the deployed commit only after its
-production smoke check passes. See `docs/production.md` for the reviewed tooling
-and operator sequence.
+The first verified release is tagged `v0.1.0` at
+`7021f3137b597119e39ca13e6a86275da58b28e1`. #29 remains Todo until its separate
+post-deployment record PR updates the changelog and runtime acceptance evidence.
+See `docs/production.md` for the reviewed tooling and operator sequence.
 
 ---
 
@@ -114,19 +113,17 @@ Examples:
 - the active `protect-main` ruleset requires both `checks` and `containers`;
   the owner-authorized setting update for #29 was applied on 2026-09-16
 - **CD does not exist yet.** Images are verified but are not pushed, deployed or
-  released on merge. Write rate limiting (#31) is complete; the remaining
-  first-deploy step is #29 (first production deployment), then recovery proceeds
-  through #28 (manual offsite backup and restore drill) and #32 (automated
-  offsite backups)
+  released on merge. The owner-operated first release and the #28 manual offsite
+  backup/restore drill have completed; #29 awaits its separate post-deployment
+  documentation closure, and #32 remains the next backup stage
 - each merge should be production-ready
 - releases will be tagged manually once there is something to release
 
-For the first production deployment (#29), the infrastructure/tooling PR is
-reviewed and merged before the shared VPS is changed. Deployment then uses that
-exact CI-green `main` SHA. Because the deploy is the behavior that completes the
-item, a small post-deploy record PR moves #29 to `Done`; the immediately required
-#28 backup/restore drill starts after the verified deployment and does not wait
-for that record PR to merge.
+For the first production deployment (#29), the infrastructure/tooling PR was
+reviewed and merged before the shared VPS was changed, and deployment used its
+exact CI-green `main` SHA. A small post-deploy record PR still moves #29 to
+`Done`. The required #28 backup/restore drill completed after the verified
+deployment without waiting for that record PR to merge.
 
 ---
 
