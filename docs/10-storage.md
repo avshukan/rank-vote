@@ -73,44 +73,40 @@ cost and complexity low while still proving that recovery works.
 
 ### Stage 1 — manual offsite backup and restore
 
-Backlog #28 is an owner-operated drill against the verified `v0.1.0` deployment
-at commit `7021f3137b597119e39ca13e6a86275da58b28e1`. It uses `pg_dump -Fc`
-against the running `rank_vote_prod` database: production remains online, and
-the procedure neither copies nor changes the live Docker volume. The completed
-dump has a UTC timestamp in its filename and a SHA-256 checksum calculated on
-the VPS before both files are copied over an authenticated encrypted channel to
-the owner's local WSL machine outside DigitalOcean. The local digest must match
-before restore begins.
+The owner completed backlog #28 on 2026-09-19 against verified release
+`v0.1.0` at commit `7021f3137b597119e39ca13e6a86275da58b28e1`. `pg_dump -Fc`
+created `rank-vote-20260919T140118Z.dump` from the running `rank_vote_prod`
+database while production remained online; the procedure neither copied nor
+changed the live Docker volume. Its SHA-256 was calculated on the VPS before
+the dump and checksum were copied with `scp` to the owner's local WSL machine
+outside DigitalOcean. Local verification matched the source digest exactly.
 
-Restore uses a fresh, isolated PostgreSQL 17 container, database, network,
-storage and local-only credentials. It must not reuse or reset the normal
+Restore used a fresh, isolated PostgreSQL 17 container, database, network,
+storage and local-only credentials. It did not reuse or reset the normal
 development database, `rank_vote_test`, their existing volumes, or any
-production resource. `pg_restore --no-owner --no-acl --exit-on-error` makes the
-chosen local role own the restored objects without copying production
-credentials or requiring production roles. A successful restore is followed by
-direct schema/data reads and by a locally built API from the recorded release
-SHA connected only to the restored database.
+production resource. `pg_restore --no-owner --no-acl --exit-on-error` completed
+successfully, and direct schema/data reads plus the exact `v0.1.0` API connected
+only to the restored database verified recovery.
 
-Recovery is proven through smoke poll
-`4647e500-8940-41a2-9b25-6261d82e9ace`: the restored API must return its
+Recovery was proven through smoke poll
+`4647e500-8940-41a2-9b25-6261d82e9ace`: the restored API returned its
 `Production smoke ...` poll with ordered options `Alpha`, `Beta`, `Gamma`, then
-calculate one `BORDA` ballot as scores `2`, `1`, `0` with `Alpha` the sole
-winner. This exercises restored poll, option, ballot and entry data rather than
-accepting `pg_restore` success alone. The temporary local application/database
-resources can then be destroyed, while the verified dump and checksum remain
-in an owner-only offsite location.
+calculated one `BORDA` ballot as scores `2`, `1`, `0` with `Alpha` the sole
+winner. This exercised restored poll, option, ballot and entry data rather than
+accepting `pg_restore` success alone. The temporary application, database,
+network, volume, credentials, worktree and image were removed. The verified
+dump and checksum remain offsite under `~/backups/rank-vote/` on the owner's WSL
+machine.
 
-See `docs/acceptance-criteria.md` for the complete #28 contract and evidence
-requirements. The readiness documentation does not execute the drill or mark
-#28 done. Its purpose is to prove the complete recovery path before automating
-it; the local machine is an offsite copy, but it is not the intended long-term
-backup service.
+See `docs/acceptance-criteria.md` for the complete #28 contract and completion
+evidence. The successful drill proved the complete recovery path; the retained
+local copy is the Stage 1 artifact, not the intended long-term backup service.
 
 ### Stage 2 — automated offsite backups
 
-After the manual backup/restore path is proven, automate logical dumps on a
-schedule and send them to object storage with an independent provider outside
-DigitalOcean. This stage is backlog #32.
+With the manual backup/restore path proven, the next step is to automate logical
+dumps on a schedule and send them to object storage with an independent
+provider outside DigitalOcean. This stage remains backlog #32.
 
 Stage 2 must define:
 
@@ -178,14 +174,15 @@ Its first-initialization SQL hook creates the non-superuser app/database owner
 using a separate bootstrap credential; normal deploy requires the existing
 external volume. Prisma's schema engine is preloaded during image build, since
 the migration container's internal database network has no internet access.
-Production remains undeployed until the reviewed release is operated on the VPS.
+Production deployment evidence and closure of #29 remain a separate
+documentation task from the completed #28 recovery drill.
 
 ### Backup / restore
 
 PostgreSQL data is transferred with logical `pg_dump` / `pg_restore` backups,
-not by copying the live Docker volume. The first production offsite dump uses
-custom format, is restored into isolated PostgreSQL 17 and is verified through
-known application data as backlog #28; see
+not by copying the live Docker volume. The first production offsite dump used
+custom format, was restored into isolated PostgreSQL 17 and was verified
+through known application data as completed backlog #28; see
 [Production PostgreSQL backup and recovery](#production-postgresql-backup-and-recovery).
 
 ---

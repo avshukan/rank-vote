@@ -106,19 +106,17 @@ prevention.
 
 ## Operations
 
-Nothing is deployed yet. The repository contains a complete local Compose stack
-for PostgreSQL, migrations, the API and the web application. The single-VPS
-production contract is specified under #29 in `docs/acceptance-criteria.md`.
-Its separate Compose, deploy/rollback tooling, PostgreSQL bootstrap and reviewed
-Caddy snippet now exist; `docs/production.md` documents the operator sequence.
-Actual VPS/public deployment and recovery remain pending:
+The owner has operated verified release `v0.1.0`; #29 remains Todo pending its
+separate post-deployment documentation closure. The repository contains a
+complete local Compose stack for PostgreSQL, migrations, the API and the web
+application. The single-VPS production contract is specified under #29 in
+`docs/acceptance-criteria.md`; `docs/production.md` documents its operator
+sequence. Remaining operational limitations are:
 
 - `web` / `api` images and container smoke tests exist, but there is no CD
   pipeline — CI builds and tests, then stops; #29 deploys them
-- PostgreSQL runs locally through Compose and in CI; no production database
-  exists until #29
-- no backups yet: the first manual offsite backup and restore drill is #28,
-  followed by automated offsite backups in #32
+- the #28 manual dump, offsite transfer and clean restore drill succeeded, but
+  scheduled independent backups remain backlog #32
 - no production monitoring, alerting, or error tracking; tracked as #33
 - API handles Docker `SIGTERM`, drains HTTP and closes Prisma (#35); the
   production Compose declares a 30-second stop grace period. Requests exceeding

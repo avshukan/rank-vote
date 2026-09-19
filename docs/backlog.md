@@ -54,8 +54,7 @@ adapts to the column, never the column to the content.
 <!-- prettier-ignore -->
 | ID  | Title                      | Type     | Priority | Notes                                                       |
 | --- | -------------------------- | -------- | -------- | ----------------------------------------------------------- |
-| 29  | First production deploy    | Quality  | High     | Tooling prepared; VPS deploy waits for review/merge         |
-| 28  | Manual offsite backup      | Quality  | High     | Local pg_dump + restore drill; needs #29, blocks #32        |
+| 29  | First production deploy    | Quality  | High     | VPS live; separate post-deploy record remains               |
 | 6   | Mobile responsive layout   | Quality  | Medium   | Basic responsive UI                                         |
 | 19  | Explain score calculation  | Value    | Medium   | How the points produced the ranking, per method; needs #5   |
 | 20  | Refresh results button     | Quality  | Medium   | Manual re-fetch on the results page until #16 lands         |
@@ -65,7 +64,7 @@ adapts to the column, never the column to the content.
 | 25  | Unify eslint and TS majors | Refactor | Medium   | web on eslint 10/TS 6, the rest on 9/TS 5; lock churn       |
 | 26  | Extract page fetch/retry   | Refactor | Medium   | BallotForm and ResultsView duplicate load/404/retry         |
 | 30  | Drop the scaffold endpoint | Quality  | Medium   | `GET /api/v1` stays; liveness is separate in #27            |
-| 32  | Automate offsite backups   | Quality  | Medium   | Scheduled dumps to independent object storage; needs #28    |
+| 32  | Automate offsite backups   | Quality  | Medium   | Next: scheduled dumps to independent object storage         |
 | 33  | Add production monitoring  | Quality  | Medium   | Dependency health, monitoring and alerts; needs #29         |
 | 34  | Share rate-limit state     | Quality  | Low      | Shared counters before API replicas >1; needs #31           |
 | 11  | Add PWA support            | Quality  | Low      | Installable web app                                         |
@@ -97,3 +96,4 @@ adapts to the column, never the column to the content.
 |  27 | Dockerize web and api      | Quality  | High     | Separate images + healthy local stack; blocks #29           |
 |  31 | Rate-limit write endpoints | Quality  | High     | Per-IP fixed windows on both public write endpoints         |
 | 35  | Graceful API shutdown      | Quality  | High     | SIGTERM drains HTTP, closes Prisma; process + Docker tests  |
+|  28 | Manual offsite backup      | Quality  | High     | Offsite dump + clean restore + v0.1.0 API proof             |

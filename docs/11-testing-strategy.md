@@ -203,8 +203,8 @@ recorded as current:
 The proxy/rate-limit check uses controlled invalid requests and then restarts
 the single API container to clear only that test bucket before the user-flow
 smoke. It must not consume the bucket of an unrelated production user. The
-smoke poll is retained and its ID recorded so #28 can verify that the first
-offsite dump and restore contains known application data.
+retained smoke poll and recorded ID were used by #28 to verify that the first
+offsite dump and restore contained known application data.
 
 Backlog #35 provides the signal-lifecycle and Docker stop coverage described
 above. #29 consumes that behavior and configures the production grace period.

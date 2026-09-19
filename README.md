@@ -35,14 +35,16 @@ restarting the web half does not take the API down with it.
 `make db-up` continues to start only PostgreSQL. `make container-smoke` builds
 both images and exercises an isolated stack with fresh temporary storage.
 
-## Production preparation
+## Production operations
 
-Production is not deployed yet. #29 adds a separate `docker-compose.prod.yml`,
-`make prod-deploy RELEASE_SHA=<full-sha>` and `make prod-rollback`. Follow the
-[operator runbook](docs/production.md) only after review/merge and successful
-`checks` and `containers` on the exact `main` SHA. Local validation uses
-`make prod-check` and the disposable Docker integration target `make prod-smoke`.
-These commands do not replace the local stack or begin the #28 backup work.
+Verified release `v0.1.0` has been operated; #29 remains Todo pending its
+separate post-deployment documentation closure. Production uses a separate
+`docker-compose.prod.yml`, `make prod-deploy RELEASE_SHA=<full-sha>` and
+`make prod-rollback`. Follow the [operator runbook](docs/production.md) only
+from a reviewed, merged SHA with successful `checks` and `containers`. Local
+validation uses `make prod-check` and the disposable Docker integration target
+`make prod-smoke`; these commands do not replace the local stack or perform the
+production backup work completed in #28.
 
 ## Stopping and Restarting
 
