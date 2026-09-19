@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from urllib.parse import quote
 
 from .caddy import apply_route, candidate_config
@@ -14,7 +14,7 @@ from .cli import fresh_config
 from .core import (API_URL, ORIGIN, VOLUME, Refused, ReleaseState, deployment_lock,
                    parse_env, private_path, redact, validate_ci, validate_config,
                    validate_manifest, validate_model, validate_sha, validate_web_bundle)
-from .release import deploy, rollback, verify_image_ids
+from .release import deploy, internal_verify, rollback, verify_image_ids
 from .runtime import Runner, check_source, network_boundary
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -259,6 +259,36 @@ class StateTests(unittest.TestCase):
             with self.assertRaises(Refused):
                 validate_manifest({**first, "DATABASE_URL": "secret"})
             self.assertNotIn("DATABASE_URL", (Path(directory) / "current.env").read_text())
+
+
+class ProcessVerificationTests(unittest.TestCase):
+    def test_docker_top_requires_pid_and_exactly_one_node_command(self):
+        outputs = [
+            ("PID                 COMMAND\n1234                node\n", True),
+            ("PID COMMAND\n  1233 tini\n\t1234\tnode  \n1235 node-helper\n\n", True),
+            ("PID COMMAND\n", False),
+            ("PID COMMAND\n1233 tini\n1234 nodejs\n1235 node-helper\n", False),
+            ("PID COMMAND\n1234 node\n1235 node\n", False),
+        ]
+        for output, accepted in outputs:
+            with self.subTest(output=output):
+                runner = Mock(spec=Runner)
+                runner.compose.side_effect = lambda sha, args: SimpleNamespace(stdout=args[-1] + "-container\n")
+                runner.json.return_value = [{"State": {"Status": "running", "Health": {"Status": "healthy"}},
+                                             "Image": "sha256:test"}]
+                def top(args):
+                    self.assertEqual(args, ["docker", "top", "api-container", "-eo", "pid,comm"])
+                    return output
+                runner.text.side_effect = top
+                images = {service: ("unused-tag", "sha256:test") for service in ("api", "web")}
+                with patch("scripts.production.release.caddy_container"), \
+                     patch("scripts.production.release.network_boundary"):
+                    if accepted:
+                        internal_verify(runner, SHA, images, migration=False)
+                    else:
+                        with self.assertRaisesRegex(Refused, "API must have exactly one Node process"):
+                            internal_verify(runner, SHA, images, migration=False)
+                runner.text.assert_called_once_with(["docker", "top", "api-container", "-eo", "pid,comm"])
 
 
 class SequenceTests(unittest.TestCase):

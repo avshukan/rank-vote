@@ -173,7 +173,9 @@ create → share → vote → results flow through the containerized services.
 
 `pnpm test:tools` includes Python standard-library tests for production config,
 rendered-model validation, exact SHA/CI identity, missing-volume refusal,
-cross-process locking, manifests, migration failure and rollback. No VPS or
+cross-process locking, manifests, migration failure and rollback. Process
+verification tests require `docker top <api-container> -eo pid,comm` and exactly
+one `node` command, rejecting zero or multiple Node processes. No VPS or
 production credentials are used. `make prod-check` also renders the real Compose
 definition with disposable dummy credentials. `make prod-smoke` validates that
 model, substitutes randomly named local networks/volume, then exercises real

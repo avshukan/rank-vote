@@ -83,8 +83,9 @@ def internal_verify(runner, sha, images, migration=True):
         if service in images:
             require(info["Image"] == images[service][1], f"Running {service} image differs from release")
         if service == "api":
-            processes = runner.text(["docker", "top", ids[0], "-eo", "comm"]).splitlines()[1:]
-            require(sum(line.strip() == "node" for line in processes) == 1, "API must have exactly one Node process")
+            # Docker needs the PID column to identify container processes.
+            processes = runner.text(["docker", "top", ids[0], "-eo", "pid,comm"]).splitlines()[1:]
+            require(sum(line.split()[1:] == ["node"] for line in processes) == 1, "API must have exactly one Node process")
     if migration:
         ids = runner.compose(sha, ["ps", "--all", "--quiet", "migrate"]).stdout.split()
         require(len(ids) == 1, "Expected completed migrate container")
