@@ -859,16 +859,16 @@ The owner-supplied recovery target is release `v0.1.0` at
 - [x] The operator creates a logical backup of production database
       `rank_vote_prod` with PostgreSQL `pg_dump` in custom format (`-Fc`) while
       the production PostgreSQL service and application remain online
-- [ ] The dump reads the running database through the PostgreSQL container; it
+- [x] The dump reads the running database through the PostgreSQL container; it
       does not stop or recreate a production service, copy PostgreSQL data
       files or the Docker volume, or mutate
       `rank_vote_prod_postgres_data`
 - [x] The backup filename includes a UTC timestamp and contains no database
       URL, username, password or other production secret
-- [ ] A SHA-256 checksum is calculated for the completed source artifact before
+- [x] A SHA-256 checksum is calculated for the completed source artifact before
       transfer, and the dump and checksum file are readable only by the
       operator while staged on the VPS
-- [ ] The dump command neither prints a production password nor places one in a
+- [x] The dump command neither prints a production password nor places one in a
       command argument or shell history; repository files, logs and evidence
       contain no production credential
 
@@ -882,7 +882,7 @@ The owner-supplied recovery target is release `v0.1.0` at
       restore is attempted
 - [x] A matching checksum is necessary but not sufficient recovery proof: the
       drill continues through restore and application reads
-- [ ] After the drill, the verified dump and checksum remain retained in an
+- [x] After the drill, the verified dump and checksum remain retained in an
       owner-only offsite location; cleanup of the disposable restore resources
       must not remove this retained copy
 
@@ -929,8 +929,12 @@ The owner-supplied recovery target is release `v0.1.0` at
 ### Completion evidence
 
 - At `2026-09-19T14:01:18Z`, PostgreSQL 17 (`postgres:17-alpine`) produced the
-  custom-format artifact `rank-vote-20260919T140118Z.dump` while production
-  remained online. The source dump was owner-only and `pg_restore --list`
+  custom-format artifact `rank-vote-20260919T140118Z.dump` through the running
+  production PostgreSQL container while production remained online; no service
+  or live volume was stopped, recreated, copied or mutated. `umask 077` and
+  mode `600` kept the staged dump and checksum owner-only. The command used the
+  container's `POSTGRES_PASSWORD` environment variable without printing or
+  embedding the production password in the shell command. `pg_restore --list`
   parsed the archive successfully. Its source and local SHA-256 both equal
   `3c69d345cf3eceb4ecad1b6acade8cc01567e59567400c70b9416ecc7352ab99`.
 - `pg_restore --no-owner --no-acl --exit-on-error` completed with exit code 0
@@ -945,13 +949,9 @@ The owner-supplied recovery target is release `v0.1.0` at
 - Disposable API/PostgreSQL containers, network, volume, local credentials,
   release worktree and API image were removed; VPS staging files were removed.
   The checksum was still valid afterward, and the dump plus checksum remain
-  offsite on the owner's WSL machine under `~/backups/rank-vote/`.
-
-The supplied record does not independently establish the exact `pg_dump`
-execution path, the checksum sidecar's VPS permission mode, whether credentials
-were absent from the operator's command/history, or the retained WSL files'
-permission mode. Those four checklist items remain open rather than inferred;
-no credential is included in this evidence record.
+  offsite on the owner's WSL machine under `~/backups/rank-vote/`. That
+  directory was created mode `700`, and both retained files were observed as
+  mode `600`. No credential is included in this evidence record.
 
 ### Out of Scope (tracked separately)
 
