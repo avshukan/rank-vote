@@ -841,14 +841,122 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 
 ---
 
+## #28 Manual offsite backup
+
+This owner-operated runtime drill proves one complete recovery path for the
+first production deployment. This readiness PR specifies the drill only: it
+does not access production, create or transfer a dump, perform a restore, or
+complete #28.
+
+The owner-supplied recovery target is release `v0.1.0` at
+`7021f3137b597119e39ca13e6a86275da58b28e1`, served from
+`https://rankvote.avshukan.com`. Its recorded smoke poll is
+`4647e500-8940-41a2-9b25-6261d82e9ace`.
+
+### Source backup
+
+- [ ] The operator creates a logical backup of production database
+      `rank_vote_prod` with PostgreSQL `pg_dump` in custom format (`-Fc`) while
+      the production PostgreSQL service and application remain online
+- [ ] The dump reads the running database through the PostgreSQL container; it
+      does not stop or recreate a production service, copy PostgreSQL data
+      files or the Docker volume, or mutate
+      `rank_vote_prod_postgres_data`
+- [ ] The backup filename includes a UTC timestamp and contains no database
+      URL, username, password or other production secret
+- [ ] A SHA-256 checksum is calculated for the completed source artifact before
+      transfer, and the dump and checksum file are readable only by the
+      operator while staged on the VPS
+- [ ] The dump command neither prints a production password nor places one in a
+      command argument or shell history; repository files, logs and evidence
+      contain no production credential
+
+### Offsite transfer and integrity
+
+- [ ] The dump and its checksum are copied over an authenticated encrypted
+      channel from the DigitalOcean VPS to the owner's local WSL machine; that
+      local destination is outside the VPS and outside DigitalOcean
+- [ ] SHA-256 is recalculated or checked on the local machine, and the local
+      digest exactly matches the digest calculated on the VPS before any
+      restore is attempted
+- [ ] A matching checksum is necessary but not sufficient recovery proof: the
+      drill continues through restore and application reads
+- [ ] After the drill, the verified dump and checksum remain retained in an
+      owner-only offsite location; cleanup of the disposable restore resources
+      must not remove this retained copy
+
+### Isolated restore
+
+- [ ] Restore uses a fresh PostgreSQL 17 container, empty database, dedicated
+      Docker network and dedicated temporary storage on the local WSL machine
+- [ ] The restore target does not reuse, reset, mount or connect to the normal
+      development database, `rank_vote_test`, any of their existing volumes, or
+      production storage
+- [ ] The local restore uses newly chosen local-only credentials. Production
+      database passwords are neither needed nor copied, and `pg_restore` uses
+      `--no-owner --no-acl` so the restored objects belong to the chosen local
+      restore role instead of requiring production roles or grants
+- [ ] `pg_restore` reads the custom-format artifact, targets the clean database,
+      uses `--exit-on-error`, and exits successfully without ignored restore
+      errors
+
+### Recovery proof
+
+- [ ] Direct SQL inspection after restore can read the Prisma migration table
+      and all four application tables (`Poll`, `PollOption`, `Ballot` and
+      `BallotEntry`), including their restored rows and relationships
+- [ ] A locally built instance of the API from the recorded release SHA starts
+      with its `DATABASE_URL` pointing only at the isolated restore database;
+      successful process startup alone is not sufficient
+- [ ] Through that restored API, `GET /api/v1/polls/4647e500-8940-41a2-9b25-6261d82e9ace`
+      returns a `Production smoke ...` poll with the three ordered options
+      `Alpha`, `Beta` and `Gamma`
+- [ ] Through that restored API, `GET /api/v1/polls/4647e500-8940-41a2-9b25-6261d82e9ace/results`
+      reports method `BORDA`, one ballot, scores `2`, `1`, `0` for those options
+      in order, and `Alpha` as the sole winner; this proves the ballot and its
+      entries were restored, not only the poll row
+- [ ] The operator records the UTC backup time, artifact name, matching source
+      and local SHA-256, PostgreSQL major version, successful restore and SQL / API
+      checks, cleanup result and retained offsite location without recording a
+      secret
+- [ ] After verification, the temporary API and PostgreSQL containers, network,
+      restore database and temporary restore volume can be removed without
+      touching normal development/test resources or the retained dump
+- [ ] #28 moves to `Done` only after the owner-operated production dump,
+      transfer, restore, recovery proof and evidence record all succeed
+
+### Out of Scope (tracked separately)
+
+- Post-deployment runtime record and closure of the first deployment → #29
+- Backup scheduling, retention automation, independent object-storage
+  selection, backup-service encryption policy, monitoring/alerts and periodic
+  restore tests → #32
+
+### Readiness Decisions
+
+- The first recovery artifact is a custom-format PostgreSQL logical dump, not a
+  copy of the live Docker volume. Creating it is an online, read-only operation
+  and does not require production downtime.
+- The first offsite destination and restore host are the owner's local WSL
+  machine. Exact owner-only paths, temporary container/network names and local
+  ports are operator judgment calls and do not change the recovery contract.
+- Ownership and ACLs from production are not recreated locally. The isolated
+  restore role owns restored objects, while schema and application data remain
+  sufficient for the API to operate.
+- The known production smoke poll supplies the application-level recovery
+  oracle. A successful `pg_restore` or row count by itself cannot complete the
+  drill.
+- This is a one-time manual procedure. It adds no repository automation or new
+  production tooling; #32 owns the durable backup system.
+- No architectural or product questions remain open for #28.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
 run `task-readiness` when one is picked up.
 
-- **#28 Manual offsite backup** — after #29, create a logical dump, copy it to
-  the owner's local machine outside DigitalOcean, restore it into clean
-  PostgreSQL and verify the application can use the restored database.
 - **#32 Automate offsite backups** — after #28 proves recovery, choose the
   independent object-storage provider, schedule, retention, encryption,
   monitoring and restore-test cadence.
