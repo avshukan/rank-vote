@@ -73,15 +73,38 @@ cost and complexity low while still proving that recovery works.
 
 ### Stage 1 — manual offsite backup and restore
 
-Immediately after the first production deployment, create a logical PostgreSQL
-backup manually and copy it outside the VPS and outside DigitalOcean, initially
-to the project owner's local machine. Then restore that backup into a clean
-PostgreSQL instance and verify that the schema/data are readable and the
-application can connect.
+Backlog #28 is an owner-operated drill against the verified `v0.1.0` deployment
+at commit `7021f3137b597119e39ca13e6a86275da58b28e1`. It uses `pg_dump -Fc`
+against the running `rank_vote_prod` database: production remains online, and
+the procedure neither copies nor changes the live Docker volume. The completed
+dump has a UTC timestamp in its filename and a SHA-256 checksum calculated on
+the VPS before both files are copied over an authenticated encrypted channel to
+the owner's local WSL machine outside DigitalOcean. The local digest must match
+before restore begins.
 
-This stage is backlog #28. Its purpose is to prove the complete recovery path
-before automating it; the local machine is an offsite copy, but it is not the
-intended long-term backup service.
+Restore uses a fresh, isolated PostgreSQL 17 container, database, network,
+storage and local-only credentials. It must not reuse or reset the normal
+development database, `rank_vote_test`, their existing volumes, or any
+production resource. `pg_restore --no-owner --no-acl --exit-on-error` makes the
+chosen local role own the restored objects without copying production
+credentials or requiring production roles. A successful restore is followed by
+direct schema/data reads and by a locally built API from the recorded release
+SHA connected only to the restored database.
+
+Recovery is proven through smoke poll
+`4647e500-8940-41a2-9b25-6261d82e9ace`: the restored API must return its
+`Production smoke ...` poll with ordered options `Alpha`, `Beta`, `Gamma`, then
+calculate one `BORDA` ballot as scores `2`, `1`, `0` with `Alpha` the sole
+winner. This exercises restored poll, option, ballot and entry data rather than
+accepting `pg_restore` success alone. The temporary local application/database
+resources can then be destroyed, while the verified dump and checksum remain
+in an owner-only offsite location.
+
+See `docs/acceptance-criteria.md` for the complete #28 contract and evidence
+requirements. The readiness documentation does not execute the drill or mark
+#28 done. Its purpose is to prove the complete recovery path before automating
+it; the local machine is an offsite copy, but it is not the intended long-term
+backup service.
 
 ### Stage 2 — automated offsite backups
 
@@ -160,8 +183,9 @@ Production remains undeployed until the reviewed release is operated on the VPS.
 ### Backup / restore
 
 PostgreSQL data is transferred with logical `pg_dump` / `pg_restore` backups,
-not by copying the live Docker volume. The first production offsite dump and
-restore drill remains backlog #28, immediately after the first deployment; see
+not by copying the live Docker volume. The first production offsite dump uses
+custom format, is restored into isolated PostgreSQL 17 and is verified through
+known application data as backlog #28; see
 [Production PostgreSQL backup and recovery](#production-postgresql-backup-and-recovery).
 
 ---
