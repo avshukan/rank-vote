@@ -15,22 +15,22 @@
 
 ### Level
 
-| Level  | Description                                         |
-| ------ | --------------------------------------------------- |
-| High   | Important to address soon; significant impact      |
-| Medium | Valuable work that can reasonably wait             |
-| Low    | Nice-to-have, speculative, or longer-term work     |
+| Level  | Description                                    |
+| ------ | ---------------------------------------------- |
+| High   | Important to address soon; significant impact  |
+| Medium | Valuable work that can reasonably wait         |
+| Low    | Nice-to-have, speculative, or longer-term work |
 
 ---
 
 ### State
 
-| State   | Description                                      |
-| ------- | ------------------------------------------------ |
-| —       | Task-readiness has not been run                 |
-| Ready   | Ready to implement                               |
-| Design  | Needs analysis or design before implementation   |
-| Blocked | Cannot start until a known blocker is resolved   |
+| State   | Description                                    |
+| ------- | ---------------------------------------------- |
+| —       | Task-readiness has not been run                |
+| Ready   | Ready to implement                             |
+| Design  | Needs analysis or design before implementation |
+| Blocked | Cannot start until a known blocker is resolved |
 
 ---
 
@@ -56,10 +56,10 @@
 
 The `Todo` and `Done` tables have **fixed column widths**:
 
-| Table | ID | Title | Type | Level | State | Notes |
-| ----- | -- | ----- | ---- | ----- | ----- | ----- |
-| Todo  | 3  | 26    | 8    | 6     | 7     | 51    |
-| Done  | 3  | 26    | 8    | 6     | —     | 61    |
+| Table | ID  | Title | Type | Level | State | Notes |
+| ----- | --- | ----- | ---- | ----- | ----- | ----- |
+| Todo  | 3   | 26    | 8    | 6     | 7     | 51    |
+| Done  | 3   | 26    | 8    | 6     | —     | 61    |
 
 With the separators, every backlog row is exactly 120 characters wide, and the
 separator row under each header doubles as the ruler to pad against.
