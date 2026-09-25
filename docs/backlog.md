@@ -74,6 +74,7 @@ adapts to the column rather than moving the column.
 - The `ID` column contains only the number. References elsewhere use `ID-N`,
   for example `needs ID-19`, so backlog IDs are not confused with GitHub
   Issue/PR numbers such as `#19`.
+- Completed items are appended to `Done`; existing `Done` rows are not reordered.
 - Both backlog tables are preceded by `<!-- prettier-ignore -->`, so Prettier
   will not re-align them; pad the cells by hand.
 - The `Legend` and width tables are ordinary Prettier-managed tables.
@@ -86,14 +87,14 @@ adapts to the column rather than moving the column.
 | ID  | Title                      | Type     | Level  | State   | Notes                                               |
 | --- | -------------------------- | -------- | ------ | ------- | --------------------------------------------------- |
 | 6   | Mobile responsive layout   | Quality  | Medium | —       | Basic responsive UI                                 |
-| 19  | Explain score calculation  | Value    | Medium | —       | How points produce ranking; needs ID-5              |
+| 19  | Explain score calculation  | Value    | Medium | —       | How points produce ranking, per method              |
 | 20  | Refresh results button     | Quality  | Medium | —       | Manual results refresh until ID-16                  |
 | 8   | Add IRV counting           | Value    | Medium | —       | Instant-runoff voting                               |
 | 9   | Add Condorcet counting     | Value    | Medium | —       | Pairwise comparison winner                          |
 | 10  | Compare counting methods   | Value    | Medium | —       | Show different winners; needs ID-8, ID-9            |
 | 25  | Unify eslint and TS majors | Refactor | Medium | —       | web eslint 10/TS 6; rest eslint 9/TS 5              |
 | 26  | Extract page fetch/retry   | Refactor | Medium | —       | BallotForm/ResultsView duplicate load/404/retry     |
-| 30  | Drop the scaffold endpoint | Refactor | Medium | —       | `GET /api/v1` stays; liveness separate in ID-27     |
+| 30  | Drop the scaffold endpoint | Refactor | Medium | —       | Remove scaffold root; health endpoint is separate   |
 | 32  | Automate offsite backups   | Ops      | High   | —       | Schedule dumps to independent object storage        |
 | 33  | Add production monitoring  | Ops      | Medium | —       | Dependency health, monitoring and alerts            |
 | 34  | Share rate-limit state     | Quality  | Low    | —       | Shared counters before API replicas >1              |
@@ -123,7 +124,7 @@ adapts to the column rather than moving the column.
 |  21 | Fix `pnpm dev` blank app   | Quality  | High   | shared builds ESM beside CJS; `exports` routes each one       |
 |   5 | Show results               | Value    | High   | Winner(s) and score table; `NotFound` (ID-18) if poll is gone |
 |  17 | Migrate to PostgreSQL      | Quality  | High   | PostgreSQL adapter, local Compose, isolated e2e + CI          |
-|  27 | Dockerize web and api      | Quality  | High   | Separate images + healthy local stack; blocks ID-29           |
+|  27 | Dockerize web and api      | Quality  | High   | Separate images + healthy local stack; enabled ID-29          |
 |  31 | Rate-limit write endpoints | Quality  | High   | Per-IP fixed windows on both public write endpoints           |
 |  35 | Graceful API shutdown      | Quality  | High   | SIGTERM drains HTTP, closes Prisma; process + Docker tests    |
 |  28 | Manual offsite backup      | Quality  | High   | Offsite dump + clean restore + v0.1.0 API proof               |
