@@ -95,7 +95,7 @@ adapts to the column rather than moving the column.
 | 25  | Unify eslint and TS majors | Refactor | Medium | —       | web eslint 10/TS 6; rest eslint 9/TS 5              |
 | 26  | Extract page fetch/retry   | Refactor | Medium | —       | BallotForm/ResultsView duplicate load/404/retry     |
 | 30  | Drop the scaffold endpoint | Refactor | Medium | —       | Remove scaffold root; health endpoint is separate   |
-| 32  | Automate offsite backups   | Ops      | High   | Design  | Daily dump to non-DO bucket; provider/key/alert TBD |
+| 32  | Automate offsite backups   | Ops      | High   | Design  | Automate non-DO backups; design decisions pending   |
 | 33  | Add production monitoring  | Ops      | Medium | —       | Dependency health, monitoring and alerts            |
 | 34  | Share rate-limit state     | Quality  | Low    | —       | Shared counters before API replicas >1              |
 | 11  | Add PWA support            | Quality  | Low    | —       | Installable web app                                 |
