@@ -980,14 +980,146 @@ The owner-supplied recovery target is release `v0.1.0` at
 
 ---
 
+## #32 Automate offsite backups
+
+Stage 2 of the staged backup plan in `docs/10-storage.md`: a daily logical dump
+of production `rank_vote_prod` is stored in Cloudflare R2, outside
+DigitalOcean, with Bucket Lock immutability, lifecycle retention, email
+alerting and a documented restore path. The repository implementation merges
+first; #32 moves to `Done` only after the owner-operated production evidence
+below.
+
+### Storage and access
+
+- [ ] Backups are stored in one private R2 bucket dedicated to Ranking Vote
+      backups, in the owner's existing Cloudflare account
+- [ ] Objects rely on R2's built-in encryption at rest; there is no client-side
+      encryption
+- [ ] The VPS holds only an `Object Read & Write` token scoped to that bucket;
+      no admin-level Cloudflare token is stored on the VPS
+- [ ] A Bucket Lock rule retains every object for 30 days: while the lock is
+      active, the object cannot be deleted or overwritten with the VPS
+      credentials
+- [ ] A lifecycle rule deletes objects after 90 days
+- [ ] R2 and Healthchecks.io credentials are kept separately from `prod.env`, in
+      a root-only location outside git and every build context; `prod.env` and
+      its validation are unchanged
+- [ ] No credential appears in command arguments, output, logs, the repository
+      or evidence
+
+### Backup run
+
+- [ ] `make prod-backup` creates a custom-format `pg_dump -Fc` dump of
+      `rank_vote_prod` through `docker exec` in the running production
+      `postgres` container while production stays online; it never stops or
+      recreates a service and never copies or mutates
+      `rank_vote_prod_postgres_data`
+- [ ] Before upload the dump is validated as a readable archive
+      (`pg_restore --list`), and an integrity checksum is kept with it; a dump
+      that fails validation is not uploaded and the run fails
+- [ ] The dump is uploaded with `rclone` from a container image pinned by digest;
+      nothing else is installed on the host
+- [ ] Each run adds new objects and never deletes or overwrites existing ones;
+      retention belongs to the lifecycle rule
+- [ ] No dump remains on the VPS after a run, successful or not
+- [ ] The backup does not depend on GitHub or CI availability
+- [ ] A systemd timer on the VPS host runs the backup once a day (RPO 24 hours);
+      how the timer is installed and enabled is documented in
+      `docs/production.md`
+
+### Failure notification
+
+- [ ] A successful backup shows as healthy in Healthchecks.io
+- [ ] A failed backup exits non-zero with a secret-free message and results in
+      an email alert to the owner
+- [ ] A missed scheduled run also results in an email alert
+
+### Restore
+
+- [ ] `docs/production.md` documents a manual production restore drill: an R2
+      backup is downloaded outside DigitalOcean, its integrity checked, restored
+      into a fresh isolated PostgreSQL 17, and verified through the recorded
+      smoke poll by the API of the deployed release, as in #28
+- [ ] The drill runs every six months, at #32 completion, after changes to the
+      backup tooling and after a PostgreSQL major-version change
+- [ ] `docs/production.md` documents a safe production recovery path from an R2
+      backup that is compatible with the existing production constraints: it is
+      owner-operated and never automatic, it does not delete, reset or silently
+      replace `rank_vote_prod_postgres_data` or existing data, and the
+      application keeps using the non-superuser `rank_vote_app` without the
+      bootstrap credential. The implementation PR details and reviews the exact
+      procedure
+- [ ] The target recovery time (RTO) is 24 hours, best effort
+
+### Automated verification
+
+- [ ] Unit tests cover the new behaviour, including credential validation,
+      failure paths, no upload after a failed dump or validation, and
+      secret-free output
+- [ ] `make prod-smoke` automatically checks the restore path locally: a dump of
+      its disposable production-model database, taken through the backup code
+      path, is restored into a fresh disposable PostgreSQL initialized like
+      production and read back through the API using the production
+      application role
+- [ ] `make verify`, `make prod-check` and `make prod-smoke` pass without R2 or
+      Healthchecks.io credentials
+
+### Production evidence
+
+- [ ] At least one timer-initiated run successfully stored a backup in R2
+- [ ] The restore drill from R2 succeeded
+- [ ] A deliberately induced backup failure, touching neither production data
+      nor services, produced an email notification
+- [ ] Bucket Lock (30 days) and lifecycle deletion (90 days) are configured and
+      checked: an object under an active lock cannot be deleted or overwritten
+      with the VPS credentials, and the lifecycle rule is present
+- [ ] The owner records UTC times, object names, integrity and restore results
+      without any secret; #32 moves to `Done` only after all of the above
+
+### Out of Scope (tracked separately)
+
+- Automated periodic restore of production backups — no backlog item until
+  needed
+- General production monitoring, uptime and alerting → #33
+- PITR/WAL archiving and replication; managed PostgreSQL remains Stage 3
+- A second backup provider
+- Backups of `prod.env`, `deploy-state` and the Caddy configuration
+
+### Readiness Decisions
+
+- Confirmed by the owner in the #32 design loop: Cloudflare R2 in the existing
+  account with one private bucket; R2's built-in encryption only; a
+  bucket-scoped `Object Read & Write` token on the VPS and no admin-level token;
+  Bucket Lock 30 days; lifecycle deletion after 90 days; a daily backup
+  (RPO 24 hours); Healthchecks.io with email; a restore drill every six months
+  and on events; RTO 24 hours best effort; `pg_dump -Fc` through
+  `docker exec`; upload with `rclone` pinned by digest; a systemd timer on the
+  VPS host; a manual production restore drill and a local automated
+  restore-path check in `prod-smoke` as part of #32; `Done` only after
+  production evidence.
+- Implementation choices, settled in the implementation PR and its review:
+  - the Healthchecks.io signalling protocol and check timing
+  - the format and location of the separate credentials file
+  - object naming and whether the checksum is a separate object or metadata
+  - behaviour when a run overlaps a deployment and the production lock; it must
+    neither alter the deployment nor fail silently
+  - the `rclone` configuration
+  - the failure-injection mechanism for the production evidence
+  - the timer's time of day and missed-run catch-up
+  - whether production restore gets its own `make` target
+  - the PostgreSQL role used for `pg_dump`
+  - installing the systemd units through `prod-deploy` or a separate owner step
+  - the exact production recovery sequence, including a new VPS, the fixed
+    host IPv4, DNS and Caddy, and the handling of a damaged database
+- No architectural or product questions remain open for #32.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
 run `task-readiness` when one is picked up.
 
-- **#32 Automate offsite backups** — after #28 proves recovery, choose the
-  independent object-storage provider, schedule, retention, encryption,
-  monitoring and restore-test cadence.
 - **#33 Add production monitoring** — dependency-aware readiness, external
   uptime monitoring, alerting and error tracking follow the first deployment;
   #27 supplies only process-level liveness.
