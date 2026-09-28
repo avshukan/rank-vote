@@ -104,18 +104,32 @@ local copy is the Stage 1 artifact, not the intended long-term backup service.
 
 ### Stage 2 — automated offsite backups
 
-With the manual backup/restore path proven, the next step is to automate logical
-dumps on a schedule and send them to object storage with an independent
-provider outside DigitalOcean. This stage remains backlog #32.
+With the manual backup/restore path proven, backlog #32 automates logical dumps
+on a schedule and sends them to object storage with an independent provider
+outside DigitalOcean. The design is accepted and implementation is pending; the
+contract is the #32 section of `docs/acceptance-criteria.md`.
 
-Stage 2 must define:
-
-- backup tool and format
-- schedule and target recovery point (RPO)
-- retention policy
-- encryption and access control
-- failed-backup monitoring/alerting
-- restore-test cadence and target recovery time (RTO)
+- **Tool and format:** a custom-format `pg_dump -Fc`, taken online through
+  `docker exec` in the running production `postgres` container, as in Stage 1
+- **Execution:** a systemd timer on the VPS host runs the backup and uploads it
+  with `rclone` from a container image pinned by digest
+- **Destination:** one private Cloudflare R2 bucket for Ranking Vote backups,
+  in the owner's existing Cloudflare account
+- **Schedule and RPO:** once a day; RPO 24 hours
+- **Retention and immutability:** an R2 Bucket Lock keeps every object for 30
+  days, during which it cannot be deleted or overwritten; a lifecycle rule
+  deletes objects after 90 days
+- **Encryption and access control:** R2's built-in encryption at rest, without
+  client-side encryption. The VPS holds only an `Object Read & Write` token
+  scoped to that bucket, stored separately from `prod.env`; no admin-level
+  Cloudflare token is kept on the VPS
+- **Failed-backup alerting:** Healthchecks.io emails the owner when a backup
+  fails or a scheduled run is missed
+- **Restore tests and RTO:** a manual restore drill from R2 every six months, at
+  #32 completion, after changes to the backup tooling and after a PostgreSQL
+  major-version change; RTO 24 hours, best effort. #32 also documents a
+  production recovery path; there is no automated periodic restore of
+  production backups
 
 ### Stage 3 — managed PostgreSQL
 

@@ -426,8 +426,8 @@ Consequences:
 - the first production deployment is followed immediately by a manual
   `pg_dump`-style offsite copy and a restore drill (#28)
 - once that recovery path is proven, scheduled backups move to independent
-  object storage outside DigitalOcean (#32), with retention, RPO/RTO, encryption
-  and failed-backup monitoring defined there
+  object storage outside DigitalOcean (#32); see
+  [Automated offsite backups to Cloudflare R2](#automated-offsite-backups-to-cloudflare-r2)
 
 Evolution:
 
@@ -444,6 +444,75 @@ Rejected:
   not justified at the current scale
 - multi-provider replication now — additional cost and complexity are not
   justified at the current scale
+
+### Automated offsite backups to Cloudflare R2
+
+Status:
+
+- accepted for backlog #32 (Stage 2 of the staged backup plan); implementation
+  pending
+
+Chosen:
+
+- store backups in one private Cloudflare R2 bucket in the owner's existing
+  Cloudflare account, outside DigitalOcean
+- rely on R2's built-in encryption at rest, without client-side encryption
+- give the VPS only an `Object Read & Write` token scoped to that bucket and
+  keep admin-level Cloudflare credentials off the VPS
+- make every object immutable for 30 days with an R2 Bucket Lock and delete it
+  after 90 days with a lifecycle rule
+- once a day (RPO 24 hours), a systemd timer on the VPS host creates a
+  custom-format `pg_dump -Fc` through `docker exec` in the running production
+  `postgres` container and uploads it with `rclone` from an image pinned by
+  digest
+- alert the owner by email through Healthchecks.io when a backup fails or a
+  scheduled run is missed
+- run a manual restore drill from R2 every six months and after relevant
+  events, and document a production recovery path; target RTO is 24 hours,
+  best effort
+
+Reason:
+
+- R2 needs no new account, because the domain's DNS already uses Cloudflare,
+  and the current data volume fits its free tier while staying independent of
+  DigitalOcean
+- the dump holds no accounts or personal data, so provider-side encryption is
+  sufficient; a client-side key would add a secret whose loss makes every
+  backup unusable
+- deletion protection does not depend on token permissions: the Bucket Lock
+  stops a compromised VPS from deleting or overwriting recent backups, and
+  changing lock rules requires bucket-configuration rights the VPS token lacks
+- the production database network has no internet egress, so the host rather
+  than a Compose service performs the upload
+- the custom-format dump repeats the path #28 already proved and can be
+  validated with `pg_restore --list` before upload
+- an external dead-man's switch also catches a timer that never fires or a host
+  that is down
+
+Consequences:
+
+- backups and the domain's DNS share one Cloudflare account, which must be
+  protected accordingly; the live data stays on DigitalOcean
+- Healthchecks.io becomes part of operations, and the VPS keeps R2 and
+  Healthchecks.io credentials separately from `prod.env`
+- if backups stop, the owner is alerted before the lifecycle rule expires the
+  last copy
+- recovery stays owner-operated; production backups are not restored
+  automatically on a schedule
+
+Rejected:
+
+- Backblaze B2 or AWS S3 — each needs a new account, and AWS is the heaviest to
+  set up for a pet project
+- client-side `age` encryption — a key-custody failure mode for
+  low-sensitivity data
+- a GitHub Actions freshness check — the public repository disables scheduled
+  workflows after 60 days without activity, and the workflow would need an R2
+  read token
+- a plain-SQL dump — no `pg_restore --list` validation, and it departs from the
+  proven #28 path
+- an in-house S3 upload in Python — custom request-signing code instead of a
+  proven tool
 
 ### Neon (managed PostgreSQL, superseded)
 
