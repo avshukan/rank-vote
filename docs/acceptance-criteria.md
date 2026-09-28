@@ -1014,9 +1014,9 @@ below.
       `postgres` container while production stays online; it never stops or
       recreates a service and never copies or mutates
       `rank_vote_prod_postgres_data`
-- [ ] Before upload the dump is validated as a readable archive
-      (`pg_restore --list`), and an integrity checksum is kept with it; a dump
-      that fails validation is not uploaded and the run fails
+- [ ] Before upload the dump is validated as a readable PostgreSQL archive,
+      and an integrity checksum is kept with it; a dump that fails validation
+      is not uploaded and the run fails
 - [ ] The dump is uploaded with `rclone` from a container image pinned by digest;
       nothing else is installed on the host
 - [ ] Each run adds new objects and never deletes or overwrites existing ones;
