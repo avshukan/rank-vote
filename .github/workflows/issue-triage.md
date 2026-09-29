@@ -127,5 +127,6 @@ entry section. For a split, repeat the candidate entry section once per item.
 - **Dependencies / context:** …
 
 _Recommendation only — nothing was changed. The repository owner decides;
-the backlog ID and row are assigned at backlog promotion._
+the backlog ID and row are assigned at backlog promotion. To accept this
+recommendation, apply the `triage: accepted` label._
 ```
