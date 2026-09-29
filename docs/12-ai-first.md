@@ -77,7 +77,11 @@ for independent slices.
 
 ### Wave 6 — Backlog automation
 
-Scheduled grooming agent: splits backlog items into vertical slices with
+Done: eligible newly opened Issues receive an automatic, recommend-only triage
+comment from `.github/workflows/issue-triage.md` (GitHub Agentic Workflows,
+read-only agent, one safe `add-comment`). Backlog promotion stays manual.
+
+Next: scheduled grooming agent: splits backlog items into vertical slices with
 acceptance criteria, flags contradictions with `docs/`. Nested per-package
 `AGENTS.md` files once packages grow distinct conventions.
 
@@ -85,9 +89,11 @@ acceptance criteria, flags contradictions with `docs/`. Nested per-package
 
 ## Backlog workflow (backlog-as-code)
 
-- `docs/backlog.md` is the single source of truth for work items.
-- GitHub Issues are an ephemeral launch surface for agents (assign the Copilot
-  agent, mention `@claude`), not a store.
+- `docs/backlog.md` is the canonical triaged backlog and the single source of
+  truth for work items.
+- GitHub Issues are the raw idea inbox. Ideas move into `docs/backlog.md` only
+  through triage, the owner's decision and backlog promotion — see the
+  `Workflow` section of `docs/backlog.md`.
 - A PR that completes an item must update `docs/backlog.md` in the same PR —
   that is part of the Definition of Done, so the repo never drifts from
   reality.

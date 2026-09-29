@@ -680,10 +680,31 @@ Status:
 Chosen:
 
 - `docs/backlog.md` is the single source of truth for work items
-- GitHub Issues are an ephemeral surface for launching agents, not a store
+- GitHub Issues are the raw idea inbox, not the backlog store
 - a PR completing an item updates `docs/backlog.md` in the same PR (part of DoD)
 
 Rejected:
 
 - GitHub Issues/Projects as the backlog store — moves the source of truth out
   of the repository and drifts from the docs
+
+### Automatic issue triage recommendation
+
+Status:
+
+- accepted
+
+Chosen:
+
+- GitHub Agentic Workflows (`.github/workflows/issue-triage.md`) with the
+  Copilot engine
+- the agent is read-only; its only write is one safe `add-comment` on the
+  triggering Issue
+- default trigger roles, so only eligible Issues (opened by someone with write
+  access) are triaged automatically
+- recommend-only: the owner decides, and backlog promotion stays a separate step
+
+Rejected:
+
+- alternatives that give the agent direct, write-capable repository access —
+  rejected for a narrower trust boundary

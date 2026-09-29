@@ -72,6 +72,14 @@ rejected.
 Pre-commit hook (Prettier via lint-staged) is managed by `simple-git-hooks`;
 after changing its config in `package.json`, re-run `pnpm simple-git-hooks`.
 
+`.github/workflows/issue-triage.md` is a GitHub Agentic Workflow. Its markdown
+body is the prompt and is read at run time, so body edits need no compile. After
+a frontmatter edit, run Prettier on the `.md` first, then `gh aw compile` with
+the gh-aw version recorded in the lock file header (`gh extension install
+github/gh-aw --pin <version>`). Never edit `*.lock.yml` or
+`.github/aw/actions-lock.json` by hand, and do not run `gh aw init` — it adds
+tool-specific agent files this repository does not use.
+
 ---
 
 ## Environment Variables

@@ -6,7 +6,7 @@ Build a monorepo web app that lets small groups create a ranked-choice poll, vot
 
 See `docs/01-mvp-scope.md` for scope constraints and `docs/07-process.md` for process rules.
 
-Iteration planning is done flexibly per Agile principles. Current priorities are tracked in `docs/backlog.md`.
+Work is pulled continuously from `docs/backlog.md`, where current priorities are tracked.
 
 ---
 
