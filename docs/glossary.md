@@ -77,22 +77,14 @@ How it works:
 
 ## Vertical Slice
 
-A complete end-to-end feature delivered in one iteration.  
+A complete end-to-end feature, sized to fit one agent session.  
 Includes: domain logic, backend, frontend, integration, and basic testing.
-
----
-
-## Iteration
-
-A short time-boxed development cycle (1–2 weeks).  
-Has a fixed scope and ends with a merged, production-ready increment; once
-deployment exists, that increment may be released.
 
 ---
 
 ## Definition of Done (DoD)
 
-A checklist that must be satisfied before a task or iteration is considered complete.  
+A checklist that must be satisfied before a task is considered complete.  
 See `07-process.md` for the full list.
 
 ---

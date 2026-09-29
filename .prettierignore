@@ -7,3 +7,7 @@ prompt.txt
 
 # Prisma generated client (regenerated via `prisma generate`)
 apps/api/src/generated
+
+# gh-aw generated workflow files (regenerated via `gh aw compile`)
+.github/workflows/*.lock.yml
+.github/aw/actions-lock.json

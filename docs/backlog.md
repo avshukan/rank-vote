@@ -36,10 +36,16 @@
 
 ## Workflow
 
-- Raw ideas are captured as GitHub Issues. No extra metadata is required at
-  capture time.
-- Triage decides whether to keep, discard, merge, or split an idea. Kept ideas
-  become `Todo` rows; the source issue is then closed as moved to the backlog.
+- Raw ideas are captured as GitHub Issues, the raw idea inbox. No extra metadata
+  is required at capture time.
+- Triage recommends `Keep`, `Discard`, or `Duplicate` for an idea. An Issue
+  that holds several independent items stays `Keep` with a recommended split
+  into several candidate backlog entries. Eligible newly opened Issues (opened
+  by someone with write access) receive this recommendation automatically as one
+  comment from `.github/workflows/issue-triage.md`; it changes nothing else.
+- The repository owner decides. Backlog promotion then turns a kept idea into a
+  `Todo` row and assigns its ID; the source Issue is closed as moved to the
+  backlog.
 - New backlog items start with `State = —`.
 - Task-readiness can run on demand for a chosen item or proactively for likely
   next work. It sets `State` to `Ready`, `Design`, or `Blocked`.

@@ -6,12 +6,6 @@ We follow **Incremental Delivery**.
 
 ## Terms
 
-### Iteration
-
-A short time-box (usually 1–2 weeks) with a fixed scope.
-
----
-
 ### Vertical Slice
 
 One end-to-end feature that includes:
@@ -54,22 +48,24 @@ See `docs/production.md` for the reviewed tooling and operator sequence.
 
 ## How We Work
 
-1. Maintain a single backlog in `docs/backlog.md` — it is the source of truth
-2. Pick the next item(s) from the backlog and agree scope in
-   `docs/acceptance-criteria.md` **before** starting the work — the PR
+1. Maintain a single backlog in `docs/backlog.md` — it is the source of truth.
+   Raw ideas arrive as GitHub Issues and reach it through triage, the owner's
+   decision and backlog promotion (see its `Workflow` section)
+2. Pull work continuously, without fixed-length iterations:
+   pick → readiness if needed → work → merge → pick again
+3. Pick the next item, usually a `Ready` one. If it still needs readiness, agree
+   scope in `docs/acceptance-criteria.md` **before** starting the work — the PR
    description then refers to those criteria instead of restating them
-3. Pick a small stable scope for the iteration
 4. Implement features as vertical slices, sized to fit one agent session
 5. Merge changes to `main` via PR; the PR updates `docs/backlog.md` for the items it completes
-6. Each merge should be production-ready
-7. Finish iteration with a merged, production-ready increment; cut a release
-   once deployment exists
+6. Each merge should be production-ready; cut a release when there is something
+   to release
 
 ---
 
 ## Definition of Done (DoD)
 
-A task or iteration is considered done when:
+A task is considered done when:
 
 - the PR has passed code review
 - implementation is merged to `main`
@@ -112,6 +108,12 @@ Examples:
   runs `make prod-check` plus the separate isolated `make prod-smoke`
 - the active `protect-main` ruleset requires both `checks` and `containers`;
   the owner-authorized setting update for #29 was applied on 2026-09-16
+- Issue triage (`.github/workflows/issue-triage.md`, a GitHub Agentic Workflow
+  compiled to `issue-triage.lock.yml`) posts one recommend-only comment on each
+  eligible newly opened Issue and changes nothing else. It is not a required
+  check. It needs the owner-managed `COPILOT_GITHUB_TOKEN` repository secret,
+  created as described in the gh-aw
+  [authentication docs](https://github.github.com/gh-aw/reference/auth/)
 - **CD does not exist yet.** Images are verified but are not pushed, deployed or
   released on merge. The owner-operated first release and the #28 manual offsite
   backup/restore drill have completed; #29 awaits its separate post-deployment
