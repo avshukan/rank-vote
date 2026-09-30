@@ -78,6 +78,17 @@ const DEFAULT_ENTRY = {
   'Dependencies / context': 'ID-2',
 };
 
+function maxBacklogId(backlog) {
+  return Math.max(
+    0,
+    ...[...backlog.todo.rows, ...backlog.done.rows].map((row) => Number(row.cells[0])),
+  );
+}
+
+function nextBacklogId(backlog, reservedIds = []) {
+  return nextIds(backlog, reservedIds, 1)[0];
+}
+
 // A recommendation in the issue-triage comment format; a field set to
 // `undefined` is left out.
 function triageBody({ verdict = 'Keep', entries = [{}] } = {}) {
@@ -289,8 +300,9 @@ test('the backlog lint reports duplicate IDs, overflow, misalignment and unknown
 
 test('rows are padded to the ruler: 120 characters, Done IDs right-aligned', () => {
   const backlog = parseBacklog(realBacklog);
+  const actualId = nextBacklogId(backlog);
   const todo = renderRow(backlog.todo.columns, [
-    '36',
+    String(actualId),
     'Add short poll links',
     'Quality',
     'Low',
@@ -298,7 +310,7 @@ test('rows are padded to the ruler: 120 characters, Done IDs right-aligned', () 
     'x',
   ]);
   const done = renderRow(backlog.done.columns, [
-    '36',
+    String(actualId),
     'Add short poll links',
     'Quality',
     'Low',
@@ -307,16 +319,23 @@ test('rows are padded to the ruler: 120 characters, Done IDs right-aligned', () 
 
   assert.equal([...todo].length, 120);
   assert.ok(
-    todo.startsWith('| 36  | Add short poll links       | Quality  | Low    | —       | x '),
+    todo.startsWith(
+      `| ${String(actualId).padEnd(backlog.todo.columns[0].width, ' ')} | Add short poll links`,
+    ),
   );
   assert.equal([...done].length, 120);
-  assert.ok(done.startsWith('|  36 | '));
+  assert.ok(
+    done.startsWith(
+      `| ${String(actualId).padStart(backlog.done.columns[0].width, ' ')} | Add short poll links`,
+    ),
+  );
 });
 
 test('new rows are appended to the end of Todo and keep the format', () => {
   const backlog = parseBacklog(realBacklog);
+  const nextId = nextBacklogId(backlog);
   const entry = {
-    ID: '36',
+    ID: String(nextId),
     Title: 'Add short poll links',
     Type: 'Quality',
     Level: 'Low',
@@ -326,8 +345,9 @@ test('new rows are appended to the end of Todo and keep the format', () => {
   const { rows, text } = appendTodoRows(backlog, [entry]);
   const lines = text.split('\n');
   const inserted = lines.indexOf(rows[0]);
+  const previous = backlog.todo.rows.at(-1)?.cells?.[0] ?? '0';
 
-  assert.ok(lines[inserted - 1].startsWith('| 24 '), 'follows the last Todo row');
+  assert.ok(lines[inserted - 1].startsWith(`| ${previous} `), 'follows the prior Todo row');
   assert.equal(lines[inserted + 1], '');
   assert.equal(lines.length, backlog.lines.length + 1);
   assert.deepEqual(lintBacklog(text), []);
@@ -336,10 +356,12 @@ test('new rows are appended to the end of Todo and keep the format', () => {
 test('the next ID follows the backlog and every ID an open pull request adds', () => {
   const backlog = parseBacklog(realBacklog);
   const patch = '@@ -117,0 +118,2 @@\n+| 36  | Other item |\n+|  37 | Done item |\n-| 35 | gone |';
+  const reserved = addedRowIds(patch);
+  const expectedFirst = Math.max(maxBacklogId(backlog), ...reserved) + 1;
 
   assert.deepEqual(addedRowIds(patch), [36, 37]);
-  assert.deepEqual(nextIds(backlog, [], 1), [36]);
-  assert.deepEqual(nextIds(backlog, addedRowIds(patch), 2), [38, 39]);
+  assert.deepEqual(nextIds(backlog, [], 1), [maxBacklogId(backlog) + 1]);
+  assert.deepEqual(nextIds(backlog, reserved, 2), [expectedFirst, expectedFirst + 1]);
 });
 
 // ---------------------------------------------------------------------------
@@ -466,6 +488,8 @@ test('inline code survives backticks in the value', () => {
 // The whole promotion
 
 test('an accepted Issue becomes a Todo row on a new branch and a pull request', async () => {
+  const backlog = parseBacklog(realBacklog);
+  const nextId = nextBacklogId(backlog);
   const github = fakeGitHub();
   const { result, core, comment } = await promote62(github);
 
@@ -482,13 +506,10 @@ test('an accepted Issue becomes a Todo row on a new branch and a pull request', 
   assert.equal(commit.params.branch, BRANCH);
   assert.equal(commit.params.message, 'backlog: promote #62 — Add short poll links');
   const written = Buffer.from(commit.params.content, 'base64').toString('utf8');
-  assert.equal(
-    written,
-    appendTodoRows(parseBacklog(realBacklog), [{ ...result.plan.entries[0] }]).text,
-  );
+  assert.equal(written, appendTodoRows(backlog, [{ ...result.plan.entries[0] }]).text);
   assert.match(
     written,
-    /^\| 36 {2}\| Add short poll links {7}\| Quality {2}\| Low {4}\| — {7}\| /m,
+    new RegExp(`\\| ${nextId} +\\| Add short poll links +\\| Quality +\\| Low +\\| — +\\|`),
   );
   assert.equal(pull.params.head, BRANCH);
   assert.equal(pull.params.base, 'main');
@@ -500,17 +521,20 @@ test('an accepted Issue becomes a Todo row on a new branch and a pull request', 
 });
 
 test('a split recommendation gets consecutive IDs and a counted title', async () => {
+  const backlog = parseBacklog(realBacklog);
   const comments = [triageComment(triageBody({ entries: [{}, { Title: 'Second item' }] }))];
   const { result } = await promote62(fakeGitHub({ comments }));
+  const expected = [nextBacklogId(backlog), nextBacklogId(backlog) + 1];
 
   assert.deepEqual(
     result.plan.entries.map((entry) => entry.ID),
-    ['36', '37'],
+    expected.map(String),
   );
   assert.equal(result.plan.title, 'backlog: promote #62 (2 items)');
 });
 
 test('IDs added by open pull requests of this repository are skipped; forks are ignored', async () => {
+  const backlog = parseBacklog(realBacklog);
   const github = fakeGitHub({
     openPulls: [
       { number: 65, head: { repo: { full_name: REPOSITORY } } },
@@ -524,10 +548,12 @@ test('IDs added by open pull requests of this repository are skipped; forks are 
   });
   const { result } = await promote62(github);
 
-  assert.equal(result.plan.entries[0].ID, '37');
+  assert.equal(result.plan.entries[0].ID, String(nextBacklogId(backlog)));
 });
 
 test('a dry run reads everything and writes nothing', async () => {
+  const backlog = parseBacklog(realBacklog);
+  const nextId = nextBacklogId(backlog);
   const github = fakeGitHub();
   const { result, core, comment } = await promote62(github, { dryRun: true });
 
@@ -535,7 +561,7 @@ test('a dry run reads everything and writes nothing', async () => {
   assert.ok(github.state.calls.every(({ route }) => route.startsWith('GET ')));
   assert.equal(comment, '');
   assert.match(core.summaryText, /Would open: backlog: promote #62 — Add short poll links/);
-  assert.match(core.summaryText, /\| 36 {2}\| Add short poll links/);
+  assert.match(core.summaryText, new RegExp(`\\| ${nextId} {2}\\| Add short poll links`));
   assert.equal(core.failed, null);
 });
 
