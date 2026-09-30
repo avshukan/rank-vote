@@ -103,7 +103,8 @@ repository checkout or with the GitHub repository contents tool.
 ## Comment format
 
 Use this structure. For `Discard` and `Duplicate`, leave out the candidate
-entry section. For a split, repeat the candidate entry section once per item.
+entry section and the acceptance-label instruction. For a split, repeat the
+candidate entry section once per item.
 
 ```markdown
 ## Triage recommendation
@@ -128,4 +129,5 @@ entry section. For a split, repeat the candidate entry section once per item.
 
 _Recommendation only — nothing was changed. The repository owner decides;
 the backlog ID and row are assigned at backlog promotion._
+_To accept and promote this item to the backlog, apply the `triage: accepted` label._
 ```
