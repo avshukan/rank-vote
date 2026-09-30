@@ -542,13 +542,13 @@ test('IDs added by open pull requests of this repository are skipped; forks are 
       { number: 67, head: { repo: null } },
     ],
     pullFiles: {
-      65: [{ filename: BACKLOG_PATH, patch: '@@ -1 +1 @@\n+| 36  | Other promotion |' }],
-      66: [{ filename: BACKLOG_PATH, patch: '@@ -1 +1 @@\n+| 99  | Fork row |' }],
+      65: [{ filename: BACKLOG_PATH, patch: '@@ -1 +1 @@\n+| 99  | Other promotion |' }],
+      66: [{ filename: BACKLOG_PATH, patch: '@@ -1 +1 @@\n+| 999 | Fork row |' }],
     },
   });
   const { result } = await promote62(github);
 
-  assert.equal(result.plan.entries[0].ID, String(nextBacklogId(backlog)));
+  assert.equal(result.plan.entries[0].ID, String(Math.max(maxBacklogId(backlog), 99) + 1));
 });
 
 test('a dry run reads everything and writes nothing', async () => {
