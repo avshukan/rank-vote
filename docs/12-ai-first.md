@@ -79,7 +79,10 @@ for independent slices.
 
 Done: eligible newly opened Issues receive an automatic, recommend-only triage
 comment from `.github/workflows/issue-triage.md` (GitHub Agentic Workflows,
-read-only agent, one safe `add-comment`). Backlog promotion stays manual.
+read-only agent, one safe `add-comment`). Applying the `triage: accepted` label
+then starts deterministic backlog promotion
+(`.github/workflows/backlog-promotion.yml`), which opens a pull request for the
+owner to review and merge.
 
 Next: scheduled grooming agent: splits backlog items into vertical slices with
 acceptance criteria, flags contradictions with `docs/`. Nested per-package

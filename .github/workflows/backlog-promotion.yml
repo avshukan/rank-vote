@@ -1,0 +1,49 @@
+# Backlog promotion: when the repository owner accepts an Issue's triage
+# recommendation by applying the `triage: accepted` label, append its candidate
+# entries to `Todo` in docs/backlog.md and open a pull request that closes the
+# Issue on merge. Deterministic, no LLM: the logic and its tests live in
+# scripts/backlog-promotion.mjs. Never merges; see docs/backlog.md (Workflow).
+name: Backlog promotion
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number to promote
+        required: true
+        type: number
+      dry_run:
+        description: Only check and report what would happen; change nothing
+        required: true
+        type: boolean
+        default: true
+
+permissions: {}
+
+jobs:
+  promote:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.label.name == 'triage: accepted'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # One promotion at a time, so two runs never hand out the same backlog ID;
+    # `queue: max` keeps every waiting run instead of cancelling all but the newest.
+    concurrency:
+      group: backlog-promotion
+      queue: max
+    permissions:
+      contents: write # create the promotion branch and its one commit
+      issues: write # read the Issue and its triage comment; report refusals
+      pull-requests: write # find earlier promotion pull requests; open the new one
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { run } = await import(`${process.env.GITHUB_WORKSPACE}/scripts/backlog-promotion.mjs`);
+            await run({ github, context, core });

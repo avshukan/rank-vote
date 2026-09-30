@@ -45,9 +45,14 @@
   comment from `.github/workflows/issue-triage.md`; it changes nothing else and
   for `Keep` recommendations ends with an owner instruction to apply the
   `triage: accepted` label to accept and promote the item.
-- The repository owner decides. Backlog promotion then turns a kept idea into a
-  `Todo` row and assigns its ID; the source Issue is closed as moved to the
-  backlog.
+- The repository owner decides. Applying the `triage: accepted` label (repository
+  admins only) starts backlog promotion, `.github/workflows/backlog-promotion.yml`:
+  it appends the recommendation's candidate entries, exactly as written, to the
+  end of `Todo` with the next free IDs and opens a pull request that closes the
+  source Issue on merge. The label stays on the closed Issue as a record. When
+  promotion cannot proceed safely, it changes nothing and comments the reason
+  and the recovery step on the Issue. A manual run of the workflow with
+  `dry_run` checks an Issue without changing anything.
 - New backlog items start with `State = —`.
 - Task-readiness can run on demand for a chosen item or proactively for likely
   next work. It sets `State` to `Ready`, `Design`, or `Blocked`.
@@ -81,11 +86,14 @@ adapts to the column rather than moving the column.
   `docs/backlog/<id>-<slug>.md`; durable context belongs in permanent docs.
 - The `ID` column contains only the number. References elsewhere use `ID-N`,
   for example `needs ID-19`, so backlog IDs are not confused with GitHub
-  Issue/PR numbers such as `#19`.
+  Issue/PR numbers such as `#19`. IDs are never reused: a new item takes the
+  number after the highest one.
 - Completed items are appended to `Done`; existing `Done` rows are not reordered.
 - Both backlog tables are preceded by `<!-- prettier-ignore -->`, so Prettier
   will not re-align them; pad the cells by hand.
 - The `Legend` and width tables are ordinary Prettier-managed tables.
+- `pnpm test` checks these rules (`scripts/backlog-promotion.test.mjs`), so a
+  misaligned row, an overflowing cell or a reused ID fails CI.
 
 ---
 
