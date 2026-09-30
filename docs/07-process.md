@@ -114,6 +114,15 @@ Examples:
   check. It needs the owner-managed `COPILOT_GITHUB_TOKEN` repository secret,
   created as described in the gh-aw
   [authentication docs](https://github.github.com/gh-aw/reference/auth/)
+- Backlog promotion (`.github/workflows/backlog-promotion.yml`, a plain,
+  deterministic workflow) runs when a repository admin applies the
+  `triage: accepted` label. It turns the accepted recommendation into `Todo`
+  rows on a `docs/backlog-promote-<issue>` branch and opens a pull request that
+  closes the Issue on merge; it never merges. It uses the built-in
+  `GITHUB_TOKEN`, so it needs the owner-managed repository setting **Allow
+  GitHub Actions to create and approve pull requests**, and CI on its pull
+  requests starts once someone with write access selects **Approve workflows to
+  run**. It is not a required check
 - **CD does not exist yet.** Images are verified but are not pushed, deployed or
   released on merge. The owner-operated first release and the #28 manual offsite
   backup/restore drill have completed; #29 awaits its separate post-deployment

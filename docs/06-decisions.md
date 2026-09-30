@@ -708,3 +708,34 @@ Rejected:
 
 - alternatives that give the agent direct, write-capable repository access —
   rejected for a narrower trust boundary
+
+### Automatic backlog promotion
+
+Status:
+
+- accepted
+
+Chosen:
+
+- a plain GitHub Actions workflow (`.github/workflows/backlog-promotion.yml`)
+  running the tested `scripts/backlog-promotion.mjs`; there is no model, so the
+  accepted recommendation is copied as written and never re-evaluated
+- a repository admin applying `triage: accepted` starts it; it fails closed
+  (exactly one comment from the `issue-triage` workflow, verdict `Keep`, values
+  that fit the fixed widths) and reports the reason and the recovery step on
+  the Issue
+- the built-in `GITHUB_TOKEN` opens a pull request that closes the Issue on
+  merge; the owner approves its CI runs, reviews it and merges it
+- one promotion runs at a time; the next ID follows the backlog and every ID an
+  open pull request adds, and rows go to the end of `Todo`, so two promotions
+  open side by side conflict instead of merging a duplicate ID
+
+Rejected:
+
+- an agentic workflow with a `create-pull-request` safe output — a model would
+  re-derive what the owner already accepted, and its output cannot be unit
+  tested
+- a GitHub App or personal access token so CI starts without approval — a
+  secret to manage for a click the owner makes while reviewing anyway
+- shortening overlong titles or notes automatically — the owner edits the
+  triage comment instead, so the row says exactly what was accepted
