@@ -43,8 +43,8 @@
   into several candidate backlog entries. Eligible newly opened Issues (opened
   by someone with write access) receive this recommendation automatically as one
   comment from `.github/workflows/issue-triage.md`; it changes nothing else and
-  ends with an owner instruction to apply the `triage: accepted` label to accept
-  the recommendation.
+  for `Keep` recommendations ends with an owner instruction to apply the
+  `triage: accepted` label to accept and promote the item.
 - The repository owner decides. Backlog promotion then turns a kept idea into a
   `Todo` row and assigns its ID; the source Issue is closed as moved to the
   backlog.
