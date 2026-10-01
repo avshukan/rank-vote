@@ -124,6 +124,7 @@ adapts to the column rather than moving the column.
 | 23  | `/critique` command        | Ops      | Low    | —       | Design self-critique; seen 2×; write on 3rd         |
 | 24  | `pnpm dev` orphans the API | Ops      | Low    | —       | Ctrl+C leaves `node dist/main` on 3000              |
 | 36  | Export results as CSV      | Value    | Low    | —       | Download scores/ranks from results page or API      |
+| 37  | Add short poll links       | Quality  | Low    | —       | Replace/alias UUID with short ID; redirect needed   |
 
 ---
 
