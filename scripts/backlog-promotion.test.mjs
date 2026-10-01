@@ -298,6 +298,15 @@ test('the backlog lint reports duplicate IDs, overflow, misalignment and unknown
   assert.match(problems, /cells are not padded to the column widths/);
 });
 
+test('the triage prompt limits Title and Notes to the Todo column widths', () => {
+  const prompt = readFileSync(join(repositoryRoot, '.github/workflows/issue-triage.md'), 'utf8');
+  const { columns } = parseBacklog(realBacklog).todo;
+  for (const name of ['Title', 'Notes']) {
+    const { width } = columns.find((column) => column.name === name);
+    assert.match(prompt, new RegExp(`^- ${name}: at most ${width} characters\\.$`, 'm'));
+  }
+});
+
 test('rows are padded to the ruler: 120 characters, Done IDs right-aligned', () => {
   const backlog = parseBacklog(realBacklog);
   const actualId = nextBacklogId(backlog);
