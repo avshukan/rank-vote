@@ -1115,6 +1115,185 @@ below.
 
 ---
 
+## ID-6 Mobile responsive layout
+
+Responsive adaptation of the existing UI, so the four main flows — create poll,
+share poll, vote (reorder the ranking) and view results — are fully usable on a
+phone. Frontend only: no API, shared-package or storage change. This is not a
+visual redesign, rebranding or general UX overhaul; product behaviour and the
+feature-oriented frontend architecture stay as they are.
+
+### Supported viewports
+
+- [ ] Every width from 320 CSS px upward is supported. 320 px is inside the
+      contract; narrower widths are not
+- [ ] At 1280 px each page keeps its current desktop structure — the centred
+      `max-w-xl` column and the same arrangement; visible changes are limited to
+      what the criteria below require
+
+### Covered surfaces
+
+Every criterion below applies to each of these surfaces, in every listed state:
+
+- Create poll `/`: the empty form, the form with 10 options, the create error
+  and the "Poll created" share link
+- Share: the share link after creation and in the zero-ballot results state,
+  including the `Copied` label and the clipboard-failure message
+- Vote `/poll/:id`: a ballot with 2–3 and with 10 options, the submit error with
+  Retry, the load error with Retry, and "Poll not found"
+- Results `/poll/:id/results`: single winner, tied winners, zero ballots, the
+  "Vote submitted" banner, the load error with Retry, and "Poll not found"
+
+### Layout and long content
+
+- [ ] No covered surface needs horizontal page scrolling or renders zoomed out:
+      `document.documentElement.scrollWidth` never exceeds the viewport width
+- [ ] No text or control is clipped, truncated, hidden or pushed off-screen
+- [ ] User-supplied text — poll title, option text, winner text — wraps inside
+      its column, including a single unbroken token (a pasted URL, a long
+      compound word). It is never truncated or ellipsised, and its length never
+      widens the page. This covers the vote and results headings, the ballot
+      rows, the winner badge and the score table
+- [ ] Single-line text fields (question, options, share link) stay inside the
+      viewport. Text longer than a field scrolls inside it, as in any text
+      input; the full share URL stays reachable by selecting it or with Copy
+- [ ] The score table stays a table — no card layout and no horizontally
+      scrolling container. The option column wraps; position labels (`1-2`,
+      `9-10`) and scores are never split across lines
+- [ ] No length limit is introduced for titles or options to make text fit
+
+### Touch
+
+- [ ] Every interactive control on the covered surfaces — buttons, links and
+      text fields — has a bounding box of at least 24×24 CSS px (WCAG 2.2
+      SC 2.5.8, level AA) at every supported width. On `main` only
+      `+ Add option` (83×20 at 320 px) falls short
+- [ ] The ballot's ↑/↓ buttons do not shrink below their current 30×34 CSS px
+- [ ] On touch, a swipe that starts anywhere on a ballot row — option text
+      included — scrolls the page and leaves the ranking unchanged
+- [ ] On touch, drag & drop still reorders the ranking: press and hold an
+      option, then move it. The hold opens no text selection, callout or
+      context menu
+- [ ] Mouse drag & drop, keyboard dragging and the ↑/↓ buttons behave as they
+      do on `main`; a tap on ↑/↓ never starts a drag
+- [ ] The ballot instructions ("drag a row, or use the ↑/↓ buttons") stay as
+      they are
+
+### Verification
+
+Layout cannot be observed in jsdom, and `docs/11-testing-strategy.md` keeps
+browser end-to-end and visual-regression suites out of the MVP. The layout and
+gesture criteria are therefore checked in a real browser, with the evidence
+recorded in the implementation PR.
+
+- [ ] **Fixtures.** The three polls from `make seed` (no ballots, one winner, a
+      tie), plus one long-content poll:
+  - a title of at least 140 characters that ends in an unbroken URL of at least
+    60 characters
+  - 10 options: an unbroken URL-like token of at least 70 characters, the
+    48-character word `Donaudampfschifffahrtsgesellschaftskapitänsmütze`, a
+    multi-word option of at least 70 characters, and short ones
+  - ballots that tie the two longest options for first place
+- [ ] **Widths.** 320, 375, 768 and 1280 CSS px against `make web` and
+      `make api`, in a Chromium-based browser with mobile and touch emulation:
+      DevTools device mode, or the DevTools protocol's
+      `Emulation.setDeviceMetricsOverride` with `mobile: true`
+- [ ] **Overflow.** For every covered surface and width `W`,
+      `document.documentElement.scrollWidth <= W`. Compare with `W` itself:
+      under mobile emulation an overflowing page widens the layout viewport, so
+      `window.innerWidth` grows with it (613 at 320 px for the long-content poll
+      on `main`) and a check against it always passes. Bounding boxes miss text
+      that overflows its own block, so use them only to find the offender.
+      Visually hidden elements (`sr-only`, dnd-kit's live region at `-1px`)
+      are ignored
+- [ ] **Touch targets.** At 320 px, the bounding box of every `button`,
+      `a[href]` and `input` on each surface is at least 24×24, and ↑/↓ at least
+      30×34
+- [ ] **Gestures**, with touch emulation at 320 px on the long-content ballot.
+      DevTools-protocol touch coordinates are visual-viewport pixels, so scale
+      layout coordinates by `visualViewport.scale` while a page is zoomed out:
+  - a 200 px upward swipe started on an option's text, without holding, scrolls
+    the page and leaves the ranking unchanged. On `main` it does not scroll and
+    moves the option two places up (reproduced during readiness)
+  - press, hold past the delay, then move: the option is reordered
+  - a tap on ↑/↓ moves the option one place and starts no drag
+  - at 1280 px a mouse drag reorders exactly as on `main`
+- [ ] **Screenshots.** Full-page screenshots at 320 px of every covered
+      surface, using the long-content poll where it applies, plus a before/after
+      pair at 1280 px for each page, attached to or linked from the PR
+- [ ] **Evidence table** in the PR description: width × surface →
+      `scrollWidth`, smallest control size, pass/fail; then the gesture results
+- [ ] **Automated tests.** The existing Vitest suites stay green. The touch
+      activation gets a component test if dnd-kit's sensors can be driven in
+      jsdom (a touch moved before the delay starts no drag; one held past it
+      does); if they cannot, the PR says so and the gesture check is the
+      evidence. No Playwright or visual-regression suite is added
+- [ ] **Real devices.** The PR asks the owner for a spot check on one iOS
+      Safari and one Android Chrome phone: swipe-scroll over the ballot,
+      long-press drag, ↑/↓ and Copy. Chromium emulation cannot prove iOS
+      long-press behaviour (text selection, callout)
+
+### Documentation
+
+- [ ] `docs/08-known-limitations.md` "Mobile Support" states the 320 CSS px
+      minimum instead of "basic mobile responsiveness"
+- [ ] `docs/implementation-plan.md` Phase 3 no longer points at ID-6 as pending
+- [ ] `docs/11-testing-strategy.md` records in a few lines how responsive layout
+      is verified, including the `innerWidth` trap above
+
+### Out of Scope (tracked separately)
+
+- Widths below 320 CSS px — outside the contract
+- Visual redesign, rebranding, new components, a drag handle or a card layout
+  for results — not planned
+- Title and option length limits — not planned; wrapping must not depend on one
+- Keyboard/a11y reorder and an accessibility audit, including browser text zoom
+  → the Post-MVP list below and `docs/11-testing-strategy.md`
+- Installable app / PWA → ID-11
+- Browser end-to-end and visual-regression suites — excluded by
+  `docs/11-testing-strategy.md`
+- Unrelated cleanup elsewhere in `apps/web`
+
+### Baseline on `main`
+
+Measured during readiness at `37e62c5`: the production bundle in headless
+Chromium with mobile and touch emulation, and the API stubbed with the fixtures
+above.
+
+- Pass at 320 and 375 px: the create form (empty, and with 10 long options),
+  the created share link, a short ballot, short results, the zero-ballot share
+  link and "Poll not found". The share-link field shrinks and its URL scrolls
+  inside it
+- Fail: with the long-content poll the vote and results pages are 613 px wide
+  at 320 px. The headings, the ballot row text (a `flex-1` span that cannot
+  shrink below its longest unbroken token), the winner badge and the score
+  table's option cell all grow with an unbroken token
+- Touch: the ballot's drag activator is the option text with
+  `touch-action: none`, so a swipe there reorders instead of scrolling
+- Control sizes at 320 px: `+ Add option` 83×20, ↑/↓ 30×34, remove ✕ 38×42,
+  Copy 71×42, full-width buttons 40 px tall
+
+### Readiness Decisions
+
+- Set by the owner before readiness: the 320 CSS px boundary and the four-flow
+  scope; no horizontal scrolling, no clipping, touch-practical controls, long
+  text that never breaks the layout, readable results; responsive adaptation
+  only, with product behaviour and architecture preserved.
+- Set by the owner during readiness: touch targets follow WCAG 2.2 AA
+  (24×24 CSS px), not 44×44; on touch, drag starts after a press and hold so a
+  swipe scrolls. No drag handle is added and touch drag is not removed.
+- Implementation choices, settled in the implementation PR and its review:
+  - the CSS technique for wrapping and shrinking (for example `overflow-wrap`,
+    `min-w-0`) and whether the page gutter narrows on small screens
+  - the hold delay and movement tolerance, and the dnd-kit sensor setup
+  - how `+ Add option` reaches 24 px
+  - whether `make seed` gains the long-content poll; otherwise the PR records
+    the payload used
+  - the browser tooling for the measurements, and whether any script is kept
+- No architectural or product questions remain open for ID-6.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
