@@ -19,7 +19,6 @@ logs
 **/.env.*
 !**/.env.example
 
-prompt.txt
 deploy-state
 **/__pycache__
 **/*.pyc
