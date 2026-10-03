@@ -102,7 +102,7 @@ adapts to the column rather than moving the column.
 <!-- prettier-ignore -->
 | ID  | Title                      | Type     | Level  | State   | Notes                                               |
 | --- | -------------------------- | -------- | ------ | ------- | --------------------------------------------------- |
-| 6   | Mobile responsive layout   | Quality  | Medium | —       | Basic responsive UI                                 |
+| 6   | Mobile responsive layout   | Quality  | Medium | Ready   | Main flows from 320px; long-press touch drag        |
 | 19  | Explain score calculation  | Value    | Medium | —       | How points produce ranking, per method              |
 | 20  | Refresh results button     | Quality  | Medium | —       | Manual results refresh until ID-16                  |
 | 8   | Add IRV counting           | Value    | Medium | —       | Instant-runoff voting                               |
