@@ -56,10 +56,12 @@ and for items whose acceptance criteria were written in the same session.
    shared page, a shared component, a route change) ships as its own PR — folding
    it into the feature makes that PR touch unrelated flows.
 
-7. **Ship the docs.** Own branch `docs/<name>`, `make format-check`, PR — then
-   stop at green CI and hand it over, exactly as `new-slice` step 8 does. The
-   merge is the repository owner's call. `new-slice` starts once the docs PR has
-   actually landed, so the code is written against decisions that are on `main`.
+7. **Ship the docs.** Own branch `docs/<name>`, `make format-check` and
+   `node --test scripts/backlog-promotion.test.mjs` (the fixed-width backlog
+   rules), PR — then stop at green CI and hand it over, exactly as `new-slice`
+   step 8 does. The merge is the repository owner's call. `new-slice` starts
+   once the docs PR has actually landed, so the code is written against
+   decisions that are on `main`.
 
 ## Gotchas learned the hard way
 
@@ -67,3 +69,9 @@ and for items whose acceptance criteria were written in the same session.
   finished endpoint gets built twice.
 - The backlog `## Todo` table is ordered by priority, not by ID, and the ID
   column is what everything else references.
+- Size the criteria to the item. A `Medium` `Quality` fix needs testable rules
+  and a short verification checklist, not an evidence protocol heavier than the
+  change itself.
+- Every _Out of Scope_ exclusion and every check that asks the owner to act
+  must trace to an owner decision. Anything else is an implementation judgment
+  call and is recorded as one, not as a criterion.
