@@ -151,6 +151,16 @@ reset on restart.
 GET /polls/:id/results
 ```
 
+The response is discriminated by `method`, the counting method that produced
+it. Each method has its own response variant, and a client reads `method`
+before any method-specific field. Borda is the only method implemented, so
+`"BORDA"` is the only variant. A future method adds its variant in its own
+backlog item (IRV ID-8, Condorcet ID-9).
+
+Response `404 Not Found` if poll does not exist, whatever the method.
+
+#### Borda — `method: "BORDA"`
+
 Response `200 OK`:
 
 ```json
@@ -200,8 +210,6 @@ specified by backlog ID-19 and not shipped yet; until then entries carry no
 - the subtotals add up to `score`, and an option's `ballots` add up to
   `totalBallots`: a strict full ranking places every option exactly once
 - with no ballots, every row has `ballots: 0` and `subtotal: 0`
-
-Response `404 Not Found` if poll does not exist.
 
 ---
 
