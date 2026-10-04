@@ -1199,8 +1199,8 @@ Chromium emulation cannot show iOS long-press text selection.
 ### Out of Scope (tracked separately)
 
 - Widths below 320 CSS px — outside the contract
-- Visual redesign, rebranding, new components, a drag handle or a card layout
-  for results — not planned
+- Visual redesign, rebranding, a drag handle or a card layout for results — not
+  planned
 - Title and option length limits — not planned; wrapping must not depend on one
 - Keyboard/a11y reorder and an accessibility audit, including browser text zoom
   → the Post-MVP list below and `docs/11-testing-strategy.md`
