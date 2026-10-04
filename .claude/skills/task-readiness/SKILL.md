@@ -72,6 +72,9 @@ and for items whose acceptance criteria were written in the same session.
 - Size the criteria to the item. A `Medium` `Quality` fix needs testable rules
   and a short verification checklist, not an evidence protocol heavier than the
   change itself.
-- Every _Out of Scope_ exclusion and every check that asks the owner to act
-  must trace to an owner decision. Anything else is an implementation judgment
-  call and is recorded as one, not as a criterion.
+- An _Out of Scope_ exclusion already set by canonical scope, an accepted
+  decision or a tracked backlog item is cited, not asked again. A product or
+  design exclusion first introduced during readiness needs the owner's explicit
+  confirmation, and so does any check that asks the owner to act. Anything else
+  is an implementation judgment call and is recorded as one, not as
+  owner-approved scope.
