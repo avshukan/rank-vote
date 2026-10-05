@@ -126,7 +126,7 @@ adapts to the column rather than moving the column.
 | 36  | Export results as CSV      | Value    | Low    | —       | Download scores/ranks from results page or API      |
 | 37  | Add short poll links       | Quality  | Low    | —       | Replace/alias UUID with short ID; redirect needed   |
 | 38  | Breakdown hover preview    | Value    | Low    | —       | Hover preview of score breakdown; needs ID-19       |
-| 39  | Add backlog-sweep skill    | Ops      | Medium | —       | Canonical sweep skill; tracker Issue for triggers   |
+| 39  | Add backlog sweep process  | Ops      | Medium | Ready   | Sweep skill; tracker Issue triggers; Cancelled      |
 
 ---
 

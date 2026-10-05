@@ -739,3 +739,67 @@ Rejected:
   secret to manage for a click the owner makes while reviewing anyway
 - shortening overlong titles or notes automatically — the owner edits the
   triage comment instead, so the row says exactly what was accepted
+
+### Backlog sweep process
+
+Status:
+
+- accepted for backlog ID-39; implementation pending
+
+Chosen:
+
+- one canonical `backlog-sweep` skill holds the sweep procedure; it only
+  recommends, and the owner decides before `docs/` changes through a normal
+  reviewed PR. `task-readiness` stays a separate stage and the only way an item
+  becomes `Ready`
+- one plain, deterministic workflow is the common request entry point:
+  `workflow_dispatch` with a required reason, plus a weekly best-effort check.
+  It only requests and tracks sweeps
+- one persistent tracker Issue with the reserved `backlog-sweep` label: open
+  means a sweep is requested, closed means none is pending. A request reopens it
+  when it is closed and comments the reason; the owner closes it after checking
+  that the latest reasons were covered
+- triggers: fewer than 2 `Ready` items left when a `Ready` item is picked for
+  work (a procedural rule for agents and people); a release, only after a
+  successful deployment and production verification; and about 60 days since
+  the last closing
+- no longer wanted items move to a `Cancelled` section shaped like `Done`, so
+  they keep their ID and the reason
+
+Reason:
+
+- the same procedure serves every trigger, so it lives once, in the skill, and
+  neither the workflow nor the tracker repeats it
+- one tracker gathers repeated triggers in one place; a new Issue per request
+  would fill the raw idea inbox with reminders
+- the backlog has no `In progress` state, so only the person or agent picking an
+  item knows the pool just shrank
+- a tag push is not proof of a verified release, and would fire at the start of
+  a tag-triggered deployment once CD exists
+- a sweep result PR can wait in review while a newer request arrives, so the
+  tracker is not closed automatically
+
+Consequences:
+
+- the Ready-pool trigger depends on whoever picks work following the rule; it is
+  procedural, and concurrent pickups are not tracked
+- the release flow gains one owner step after verification; a future CD
+  workflow calls the same entry point after a successful deployment and
+  verification
+- GitHub disables scheduled workflows in a public repository after 60 days
+  without activity, so the periodic check is best effort
+- backlog tooling checks formatting, duplicate IDs and the next free ID across
+  `Todo`, `Done` and `Cancelled`
+
+Rejected:
+
+- detecting the Ready-pool threshold when a completed item reaches `Done` — the
+  signal arrives one pull request after the work was picked
+- an `In progress` state or reservation tracking — ceremony out of proportion to
+  the problem
+- triggering a sweep from a tag push
+- closing the tracker from the result PR with a closing keyword
+- running the sweep itself in CI — the automation only requests and tracks
+  sweeps
+- a fixed calendar schedule, which ignores sweeps that already happened, and an
+  external scheduler
