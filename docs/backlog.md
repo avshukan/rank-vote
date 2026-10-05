@@ -125,9 +125,9 @@ adapts to the column rather than moving the column.
 | 10  | Compare counting methods   | Value    | Medium | —       | Show different winners; needs ID-8, ID-9            |
 | 25  | Unify eslint and TS majors | Refactor | Medium | —       | web eslint 10/TS 6; rest eslint 9/TS 5              |
 | 26  | Extract page fetch/retry   | Refactor | Medium | —       | BallotForm/ResultsView duplicate load/404/retry     |
-| 30  | Drop the scaffold endpoint | Refactor | Medium | —       | Remove scaffold root; health endpoint is separate   |
+| 30  | Drop the scaffold endpoint | Refactor | Medium | —       | Remove scaffold `GET /api/v1`; prod smoke checks it |
 | 32  | Automate offsite backups   | Ops      | High   | Ready   | Daily dump to R2; 30d lock, 90d keep; email alerts  |
-| 33  | Add production monitoring  | Ops      | Medium | —       | Dependency health, monitoring and alerts            |
+| 33  | Add production monitoring  | Ops      | High   | —       | Dependency health, monitoring and alerts            |
 | 34  | Share rate-limit state     | Quality  | Low    | —       | Shared counters before API replicas >1              |
 | 11  | Add PWA support            | Quality  | Low    | —       | Installable web app                                 |
 | 12  | Add poll editing           | Value    | Low    | —       | Edit poll after creation                            |
@@ -136,7 +136,7 @@ adapts to the column rather than moving the column.
 | 15  | Add partial ranking        | Value    | Low    | —       | Allow ranking only subset of options                |
 | 16  | Add real-time updates      | Quality  | Low    | —       | Live result updates                                 |
 | 22  | Add OpenAPI spec           | Quality  | Low    | —       | Deferred until an outside client lands (app, bot)   |
-| 23  | `/critique` command        | Ops      | Low    | —       | Design self-critique; seen 2×; write on 3rd         |
+| 23  | Design self-critique skill | Ops      | Low    | —       | Design self-critique; seen 2×; write on 3rd         |
 | 24  | `pnpm dev` orphans the API | Ops      | Low    | —       | Ctrl+C leaves `node dist/main` on 3000              |
 | 36  | Export results as CSV      | Value    | Low    | —       | Download scores/ranks from results page or API      |
 | 37  | Add short poll links       | Quality  | Low    | —       | Replace/alias UUID with short ID; redirect needed   |
