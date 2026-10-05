@@ -73,8 +73,11 @@ infrastructure → presentation`):
    item's essence in one line — "#18 Not-found page — shared 404 surface plus a
    catch-all route" — before the PR link, the gate result, the runtime
    verification and anything left undone. End by saying in as many words that the
-   PR is **ready for code review** and is waiting on the owner to merge. Whatever
-   was found but not fixed gets its own backlog ID, named just as explicitly.
+   PR is **ready for code review** and is waiting on the owner to merge. Name
+   whatever was found but not fixed just as explicitly: the backlog item
+   (`ID-N`) or open Issue (`#N`) that already covers it, or a new GitHub Issue
+   that goes through triage, the owner's decision and backlog promotion, as in
+   `task-readiness` step 6 — never a backlog row or ID of your own.
 
 ## Gotchas learned the hard way
 

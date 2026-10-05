@@ -47,14 +47,21 @@ and for items whose acceptance criteria were written in the same session.
 
 5. **Write the answers down.** Decisions go into the item's section of
    `docs/acceptance-criteria.md`, contract changes into `docs/09-api-design.md`.
-   Add an _Out of Scope_ block naming the backlog items that absorbed the
-   deferred work — a criterion that was dropped without a destination comes back.
+   Add an _Out of Scope_ block naming where the deferred work went — a backlog
+   item (`ID-N`) or a follow-up Issue from step 6 (`#N`). A criterion that was
+   dropped without a destination comes back.
 
-6. **File the follow-ups.** New rows in `docs/backlog.md` with the next free ID,
-   each stating its dependency direction (`blocks #N` / `needs #N`), and put a
-   blocking item above the one it blocks. A blocker that is cross-cutting (a
-   shared page, a shared component, a route change) ships as its own PR — folding
-   it into the feature makes that PR touch unrelated flows.
+6. **File the follow-ups.** New work found during readiness enters the backlog
+   the way every idea does (`docs/backlog.md`, `Workflow`): a GitHub Issue, the
+   automatic triage recommendation, the owner's decision, backlog promotion.
+   Never add a backlog row or pick an ID yourself, and never apply
+   `triage: accepted` — that label is the owner's decision. When a backlog item
+   or an open Issue already covers the work, cite it instead of filing a
+   duplicate. State the dependency direction in the Issue (`blocks ID-N` /
+   `needs ID-N`), as context for triage and for the owner, who decides where
+   the item goes in `Todo`. A blocker that is cross-cutting (a shared page, a
+   shared component, a route change) ships as its own PR — folding it into the
+   feature makes that PR touch unrelated flows.
 
 7. **Ship the docs.** Own branch `docs/<name>`, `make format-check` and
    `node --test scripts/backlog-promotion.test.mjs` (the fixed-width backlog
