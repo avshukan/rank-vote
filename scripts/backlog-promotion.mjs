@@ -20,6 +20,7 @@ const DEPENDENCIES_FIELD = 'Dependencies / context';
 const TABLE_COLUMNS = {
   Todo: ['ID', 'Title', 'Type', 'Level', 'State', 'Notes'],
   Done: ['ID', 'Title', 'Type', 'Level', 'Notes'],
+  Cancelled: ['ID', 'Title', 'Type', 'Level', 'Notes'],
 };
 const REPORT_MARKER = '<!-- backlog-promotion-report -->';
 
@@ -165,10 +166,14 @@ export function parseBacklog(text) {
     },
     todo: sectionTable(lines, 'Todo'),
     done: sectionTable(lines, 'Done'),
+    cancelled: sectionTable(lines, 'Cancelled'),
   };
 }
 
-// The `Format` rules of docs/backlog.md for its `Todo` and `Done` tables.
+const backlogTables = (backlog) => [backlog.todo, backlog.done, backlog.cancelled];
+
+// The `Format` rules of docs/backlog.md for its `Todo`, `Done` and `Cancelled`
+// tables.
 export function lintBacklog(text) {
   let backlog;
   try {
@@ -178,7 +183,8 @@ export function lintBacklog(text) {
   }
   const problems = [];
   const seenIds = new Map();
-  for (const table of [backlog.todo, backlog.done]) {
+  const ruler = (table) => backlog.lines[table.header + 1];
+  for (const table of backlogTables(backlog)) {
     const at = (line) => `${table.name} line ${line + 1}`;
     const names = table.columns.map((column) => column.name);
     if (names.join('|') !== TABLE_COLUMNS[table.name].join('|')) {
@@ -186,6 +192,10 @@ export function lintBacklog(text) {
         `${table.name}: columns are ${names.join(', ')}, expected ${TABLE_COLUMNS[table.name].join(', ')}`,
       );
       continue;
+    }
+    // `Cancelled` has the exact shape of `Done`, widths included.
+    if (table === backlog.cancelled && ruler(table) !== ruler(backlog.done)) {
+      problems.push(`${at(table.header + 1)}: the separator row differs from the \`Done\` table's`);
     }
     if (!table.ignored) {
       problems.push(`${table.name}: the table must be preceded by \`<!-- prettier-ignore -->\``);
@@ -232,9 +242,11 @@ export function lintBacklog(text) {
 }
 
 // Backlog IDs are never reused: the next one follows every ID on the default
-// branch and every ID an open pull request is about to add.
+// branch, cancelled items included, and every ID an open pull request is about
+// to add.
 export function nextIds(backlog, reservedIds, count) {
-  const used = [...backlog.todo.rows, ...backlog.done.rows]
+  const used = backlogTables(backlog)
+    .flatMap((table) => table.rows)
     .map((row) => Number(row.cells[0]))
     .concat(reservedIds)
     .filter(Number.isInteger);

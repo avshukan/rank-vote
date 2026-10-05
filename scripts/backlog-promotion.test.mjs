@@ -81,8 +81,19 @@ const DEFAULT_ENTRY = {
 function maxBacklogId(backlog) {
   return Math.max(
     0,
-    ...[...backlog.todo.rows, ...backlog.done.rows].map((row) => Number(row.cells[0])),
+    ...[...backlog.todo.rows, ...backlog.done.rows, ...backlog.cancelled.rows].map((row) =>
+      Number(row.cells[0]),
+    ),
   );
+}
+
+// The real backlog with `cells` rows appended to its `Cancelled` table.
+function withCancelled(...cells) {
+  const backlog = parseBacklog(realBacklog);
+  const lines = [...backlog.lines];
+  const rows = cells.map((values) => renderRow(backlog.cancelled.columns, values));
+  lines.splice(backlog.cancelled.end, 0, ...rows);
+  return lines.join('\n');
 }
 
 function nextBacklogId(backlog, reservedIds = []) {
@@ -298,6 +309,83 @@ test('the backlog lint reports duplicate IDs, overflow, misalignment and unknown
   assert.match(problems, /cells are not padded to the column widths/);
 });
 
+test('Cancelled rows follow the Done format', () => {
+  const backlog = parseBacklog(realBacklog);
+  assert.deepEqual(
+    backlog.cancelled.columns.map((column) => column.name),
+    backlog.done.columns.map((column) => column.name),
+  );
+  const cancelled = withCancelled(
+    ['900', 'Dropped idea', 'Value', 'Low', 'Superseded by ID-19'],
+    ['901', 'Another dropped idea', 'Ops', 'Medium', 'No longer wanted'],
+  );
+  assert.deepEqual(lintBacklog(cancelled), []);
+
+  const lines = cancelled.split('\n');
+  const row = (id) => lines.findIndex((line) => line.startsWith(`| ${id} `));
+  const header = lines.indexOf('## Cancelled');
+  const ignore = lines.indexOf('<!-- prettier-ignore -->', header);
+  const broken = [...lines];
+  broken[row(900)] = broken[row(900)].replace('| Value ', '| Feature').replace('| Low ', '| Soon');
+  broken[row(901)] = broken[row(901)].replace(
+    'No longer wanted',
+    'No longer wanted'.padEnd(70, '!'),
+  );
+  broken[ignore] = '';
+  broken[ignore + 2] = broken[ignore + 2].replace('| --: |', '| ---: |');
+  const problems = lintBacklog(broken.join('\n')).join('\n');
+
+  assert.match(problems, /Cancelled: the table must be preceded by `<!-- prettier-ignore -->`/);
+  assert.match(problems, /Cancelled line \d+: the separator row differs from the `Done` table's/);
+  assert.match(problems, /Cancelled line \d+: Type `Feature` is not a Legend value/);
+  assert.match(problems, /Cancelled line \d+: Level `Soon` is not a Legend value/);
+  assert.match(problems, /Cancelled line \d+: Notes is 70 characters; the column fits 61/);
+
+  const misaligned = [...lines];
+  misaligned[row(900)] = misaligned[row(900)].replace('| Value ', '|  Value');
+  assert.match(
+    lintBacklog(misaligned.join('\n')).join('\n'),
+    /Cancelled line \d+: cells are not padded to the column widths/,
+  );
+
+  const reshaped = [...lines];
+  reshaped[ignore + 1] = reshaped[ignore + 1].replace('| Notes ', '| Why   ');
+  assert.match(
+    lintBacklog(reshaped.join('\n')).join('\n'),
+    /Cancelled: columns are ID, Title, Type, Level, Why, expected ID, Title, Type, Level, Notes/,
+  );
+
+  assert.deepEqual(lintBacklog(realBacklog.replace('## Cancelled', '## Discarded')), [
+    'docs/backlog.md has no `## Cancelled` section',
+  ]);
+});
+
+test('duplicate IDs are reported across Todo, Done and Cancelled', () => {
+  const { todo, done } = parseBacklog(realBacklog);
+  const [todoId] = todo.rows[0].cells;
+  const [doneId] = done.rows[0].cells;
+  const problems = lintBacklog(
+    withCancelled(
+      [todoId, 'Cancelled twin of Todo', 'Value', 'Low', 'x'],
+      [doneId, 'Cancelled twin of Done', 'Value', 'Low', 'x'],
+      ['900', 'Cancelled twice', 'Value', 'Low', 'x'],
+      ['900', 'Cancelled twice', 'Value', 'Low', 'x'],
+    ),
+  ).join('\n');
+
+  assert.match(problems, new RegExp(`Cancelled line \\d+: ID ${todoId} is already used on line`));
+  assert.match(problems, new RegExp(`Cancelled line \\d+: ID ${doneId} is already used on line`));
+  assert.match(problems, /Cancelled line \d+: ID 900 is already used on line/);
+
+  const lines = realBacklog.split('\n');
+  const todoRow = lines.findIndex((line) => line.startsWith(`| ${todoId} `));
+  lines[todoRow] = lines[todoRow].replace(`| ${todoId.padEnd(3)} |`, `| ${doneId.padEnd(3)} |`);
+  assert.match(
+    lintBacklog(lines.join('\n')).join('\n'),
+    new RegExp(`Done line \\d+: ID ${doneId} is already used on line`),
+  );
+});
+
 test('the triage prompt limits Title and Notes to the Todo column widths', () => {
   const prompt = readFileSync(join(repositoryRoot, '.github/workflows/issue-triage.md'), 'utf8');
   const { columns } = parseBacklog(realBacklog).todo;
@@ -307,7 +395,7 @@ test('the triage prompt limits Title and Notes to the Todo column widths', () =>
   }
 });
 
-test('rows are padded to the ruler: 120 characters, Done IDs right-aligned', () => {
+test('rows are padded to the ruler: 120 characters, Done and Cancelled IDs right-aligned', () => {
   const backlog = parseBacklog(realBacklog);
   const actualId = nextBacklogId(backlog);
   const todo = renderRow(backlog.todo.columns, [
@@ -338,6 +426,14 @@ test('rows are padded to the ruler: 120 characters, Done IDs right-aligned', () 
       `| ${String(actualId).padStart(backlog.done.columns[0].width, ' ')} | Add short poll links`,
     ),
   );
+  const cancelled = renderRow(backlog.cancelled.columns, [
+    String(actualId),
+    'Add short poll links',
+    'Quality',
+    'Low',
+    'x',
+  ]);
+  assert.equal(cancelled, done);
 });
 
 test('new rows are appended to the end of Todo and keep the format', () => {
@@ -360,6 +456,17 @@ test('new rows are appended to the end of Todo and keep the format', () => {
   assert.equal(lines[inserted + 1], '');
   assert.equal(lines.length, backlog.lines.length + 1);
   assert.deepEqual(lintBacklog(text), []);
+});
+
+test('the next ID follows a cancelled item that holds the highest ID', () => {
+  const highest = maxBacklogId(parseBacklog(realBacklog)) + 50;
+  const backlog = parseBacklog(
+    withCancelled([String(highest), 'Dropped idea', 'Value', 'Low', 'No longer wanted']),
+  );
+
+  assert.equal(Math.max(...backlog.todo.rows.map((row) => Number(row.cells[0]))) < highest, true);
+  assert.equal(Math.max(...backlog.done.rows.map((row) => Number(row.cells[0]))) < highest, true);
+  assert.deepEqual(nextIds(backlog, [], 2), [highest + 1, highest + 2]);
 });
 
 test('the next ID follows the backlog and every ID an open pull request adds', () => {
@@ -527,6 +634,24 @@ test('an accepted Issue becomes a Todo row on a new branch and a pull request', 
   assert.equal(comment, '');
   assert.equal(core.failed, null);
   assert.deepEqual(core.notices, [`Opened https://github.com/${REPOSITORY}/pull/70`]);
+});
+
+test('a promotion appends to Todo and leaves Cancelled rows unchanged', async () => {
+  const highest = maxBacklogId(parseBacklog(realBacklog)) + 50;
+  const backlog = withCancelled(
+    [String(highest - 1), 'Dropped idea', 'Value', 'Low', 'Superseded by ID-19'],
+    [String(highest), 'Another dropped idea', 'Ops', 'Medium', 'No longer wanted'],
+  );
+  const github = fakeGitHub({ backlog });
+  const { result } = await promote62(github);
+
+  assert.equal(result.outcome, 'promoted');
+  assert.equal(result.plan.entries[0].ID, String(highest + 1));
+  const commit = github.state.calls.find(({ route }) => route.startsWith('PUT '));
+  const written = Buffer.from(commit.params.content, 'base64').toString('utf8');
+  const cancelledSection = (text) => text.slice(text.indexOf('## Cancelled'));
+  assert.equal(cancelledSection(written), cancelledSection(backlog));
+  assert.deepEqual(lintBacklog(written), []);
 });
 
 test('a split recommendation gets consecutive IDs and a counted title', async () => {

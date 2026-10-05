@@ -21,7 +21,8 @@ Pure refactors or single-package changes don't need the full sequence.
    `feat/<name>` (or `fix/`, `chore/`). Read the item's row and the relevant
    `docs/` (`09-api-design.md`, `10-storage.md`, `04-domain-model.md`). If the
    item's acceptance criteria still hold open questions, run `task-readiness`
-   first and land its docs PR.
+   first and land its docs PR. Picking a `Ready` item can leave the `Ready`
+   pool short; follow the Ready-pool rule in `AGENTS.md` (Process Rules).
 
 2. **shared** (`packages/shared`). Add only the types/DTOs/constants this slice
    needs — they are the single source of truth for the wire contract. Keep them

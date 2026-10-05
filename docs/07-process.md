@@ -55,10 +55,19 @@ See `docs/production.md` for the reviewed tooling and operator sequence.
    pick → readiness if needed → work → merge → pick again
 3. Pick the next item, usually a `Ready` one. If it still needs readiness, agree
    scope in `docs/acceptance-criteria.md` **before** starting the work — the PR
-   description then refers to those criteria instead of restating them
+   description then refers to those criteria instead of restating them. Keep a
+   small `Ready` pool: when picking a `Ready` item leaves fewer than 2 others,
+   whoever picked it requests a backlog sweep (the exact rule and command are in
+   `AGENTS.md`, Process Rules)
 4. Implement features as vertical slices, sized to fit one agent session
 5. Merge changes to `main` via PR; the PR updates `docs/backlog.md` for the items it completes
-6. Each merge should be production-ready; cut a release when there is something
+6. Keep `Todo` current with backlog sweeps. A sweep is requested on the
+   `backlog-sweep` tracker Issue — by the `Ready` pool rule, after a verified
+   production release, and by a weekly check about 60 days after the last
+   sweep. It runs with the `backlog-sweep` skill, which only recommends; the
+   owner decides, the approved changes land as a reviewed docs PR, and the
+   owner closes the tracker
+7. Each merge should be production-ready; cut a release when there is something
    to release
 
 ---
@@ -123,12 +132,26 @@ Examples:
   GitHub Actions to create and approve pull requests**, and CI on its pull
   requests starts once someone with write access selects **Approve workflows to
   run**. It is not a required check
+- Backlog sweep request (`.github/workflows/backlog-sweep.yml`, a plain,
+  deterministic workflow) is the one entry point for requesting a sweep:
+  `workflow_dispatch` with a required `reason`, plus a weekly, best-effort check
+  that requests one about 60 days after the tracker was last closed. It reopens
+  or comments on the one Issue labelled `backlog-sweep`. The first explicit
+  request creates the label and the Issue; until then the weekly check does
+  nothing. It never runs the sweep or closes the tracker. It uses the built-in `GITHUB_TOKEN` and is not a required check.
+  GitHub disables scheduled workflows in a public repository after 60 days
+  without repository activity, and they stay off until someone re-enables them
+  from the Actions tab; no external scheduler backs this up
 - **CD does not exist yet.** Images are verified but are not pushed, deployed or
   released on merge. The owner-operated first release and the #28 manual offsite
   backup/restore drill have completed; #29 awaits its separate post-deployment
   documentation closure, and #32 remains the next backup stage
 - each merge should be production-ready
 - releases will be tagged manually once there is something to release
+- a future release workflow requests a backlog sweep through the same
+  `workflow_dispatch` entry point, with the release tag and full SHA as the
+  reason, and only after a successful deployment and production verification.
+  A tag push itself never requests a sweep
 
 For the first production deployment (#29), the infrastructure/tooling PR was
 reviewed and merged before the shared VPS was changed, and deployment used its

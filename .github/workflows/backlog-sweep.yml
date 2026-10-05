@@ -1,0 +1,46 @@
+# Backlog sweep request: the common entry point that requests a backlog sweep
+# on the one tracker Issue labelled `backlog-sweep` (open = a sweep is
+# requested). Deterministic, no LLM: the logic and its tests live in
+# scripts/backlog-sweep.mjs. It never runs the sweep or closes the tracker; the
+# procedure is .claude/skills/backlog-sweep/SKILL.md. See docs/backlog.md
+# (Workflow).
+name: Backlog sweep request
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Why a sweep is requested (e.g. the picked item, or the release tag and SHA)
+        required: true
+        type: string
+  # Weekly, best-effort fallback: requests a sweep about 60 days after the last
+  # one. GitHub disables scheduled workflows in a public repository after 60
+  # days without activity; re-enable it from the Actions tab.
+  schedule:
+    - cron: '17 6 * * 1'
+
+permissions: {}
+
+jobs:
+  request:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # One request at a time, so two runs never create two trackers; `queue: max`
+    # keeps every waiting run instead of cancelling all but the newest.
+    concurrency:
+      group: backlog-sweep-request
+      queue: max
+    permissions:
+      contents: read # check out the script
+      issues: write # find, create, reopen and comment on the tracker; create its label
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The `reason` input is read from the event payload inside the script and
+      # never interpolated here.
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { run } = await import(`${process.env.GITHUB_WORKSPACE}/scripts/backlog-sweep.mjs`);
+            await run({ github, context, core });

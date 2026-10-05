@@ -88,8 +88,8 @@ Read these before deciding; do not rely on memory. Read files from the
 repository checkout or with the GitHub repository contents tool.
 
 1. `docs/backlog.md` — the `Legend` (Type, Level, State), `Workflow`, `Format`,
-   `Todo` and `Done` sections. Use only the Type, Level and State values
-   defined there.
+   `Todo`, `Done` and `Cancelled` sections. Use only the Type, Level and State
+   values defined there.
 2. Open Issues in this repository, read-only, to spot duplicates. Ignore
    Issue #${{ github.event.issue.number }} itself.
 3. Only when relevant for context or dependencies: `docs/01-mvp-scope.md`,
@@ -108,6 +108,11 @@ repository checkout or with the GitHub repository contents tool.
    If the Issue holds several independent backlog items, the verdict stays
    `Keep`: recommend a split explicitly and give one candidate backlog entry
    per item.
+
+   A matching item in `Cancelled` is context, not a verdict: cite it under
+   **Dependencies / context** as `ID-N` with its cancellation reason, but do not
+   make the verdict `Discard` or `Duplicate` because of it alone. Raising the
+   idea again may be renewed interest, and that is the owner's call.
 
 2. **Proposed backlog title** — short and specific, within the Title limit.
 3. **Type** and **Level** — one value each from the `Legend`, each with a
