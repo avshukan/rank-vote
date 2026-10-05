@@ -357,7 +357,10 @@ python3 -m scripts.production.cli tag --tag v0.1.0
 
 This updates tag metadata without changing recorded image IDs/SHA. Then request
 a backlog sweep, naming the verified release by its tag and full deployed SHA
-(releases after v0.1.0, which predates the sweep workflow):
+(releases after v0.1.0, which predates the sweep workflow). Run it from the
+owner's workstation, where `gh` is authenticated as the owner with permission
+to run GitHub Actions workflows — not from the VPS, whose `gh` stays read-only
+and gets no new credential for this:
 
 ```bash
 gh workflow run backlog-sweep.yml -f reason="release <tag> at <deployed-full-sha>"

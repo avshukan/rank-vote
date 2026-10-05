@@ -355,6 +355,26 @@ test('only a request comment from the current opening counts as already recorded
   }
 });
 
+test('only the generated marker line counts, not a marker quoted in another reason', async () => {
+  const reason = 'release v0.2.0 at ' + 'a'.repeat(40);
+  const quoting = `see ${reasonMarker(reason)}`;
+  const github = fakeGitHub({
+    issues: [tracker({ created_at: daysAgo(3) })],
+    labelExists: true,
+    comments: { 80: [botComment(quoting, daysAgo(1))] },
+  });
+  assert.ok(github.state.comments[80][0].body.includes(reasonMarker(reason)));
+
+  const first = await request(github, reason);
+  const second = await request(github, reason);
+  const quoted = await request(github, quoting);
+
+  assert.equal(first.result.outcome, 'recorded');
+  assert.equal(second.result.outcome, 'already-recorded');
+  assert.equal(quoted.result.outcome, 'already-recorded');
+  assert.equal(github.posted(80).length, 1);
+});
+
 test('a tracker that was never reopened counts comments since its creation', async () => {
   const reason = 'initial backlog sweep';
   const github = fakeGitHub({
@@ -425,6 +445,57 @@ test('a due periodic check reopens the tracker with a reason that names the clos
   const again = await weekly(github);
   assert.equal(again.result.outcome, 'pending');
   assert.equal(github.posted(80).length, 1);
+});
+
+test('a periodic request that fails after reopening names its reason and the manual recovery', async () => {
+  const reason = 'periodic check: the last sweep closed on 2026-08-02, 60+ days ago';
+  const comment = 'POST /repos/{owner}/{repo}/issues/{issue_number}/comments';
+  const failures = { [comment]: httpError(502, 'Bad Gateway') };
+  const github = fakeGitHub({
+    issues: [tracker({ state: 'closed', closed_at: daysAgo(64) })],
+    labelExists: true,
+    failures,
+  });
+
+  const failed = await weekly(github);
+  assert.equal(failed.result.outcome, 'refused');
+  assert.deepEqual(github.writes(), [
+    'PATCH /issues/{issue_number}',
+    'POST /issues/{issue_number}/comments',
+  ]);
+  assert.equal(github.state.issues[0].state, 'open');
+  assert.equal(github.posted(80).length, 0);
+  assert.match(failed.core.failed, /Requesting the periodic sweep failed: `Bad Gateway`/);
+  assert.ok(failed.core.failed.includes(`which was \`${reason}\``));
+  assert.match(failed.core.summaryText, /Re-running this scheduled job does not record the reason/);
+  assert.doesNotMatch(failed.core.summaryText, /Re-run the failed jobs/);
+  const [, recovered] = failed.core.summaryText.match(
+    /`gh workflow run backlog-sweep\.yml -f reason="([^"]+)"`/,
+  );
+  assert.equal(recovered, reason);
+
+  delete failures[comment];
+  const rerun = await weekly(github);
+  assert.equal(rerun.result.outcome, 'pending');
+  assert.equal(github.posted(80).length, 0);
+  assert.doesNotMatch(rerun.core.summaryText, /recorded/);
+
+  const manual = await request(github, recovered);
+  assert.equal(manual.result.outcome, 'recorded');
+  const [posted] = github.posted(80);
+  assert.ok(posted.body.includes(`**Reason:** \`${reason}\``));
+  assert.match(posted.body, /\*\*Source:\*\* manual request by `avshukan`/);
+});
+
+test('a periodic check that fails before deciding anything can simply be re-run', async () => {
+  const github = fakeGitHub({
+    failures: { 'GET /repos/{owner}/{repo}/issues': httpError(502, 'Bad Gateway') },
+  });
+  const { result, core } = await weekly(github);
+
+  assert.equal(result.outcome, 'refused');
+  assert.deepEqual(github.writes(), []);
+  assert.match(core.summaryText, /Re-run the failed jobs of this workflow run/);
 });
 
 for (const [name, issues, outcome, summary] of [

@@ -34,9 +34,11 @@ that is `task-readiness`, which stays a separate step.
    closed (`git log`, merged PRs). Read code where a question depends on it.
 
 3. **Review every `Todo` item** — every row, none skipped:
-   - **Still needed?** Already delivered, superseded, contradicted by a decision
-     in `docs/06-decisions.md`, or no longer wanted → a candidate for
-     `Cancelled`.
+   - **Still needed?** Work that was actually delivered belongs in `Done`, at
+     the end of the table, citing the PR that delivered it. Work that was
+     abandoned, superseded, contradicted by an accepted decision in
+     `docs/06-decisions.md`, or is otherwise no longer wanted → a candidate for
+     `Cancelled`. Either move needs the owner's approval.
    - **Type still correct?** **Level still correct?** Against the Legend.
    - **Dependencies still valid?** Each `needs ID-N` / `blocks ID-N` points at
      an item that still exists and still matters: one in `Done` is satisfied,
@@ -50,10 +52,11 @@ that is `task-readiness`, which stays a separate step.
      dependencies.
 
 4. **Recommend, then wait.** Present one compact list: the item (`ID-N`), the
-   proposed change and its reason, grouped as cancel / Type or Level /
-   dependencies or Notes / State / readiness candidates. Items with no change
-   go on one line. Do not edit anything yet, and do not decide a product or
-   process question — put it to the owner as a question with a recommendation.
+   proposed change and its reason, grouped as move to `Done` or `Cancelled` /
+   Type or Level / dependencies or Notes / State / readiness candidates. Items
+   with no change go on one line. Do not edit anything yet, and do not decide a
+   product or process question — put it to the owner as a question with a
+   recommendation.
 
 5. **Apply only what the owner approved,** on a branch
    `docs/backlog-sweep-<YYYY-MM-DD>`:

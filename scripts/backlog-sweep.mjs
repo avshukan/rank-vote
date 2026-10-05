@@ -43,6 +43,10 @@ export function reasonMarker(reason) {
   return `<!-- backlog-sweep-request: ${digest} -->`;
 }
 
+// The workflow writes the marker as the last line of its comment. Only that
+// line counts: the same text quoted anywhere else in a comment does not.
+const markerLine = (body) => body.trimEnd().split(/\r?\n/).at(-1);
+
 const isoDate = (time) => new Date(time).toISOString().slice(0, 10);
 
 // ---------------------------------------------------------------------------
@@ -193,13 +197,15 @@ async function alreadyRecorded(github, owner, repo, tracker, reason) {
       user?.type === 'Bot' &&
       Date.parse(createdAt) >= since &&
       typeof body === 'string' &&
-      body.includes(marker),
+      markerLine(body) === marker,
   );
 }
 
 // The only writes: the label and the tracker when there is none, reopening a
-// closed tracker, and one reason comment. Reopening comes first, so a retry
-// after a failed comment still records the reason.
+// closed tracker, and one reason comment. Reopening comes first, so repeating
+// a request whose comment failed still records its reason: a re-run of a
+// dispatched request, or a manual request with the reason of a failed periodic
+// check (`periodicFailure`).
 async function requestSweep({ github, owner, repo, tracker, reason, source, runUrl, urls }) {
   let outcome;
   if (!tracker) {
@@ -273,6 +279,22 @@ async function report(core, heading, result) {
   return result;
 }
 
+// A periodic request that fails after its reason is known cannot be repeated by
+// re-running the scheduled job: once the tracker was reopened, the re-run finds
+// it open and adds nothing. The manual entry point records the same reason
+// whether the tracker is open or still closed.
+function periodicFailure(reason, error) {
+  const command = `gh workflow run ${WORKFLOW_FILE} -f reason="${reason}"`;
+  return new SweepStop(
+    `Requesting the periodic sweep failed: ${inlineCode(error.message)}. The tracker may now be ` +
+      `open without its reason, which was ${inlineCode(reason)}.`,
+    'Re-running this scheduled job does not record the reason: once the tracker is open, the ' +
+      'periodic check adds nothing. Request the sweep manually with exactly that reason: run ' +
+      `${inlineCode(command)}, or **Run workflow** on _Backlog sweep request_ in the Actions tab ` +
+      'with that `reason`. A reason the tracker already records is not added again.',
+  );
+}
+
 async function attempt(work) {
   try {
     return await work();
@@ -315,16 +337,20 @@ export async function run({ github, context, core, now = new Date() }) {
       const check = periodicCheck(tracker, now);
       if (check.kind !== 'due') return { outcome: check.kind, tracker, ...check };
       const source = 'weekly periodic check';
-      return requestSweep({
-        github,
-        owner,
-        repo,
-        tracker,
-        reason: check.reason,
-        source,
-        runUrl,
-        urls,
-      });
+      try {
+        return await requestSweep({
+          github,
+          owner,
+          repo,
+          tracker,
+          reason: check.reason,
+          source,
+          runUrl,
+          urls,
+        });
+      } catch (error) {
+        throw periodicFailure(check.reason, error);
+      }
     });
     return report(core, 'periodic check', result);
   }
