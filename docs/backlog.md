@@ -56,9 +56,21 @@
 - New backlog items start with `State = —`.
 - Task-readiness can run on demand for a chosen item or proactively for likely
   next work. It sets `State` to `Ready`, `Design`, or `Blocked`.
-- Backlog sweeps keep items, levels, types, dependencies, and states current.
+- Backlog sweeps keep `Todo` current: whether each item is still needed, its
+  Type, Level, dependencies and State, stale readiness, and candidates for the
+  `Ready` pool. `.github/workflows/backlog-sweep.yml` requests a sweep on the
+  one Issue labelled `backlog-sweep`: open while a sweep is requested, closed by
+  the owner once none is pending. Requests come when picking work leaves fewer
+  than 2 `Ready` items, after a verified production release, and from a weekly
+  check about 60 days after the last sweep. The `backlog-sweep` skill only
+  recommends; the owner decides, and the approved changes land as a reviewed
+  docs pull request.
+- An item that is no longer wanted moves from `Todo` to the end of `Cancelled`
+  by the owner's decision. It keeps its ID, Title, Type and Level, and Notes
+  records the reason. Rows are never deleted.
 - Work is pulled continuously from `Ready` items. `Level` guides selection but
-  is not a strict queue order.
+  is not a strict queue order. The Ready-pool rule for picking an item is in
+  `AGENTS.md` (Process Rules).
 - A detailed file under `docs/backlog/<id>-<slug>.md` is optional when one row
   is not enough. It is normally deleted when the task is done; durable decisions
   move to permanent documentation.
@@ -67,12 +79,13 @@
 
 ## Format
 
-The `Todo` and `Done` tables have **fixed column widths**:
+The `Todo`, `Done` and `Cancelled` tables have **fixed column widths**:
 
-| Table | ID  | Title | Type | Level | State | Notes |
-| ----- | --- | ----- | ---- | ----- | ----- | ----- |
-| Todo  | 3   | 26    | 8    | 6     | 7     | 51    |
-| Done  | 3   | 26    | 8    | 6     | —     | 61    |
+| Table     | ID  | Title | Type | Level | State | Notes |
+| --------- | --- | ----- | ---- | ----- | ----- | ----- |
+| Todo      | 3   | 26    | 8    | 6     | 7     | 51    |
+| Done      | 3   | 26    | 8    | 6     | —     | 61    |
+| Cancelled | 3   | 26    | 8    | 6     | —     | 61    |
 
 With the separators, every backlog row is exactly 120 characters wide, and the
 separator row under each header doubles as the ruler to pad against.
@@ -89,7 +102,9 @@ adapts to the column rather than moving the column.
   Issue/PR numbers such as `#19`. IDs are never reused: a new item takes the
   number after the highest one.
 - Completed items are appended to `Done`; existing `Done` rows are not reordered.
-- Both backlog tables are preceded by `<!-- prettier-ignore -->`, so Prettier
+  Cancelled items are appended to `Cancelled` the same way, and no row is ever
+  deleted.
+- All three backlog tables are preceded by `<!-- prettier-ignore -->`, so Prettier
   will not re-align them; pad the cells by hand.
 - The `Legend` and width tables are ordinary Prettier-managed tables.
 - `pnpm test` checks these rules (`scripts/backlog-promotion.test.mjs`), so a
@@ -126,7 +141,6 @@ adapts to the column rather than moving the column.
 | 36  | Export results as CSV      | Value    | Low    | —       | Download scores/ranks from results page or API      |
 | 37  | Add short poll links       | Quality  | Low    | —       | Replace/alias UUID with short ID; redirect needed   |
 | 38  | Breakdown hover preview    | Value    | Low    | —       | Hover preview of score breakdown; needs ID-19       |
-| 39  | Add backlog sweep process  | Ops      | Medium | Ready   | Sweep skill; tracker Issue triggers; Cancelled      |
 
 ---
 
@@ -149,3 +163,15 @@ adapts to the column rather than moving the column.
 |  35 | Graceful API shutdown      | Quality  | High   | SIGTERM drains HTTP, closes Prisma; process + Docker tests    |
 |  28 | Manual offsite backup      | Quality  | High   | Offsite dump + clean restore + v0.1.0 API proof               |
 |  29 | First production deploy    | Ops      | High   | Production deployment completed; VPS live                     |
+|  39 | Add backlog sweep process  | Ops      | Medium | Sweep skill; request workflow + tracker Issue; `Cancelled`    |
+
+---
+
+## Cancelled
+
+Items the owner decided are no longer wanted. They keep their ID, Title, Type
+and Level; Notes records the reason.
+
+<!-- prettier-ignore -->
+|  ID | Title                      | Type     | Level  | Notes                                                         |
+| --: | -------------------------- | -------- | ------ | ------------------------------------------------------------- |

@@ -355,8 +355,17 @@ git push origin v0.1.0
 python3 -m scripts.production.cli tag --tag v0.1.0
 ```
 
-This updates tag metadata without changing recorded image IDs/SHA. The owner
-then completed #28: an offsite logical dump was copied outside
+This updates tag metadata without changing recorded image IDs/SHA. Then request
+a backlog sweep, naming the verified release by its tag and full deployed SHA
+(releases after v0.1.0, which predates the sweep workflow):
+
+```bash
+gh workflow run backlog-sweep.yml -f reason="release <tag> at <deployed-full-sha>"
+```
+
+This step belongs here, after the deployment and its production verification
+succeeded; pushing the tag never requests a sweep by itself. For v0.1.0 the
+owner then completed #28: an offsite logical dump was copied outside
 VPS/DigitalOcean, restored into clean PostgreSQL 17 and verified through the
 recorded smoke poll. The volume is storage, **not backup**. A separate docs PR
 still records the release, dates the changelog, checks actual host/public AC

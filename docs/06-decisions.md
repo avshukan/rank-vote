@@ -744,7 +744,7 @@ Rejected:
 
 Status:
 
-- accepted for backlog ID-39; implementation pending
+- accepted; implemented by backlog ID-39
 
 Chosen:
 
@@ -752,9 +752,10 @@ Chosen:
   recommends, and the owner decides before `docs/` changes through a normal
   reviewed PR. `task-readiness` stays a separate stage and the only way an item
   becomes `Ready`
-- one plain, deterministic workflow is the common request entry point:
-  `workflow_dispatch` with a required reason, plus a weekly best-effort check.
-  It only requests and tracks sweeps
+- one plain, deterministic workflow (`.github/workflows/backlog-sweep.yml`,
+  running the tested `scripts/backlog-sweep.mjs`) is the common request entry
+  point: `workflow_dispatch` with a required reason, plus a weekly best-effort
+  check. It only requests and tracks sweeps
 - one persistent tracker Issue with the reserved `backlog-sweep` label: open
   means a sweep is requested, closed means none is pending. A request reopens it
   when it is closed and comments the reason; the owner closes it after checking

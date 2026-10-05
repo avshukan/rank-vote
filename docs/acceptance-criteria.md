@@ -1403,130 +1403,130 @@ and tooling only: no app, API, shared-package or storage change.
 
 ### Sweep request workflow
 
-- [ ] One plain GitHub Actions workflow, with no model, is the common entry
+- [x] One plain GitHub Actions workflow, with no model, is the common entry
       point for every sweep request: `workflow_dispatch` with a required
       free-text `reason`, plus the weekly periodic check below. It has no
       `push`, tag or `issues` trigger
-- [ ] Its logic lives in a `scripts/` module with `node:test` tests that
+- [x] Its logic lives in a `scripts/` module with `node:test` tests that
       `pnpm test` runs, as with backlog promotion. The workflow YAML only
       invokes it and holds no sweep procedure
-- [ ] Every run, dispatched or scheduled, is serialized in one concurrency group
+- [x] Every run, dispatched or scheduled, is serialized in one concurrency group
       that queues runs instead of cancelling them, so no request is dropped and
       no second tracker is created
-- [ ] Least privilege as in backlog promotion: `permissions: {}` at the top,
+- [x] Least privilege as in backlog promotion: `permissions: {}` at the top,
       only the Issue permissions the job needs, actions pinned by SHA, and the
       `reason` input never interpolated into a script
-- [ ] It is not a required check
+- [x] It is not a required check
 
 ### Tracker Issue
 
-- [ ] The tracker is the one Issue that carries the reserved `backlog-sweep`
+- [x] The tracker is the one Issue that carries the reserved `backlog-sweep`
       label. Open means a sweep is requested; closed means none is pending
-- [ ] The lookup covers open and closed Issues, excludes pull requests and
+- [x] The lookup covers open and closed Issues, excludes pull requests and
       follows pagination
-- [ ] With no tracker, a request creates the label if it is missing, then the
+- [x] With no tracker, a request creates the label if it is missing, then the
       tracker. Its body holds only the tracker semantics, who closes it, and a
       link to the canonical skill — no sweep procedure
-- [ ] With more than one tracker, a request changes nothing, and the run fails
+- [x] With more than one tracker, a request changes nothing, and the run fails
       with a message that names every labelled Issue and the recovery: remove
       the label from all but one
-- [ ] A request reopens a closed tracker and leaves an open one open. Either way
+- [x] A request reopens a closed tracker and leaves an open one open. Either way
       it adds one comment that records the reason as given, shown as inline
       code because it is untrusted text, and links the run
-- [ ] A retried request adds no second comment: a reason already recorded since
+- [x] A retried request adds no second comment: a reason already recorded since
       the tracker was last opened is not recorded again. A re-run of the same
       workflow run or a repeated release request leaves one comment
 
 ### Request triggers
 
-- [ ] **Ready pool, at pickup time.** Whoever picks a `Ready` item for work, an
+- [x] **Ready pool, at pickup time.** Whoever picks a `Ready` item for work, an
       agent or a person, through `new-slice` or not, counts the `Ready` rows of
       `Todo` without the picked item. When fewer than 2 remain, they request a
       sweep with a reason that names the picked item and the count. The rule
       lives in `AGENTS.md` and `docs/07-process.md`; `new-slice` step 1 points
       to it instead of restating it
-- [ ] **Release.** The manual release flow in `docs/production.md` requests a
+- [x] **Release.** The manual release flow in `docs/production.md` requests a
       sweep only after a successful deployment and production verification,
       with a reason that records the release tag and the full deployed SHA. A
       tag push never triggers a sweep
-- [ ] **Future CD.** `docs/07-process.md` records that a future release workflow
+- [x] **Future CD.** `docs/07-process.md` records that a future release workflow
       requests a sweep through the same entry point, and only after a
       successful deployment and verification
-- [ ] **Periodic, best effort.** A weekly scheduled check requests a sweep when
+- [x] **Periodic, best effort.** A weekly scheduled check requests a sweep when
       the tracker is closed and was last closed at least 60 days ago, with a
       reason that names that date. It adds no comment while the tracker is
       open, and with no tracker it does nothing and says so in the run summary
-- [ ] The docs state GitHub's limitation: in a public repository, scheduled
+- [x] The docs state GitHub's limitation: in a public repository, scheduled
       workflows are disabled after 60 days without repository activity and stay
       off until someone re-enables them. No external scheduler is added
 
 ### Completing a sweep
 
-- [ ] A sweep's result PR links the tracker without a closing keyword. Nothing
+- [x] A sweep's result PR links the tracker without a closing keyword. Nothing
       closes the tracker automatically
-- [ ] The owner closes the tracker once the approved changes have merged, or
+- [x] The owner closes the tracker once the approved changes have merged, or
       once they accept a no-change sweep, after checking that the latest
       trigger reasons on the tracker were covered
 
 ### `backlog-sweep` skill
 
-- [ ] `.claude/skills/backlog-sweep/SKILL.md` in the Agent Skills format, with
+- [x] `.claude/skills/backlog-sweep/SKILL.md` in the Agent Skills format, with
       the relative symlink `.agents/skills/backlog-sweep`. As with
       `task-readiness`, agents may invoke it on their own
-- [ ] It starts from the tracker's trigger reasons since it was last opened, and
+- [x] It starts from the tracker's trigger reasons since it was last opened, and
       reviews every `Todo` item: still needed? Type and Level still correct?
       Dependencies still valid? State still correct? Readiness stale? A
       candidate for replenishing the `Ready` pool?
-- [ ] It only recommends. It presents each proposed change with a reason and
+- [x] It only recommends. It presents each proposed change with a reason and
       waits for the owner's decisions; nothing in `docs/` changes before them,
       and it decides no product or process question
-- [ ] Only `task-readiness` sets `Ready`. A sweep may name readiness candidates
+- [x] Only `task-readiness` sets `Ready`. A sweep may name readiness candidates
       and recommend moving a stale item out of `Ready`, but never sets `Ready`
-- [ ] After the decisions it applies only the approved changes on a `docs/`
+- [x] After the decisions it applies only the approved changes on a `docs/`
       branch, moving a cancelled item to `Cancelled` with its reason. It runs
       `make format-check` and the backlog format tests, opens a PR that lists
       the trigger reasons it covered and links the tracker, and stops at green
       CI
-- [ ] The procedure lives only in the skill. The workflow, its script and the
+- [x] The procedure lives only in the skill. The workflow, its script and the
       tracker Issue point to it
 
 ### `Cancelled` backlog section
 
-- [ ] `docs/backlog.md` has `## Cancelled` after `## Done`, preceded by
+- [x] `docs/backlog.md` has `## Cancelled` after `## Done`, preceded by
       `<!-- prettier-ignore -->`, with the same columns, fixed widths and
       right-aligned `ID` as `Done`: `ID | Title | Type | Level | Notes`. Notes
       records the cancellation reason. The table may have no rows
-- [ ] An item that is no longer wanted moves from `Todo` to the end of
+- [x] An item that is no longer wanted moves from `Todo` to the end of
       `Cancelled` by an owner decision and keeps its ID, Title, Type and Level.
       Rows are never deleted, and IDs are never reused
-- [ ] The `Format` section's width table and rules cover `Cancelled`, and the
+- [x] The `Format` section's width table and rules cover `Cancelled`, and the
       `Workflow` section describes cancellation, sweeps and the tracker
-- [ ] Issue triage (`.github/workflows/issue-triage.md`, a body-only edit that
+- [x] Issue triage (`.github/workflows/issue-triage.md`, a body-only edit that
       needs no recompile) also reads `Cancelled` and may cite a matching item as
       context. A match never decides the verdict by itself: renewed interest
       remains the owner's call
 
 ### Backlog tooling
 
-- [ ] The deterministic backlog parser and lint, used by `pnpm test` and by
+- [x] The deterministic backlog parser and lint, used by `pnpm test` and by
       backlog promotion, cover `Todo`, `Done` and `Cancelled`: the format
       rules, Legend values, and duplicate IDs within and across all three
-- [ ] Next-ID allocation counts all three sections, plus the IDs that open pull
+- [x] Next-ID allocation counts all three sections, plus the IDs that open pull
       requests add
-- [ ] Tests cover at least: the highest ID existing only in `Cancelled`;
+- [x] Tests cover at least: the highest ID existing only in `Cancelled`;
       duplicate IDs across sections; `Cancelled` formatting (columns, padding,
       overflow, Legend values, `prettier-ignore`); and promotion leaving
       `Cancelled` rows unchanged
 
 ### Verification
 
-- [ ] Unit tests for the request logic: tracker lookup (open and closed, pull
+- [x] Unit tests for the request logic: tracker lookup (open and closed, pull
       requests excluded, more than one page), creation of the label and the
       tracker, the more-than-one failure with no writes, reopen plus comment,
       a comment on an open tracker, a repeated reason recorded once, and the
       periodic check (due, not yet due, tracker open, no tracker)
-- [ ] The backlog tooling tests above; `make verify` passes
-- [ ] The workflow cannot run before it is on `main`. The PR says what was
+- [x] The backlog tooling tests above; `make verify` passes
+- [x] The workflow cannot run before it is on `main`. The PR says what was
       verified locally and lists the post-merge step
 - [ ] After merge, the owner runs the workflow once with the reason
       `initial backlog sweep`. It creates the label and the tracker with that
@@ -1534,18 +1534,18 @@ and tooling only: no app, API, shared-package or storage change.
 
 ### Documentation
 
-- [ ] `docs/backlog.md`: `Workflow`, `Format` and the new `Cancelled` section;
+- [x] `docs/backlog.md`: `Workflow`, `Format` and the new `Cancelled` section;
       ID-39 moves to `Done`
-- [ ] `AGENTS.md`: the pickup-time Ready-pool rule under Process Rules, and the
+- [x] `AGENTS.md`: the pickup-time Ready-pool rule under Process Rules, and the
       new skill under Skills & Workflows
-- [ ] `docs/07-process.md`: How We Work (the pickup rule, sweeps) and CI/CD (the
+- [x] `docs/07-process.md`: How We Work (the pickup rule, sweeps) and CI/CD (the
       request workflow, its scheduled-run limitation, the future CD entry point)
-- [ ] `docs/production.md`: the release sweep request in "Tag and immediate
+- [x] `docs/production.md`: the release sweep request in "Tag and immediate
       recovery handoff", after the verified deployment
-- [ ] `.claude/skills/new-slice/SKILL.md` step 1 points to the pickup rule
-- [ ] `docs/06-decisions.md`: the "Backlog sweep process" ADR no longer says
+- [x] `.claude/skills/new-slice/SKILL.md` step 1 points to the pickup rule
+- [x] `docs/06-decisions.md`: the "Backlog sweep process" ADR no longer says
       implementation pending
-- [ ] `docs/12-ai-first.md`: Wave 6 lists the sweep as done
+- [x] `docs/12-ai-first.md`: Wave 6 lists the sweep as done
 
 ### Out of Scope (tracked separately)
 
