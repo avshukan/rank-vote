@@ -151,6 +151,16 @@ reset on restart.
 GET /polls/:id/results
 ```
 
+The response is discriminated by `method`, the counting method that produced
+it. Each method has its own response variant, and a client reads `method`
+before any method-specific field. Borda is the only method implemented, so
+`"BORDA"` is the only variant. A future method adds its variant in its own
+backlog item (IRV ID-8, Condorcet ID-9).
+
+Response `404 Not Found` if poll does not exist, whatever the method.
+
+#### Borda — `method: "BORDA"`
+
 Response `200 OK`:
 
 ```json
@@ -158,15 +168,29 @@ Response `200 OK`:
   "pollId": "string",
   "title": "string",
   "method": "BORDA",
-  "winners": [{ "optionId": "string", "text": "string", "score": 0 }],
-  "scores": [{ "optionId": "string", "text": "string", "score": 0 }],
+  "winners": [
+    {
+      "optionId": "string",
+      "text": "string",
+      "score": 0,
+      "breakdown": [{ "place": 1, "points": 1, "ballots": 0, "subtotal": 0 }]
+    }
+  ],
+  "scores": [
+    {
+      "optionId": "string",
+      "text": "string",
+      "score": 0,
+      "breakdown": [{ "place": 1, "points": 1, "ballots": 0, "subtotal": 0 }]
+    }
+  ],
   "totalBallots": 0
 }
 ```
 
 Notes:
 
-- `winners` and `scores` share one entry shape (`{ optionId, text, score }`), so the results page needs no lookup between them
+- `winners` and `scores` share one entry shape (`{ optionId, text, score, breakdown }`), so the results page needs no lookup between them
 - `winners` contains all options with the maximum score; typically one element, multiple on tie
 - `scores` always contains ALL poll options, sorted by `score` DESC, then by `option.order` ASC
 - `title` is included so the results page renders with a single request
@@ -174,7 +198,18 @@ Notes:
 - Borda scoring: an option ranked `r` out of `N` options earns `N − r` points
 - Results are calculated on the fly (no caching)
 
-Response `404 Not Found` if poll does not exist.
+Score breakdown — `breakdown` shows how an entry's Borda score was built. It is
+specified by backlog ID-19 and not shipped yet; until then entries carry no
+`breakdown`.
+
+- exactly `N` rows, one per place `1..N`, in ascending `place` order; a place
+  no ballot gave the option is still listed, with `ballots: 0`
+- `points` is the Borda value of that place, `N − place`
+- `ballots` is the number of ballots that ranked the option at that place
+- `subtotal` is `points × ballots`
+- the subtotals add up to `score`, and an option's `ballots` add up to
+  `totalBallots`: a strict full ranking places every option exactly once
+- with no ballots, every row has `ballots: 0` and `subtotal: 0`
 
 ---
 

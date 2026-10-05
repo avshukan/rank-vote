@@ -1238,6 +1238,160 @@ touch emulation, the API stubbed with the long-content data above:
 
 ---
 
+## ID-19 Explain score calculation
+
+Answers the Results story "see how scores were calculated, so that the result
+feels fair" (`docs/02-user-stories.md`), deferred from #5. Each option gets a
+Details view that breaks its Borda score down by place. A vertical slice: the
+results contract becomes discriminated by `method`, its Borda variant exposes
+the per-place counts the API does not return today, and the web adds the view
+and its entry point. Borda semantics do not change.
+
+### API and shared contract
+
+- [ ] The shared results contract is discriminated by `method`:
+      `PollResultsResponseDto` is a union whose only member is
+      `BordaResultsResponseDto`, typed `method: CountingMethod.BORDA`. Other
+      methods add their own variants in their own items
+- [ ] Every entry of the Borda variant's `scores` and `winners` carries
+      `breakdown` as specified in `docs/09-api-design.md`: `N` rows for places
+      `1..N` in ascending order, each `{ place, points, ballots, subtotal }`,
+      places with `ballots: 0` included
+- [ ] The entry type that carries `breakdown` belongs to the Borda variant. No
+      method-neutral type carries Borda fields
+- [ ] `points` is `N − place`, `ballots` counts the ballots that ranked the
+      option at that place, `subtotal` is `points × ballots`. The API computes
+      all three, so the web holds no Borda formula
+- [ ] The subtotals add up to `score`, and each option's `ballots` add up to
+      `totalBallots`
+- [ ] Zero ballots: every row has `ballots: 0` and `subtotal: 0`
+- [ ] On the wire `breakdown` is the only addition: `score`, the order of
+      `scores`, `winners`, `totalBallots` and `method` are unchanged for any
+      set of valid ballots. Entries for an option outside the poll stay
+      ignored, in the breakdown as in the score
+- [ ] No new endpoint
+
+### Results table entry point
+
+- [ ] In the score table, each row's Score value is a link to that option's
+      Details view, `/poll/:id/results/options/:optionId`. No separate icon or
+      button is added, and the table keeps its three columns
+- [ ] Each score link's accessible name contains its score and the option text,
+      so the links can be told apart outside their table row
+- [ ] The winner badge, the tie labels and the zero-ballot state are unchanged.
+      With no ballots there is no table, so there are no score links
+
+### Details view
+
+- [ ] Public like the results page: the URL opens directly, with no vote and no
+      prior visit to the results page
+- [ ] Shows the poll title, the option text, and a link back to
+      `/poll/:id/results`
+- [ ] A breakdown table with the columns Place, Points, Count and Subtotal, one
+      row per place from first to last. Place reads as an ordinal (1st, 2nd,
+      …). Rows with a count of 0 are shown. The values come from the API
+      `breakdown` as they are
+- [ ] Reached by click, tap or keyboard. Nothing depends on hover
+
+### States and edge cases
+
+- [ ] Unknown poll (API `404`): the shared `NotFound` with "Poll not found",
+      no Retry, as on the results page
+- [ ] An `optionId` that is not one of the poll's options: the shared
+      `NotFound` with option-specific copy, no Retry
+- [ ] Network error or 5xx: an error message with Retry
+- [ ] Zero ballots: "No votes yet" replaces the breakdown table, the same as
+      on the results page in #5. The back link stays
+- [ ] `/poll/:id/results/extra` still renders the generic not-found page (#18)
+
+### Mobile (ID-6 contract)
+
+These rules hold whether ID-6 ships before or after ID-19.
+
+- [ ] From 320 CSS px upward the Details view needs no horizontal scrolling
+      (`document.documentElement.scrollWidth <= W` at 320 and 375 px). The
+      breakdown stays a four-column table with no horizontally scrolling
+      container. The poll title and the option text wrap, including a single
+      unbroken token
+- [ ] Every interactive control on the Details view, and every score link in
+      the results table, is at least 24×24 CSS px
+
+### Verification
+
+- [ ] **Domain** (`borda.spec.ts`): breakdown rows for a multi-ballot fixture.
+      Subtotals add up to the score, counts add up to the ballot count. Zero
+      ballots give zero rows. Foreign-option entries are ignored
+- [ ] **API e2e** (`polls.e2e-spec.ts`): the results response carries the
+      breakdown in the zero-ballot and multi-ballot cases
+- [ ] **Web** (Vitest): the score links and their targets, the breakdown rows,
+      each state above, and `App` routing for the Details route and the #18
+      over-run path
+- [ ] **End-to-end** (`verify-app`, against `make web` and `make api`): on a
+      seeded poll, clicking a score opens that option's breakdown. Its
+      subtotals add up to the score in the table, and the back link returns
+      to the results
+- [ ] **Mobile:** Chromium mobile emulation at 320 and 375 px on a 10-option
+      poll with ID-6's long-content options. The two Mobile checks pass; the PR
+      includes a 320 px screenshot of the Details view
+
+### Documentation
+
+- [ ] `docs/09-api-design.md` drops its "not shipped yet" note for
+      `breakdown`, and the contract matches the code
+- [ ] `docs/03-ux-flow.md` Results step mentions the per-option breakdown
+- [ ] `docs/backlog.md` moves ID-19 to `Done`
+
+### Out of Scope (tracked separately)
+
+- Hover or focus preview of the breakdown → GitHub Issue #69. The Details
+  view is the full path on every device
+- Result variants and explanations for IRV (ID-8), Condorcet (ID-9) and later
+  methods, and returning or comparing several methods' results for one poll
+  (ID-10). The product expects every counting method to explain its result.
+  Each method's variant and explanation are designed with that method; ID-19
+  adds no requirement to those items
+- Privacy suppression — a minimum ballot threshold, hidden breakdowns for
+  small polls, privacy warnings or anonymisation rules. Not planned at this
+  stage; the aggregate breakdown is shown for any ballot count
+- Extracting the shared load/404/retry logic → ID-26
+- Manual refresh → ID-20
+
+### Readiness Decisions
+
+- Accepted by the owner: a per-option breakdown by place, with Place, Points,
+  Count and Subtotal; the total stays in the results table. The breakdown has
+  its own Details view, and the score value in each results row is its only
+  entry point. Hover preview is #69. No privacy suppression. Borda only, with
+  future methods expected to explain their own results. The Details view
+  follows the ID-6 contract from 320 CSS px. The results contract is
+  discriminated by `method`, and only its Borda variant is added now, as the
+  smallest extension point. Multi-method work stays with ID-8, ID-9 and ID-10.
+- Settled during readiness. These follow from the decisions above and are open
+  to review in this PR:
+  - One Details view per option. The row's score opens that option's
+    breakdown, which is what #69 previews.
+  - Route `/poll/:id/results/options/:optionId`. It sits under the public
+    results URL. The fixed `options` segment keeps `/poll/:id/results/extra`
+    on the catch-all, so #18's behaviour and test stand.
+  - Contract: a `breakdown` field on the Borda variant's score entry, in the
+    existing results response. `winners` keeps the same shape. The Details
+    view reads that one response, with no per-option endpoint. Points and
+    subtotals come from the API because the shared DTO keeps counting logic in
+    the API domain. No base type for future variants is designed now: the
+    item that adds the second variant extracts what the two share.
+  - Zero ballots and an unknown option follow #5 and #18.
+- Implementation choices, settled in the implementation PR and its review:
+  component and file names; type names inside the Borda variant, including
+  whether `PollScoreDto` is renamed; whether the web narrows on `method`
+  explicitly while Borda is the only variant; the ordinal format; copy for
+  headings, the back link and the option not-found message; whether the view
+  repeats the option's total or adds a one-line caption; how a score link
+  reaches 24×24. Copying or sharing the existing load/retry pattern is also
+  open; extracting it is ID-26.
+- No architectural or product questions remain open for ID-19.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
