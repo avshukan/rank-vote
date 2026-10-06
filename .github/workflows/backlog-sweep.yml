@@ -16,8 +16,11 @@ on:
   # Weekly, best-effort fallback: requests a sweep about 60 days after the last
   # one. GitHub disables scheduled workflows in a public repository after 60
   # days without activity; re-enable it from the Actions tab.
+  # TEMPORARY scheduled end-to-end test: daily with PERIODIC_DAYS = 2. Revert to
+  # weekly '17 6 * * 1' and 60 days once the scheduled run has reopened the
+  # tracker (see docs/07-process.md, CI/CD).
   schedule:
-    - cron: '17 6 * * 1'
+    - cron: '17 6 * * *'
 
 permissions: {}
 

@@ -142,6 +142,12 @@ Examples:
   GitHub disables scheduled workflows in a public repository after 60 days
   without repository activity, and they stay off until someone re-enables them
   from the Actions tab; no external scheduler backs this up
+- **Temporary scheduled end-to-end test of the backlog sweep request:** the
+  periodic check currently runs daily (`17 6 * * *`) with a 2-day interval
+  (`PERIODIC_DAYS` in `scripts/backlog-sweep.mjs`), to see a scheduled run
+  reopen the closed tracker and record the periodic reason. Once one has, revert
+  to weekly (`17 6 * * 1`) and 60 days, and delete this note. The decision and
+  its criteria stay weekly and 60 days
 - **CD does not exist yet.** Images are verified but are not pushed, deployed or
   released on merge. The owner-operated first release and the #28 manual offsite
   backup/restore drill have completed; #29 awaits its separate post-deployment

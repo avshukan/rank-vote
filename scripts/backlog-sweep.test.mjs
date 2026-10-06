@@ -418,8 +418,8 @@ test('the periodic check measures from the last closing', () => {
   assert.equal(periodicCheck(closed(PERIODIC_DAYS - 1), NOW).dueOn, '2026-10-06');
   assert.deepEqual(periodicCheck(closed(PERIODIC_DAYS), NOW), {
     kind: 'due',
-    closedOn: '2026-08-06',
-    reason: 'periodic check: the last sweep closed on 2026-08-06, 60+ days ago',
+    closedOn: '2026-10-03',
+    reason: 'periodic check: the last sweep closed on 2026-10-03, 2+ days ago',
   });
 });
 
@@ -436,10 +436,7 @@ test('a due periodic check reopens the tracker with a reason that names the clos
     'POST /issues/{issue_number}/comments',
   ]);
   const [comment] = github.posted(80);
-  assert.match(
-    comment.body,
-    /`periodic check: the last sweep closed on 2026-08-02, 60\+ days ago`/,
-  );
+  assert.match(comment.body, /`periodic check: the last sweep closed on 2026-08-02, 2\+ days ago`/);
   assert.match(comment.body, /\*\*Source:\*\* weekly periodic check/);
 
   const again = await weekly(github);
@@ -448,7 +445,7 @@ test('a due periodic check reopens the tracker with a reason that names the clos
 });
 
 test('a periodic request that fails after reopening names its reason and the manual recovery', async () => {
-  const reason = 'periodic check: the last sweep closed on 2026-08-02, 60+ days ago';
+  const reason = 'periodic check: the last sweep closed on 2026-08-02, 2+ days ago';
   const comment = 'POST /repos/{owner}/{repo}/issues/{issue_number}/comments';
   const failures = { [comment]: httpError(502, 'Bad Gateway') };
   const github = fakeGitHub({
@@ -502,10 +499,10 @@ for (const [name, issues, outcome, summary] of [
   ['no tracker', [], 'no-tracker', /No tracker exists yet.*nothing was requested/],
   ['an open tracker', [tracker()], 'pending', /a sweep is already requested, so nothing was added/],
   [
-    'a tracker closed less than 60 days ago',
-    [tracker({ state: 'closed', closed_at: daysAgo(30) })],
+    'a tracker closed less than 2 days ago',
+    [tracker({ state: 'closed', closed_at: daysAgo(1) })],
     'not-due',
-    /was closed on 2026-09-05; the periodic check is due on 2026-11-04/,
+    /was closed on 2026-10-04; the periodic check is due on 2026-10-06/,
   ],
 ]) {
   test(`the periodic check does nothing with ${name}`, async () => {
