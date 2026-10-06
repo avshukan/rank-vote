@@ -1343,8 +1343,8 @@ These rules hold whether ID-6 ships before or after ID-19.
 
 ### Out of Scope (tracked separately)
 
-- Hover or focus preview of the breakdown → GitHub Issue #69. The Details
-  view is the full path on every device
+- Hover or focus preview of the breakdown → ID-38. The Details view is the
+  full path on every device
 - Result variants and explanations for IRV (ID-8), Condorcet (ID-9) and later
   methods, and returning or comparing several methods' results for one poll
   (ID-10). The product expects every counting method to explain its result.
@@ -1528,9 +1528,10 @@ and tooling only: no app, API, shared-package or storage change.
 - [x] The backlog tooling tests above; `make verify` passes
 - [x] The workflow cannot run before it is on `main`. The PR says what was
       verified locally and lists the post-merge step
-- [ ] After merge, the owner runs the workflow once with the reason
+- [x] After merge, the owner runs the workflow once with the reason
       `initial backlog sweep`. It creates the label and the tracker with that
-      reason: the end-to-end check, and the first sweep request
+      reason: the end-to-end check, and the first sweep request. Done on
+      2026-10-05: workflow run 37362889824 on `baef2fe` created tracker #77
 
 ### Documentation
 
