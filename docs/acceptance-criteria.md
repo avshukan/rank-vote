@@ -764,7 +764,7 @@ runtime criterion.
 - [ ] The client-IP/proxy checks above pass, while direct connections to API
       port `3000` and PostgreSQL port `5432` fail through both the VPS IPv4 and
       IPv6 addresses
-- [x] Existing Caddy-hosted projects still respond after its validated reload;
+- [ ] Existing Caddy-hosted projects still respond after its validated reload;
       deployment logs and `docker compose ps` show no unhealthy or restarting
       Ranking Vote service
 
@@ -963,8 +963,7 @@ T an automatic check, named by its function in `scripts/production/`.
   health `{ "status": "ok" }` — T (`internal_verify`, `smoke`); HTTPS, no mixed
   content and the direct results route — O (browser), T (`verify_poll` requests
   the route, and `request` keeps TLS verification); the smoke poll — T
-  (`smoke`, `verify_poll`), M (`SMOKE_POLL_ID`), O; existing sites and healthy
-  services — O, T (`internal_verify`, before and after public verification)
+  (`smoke`, `verify_poll`), M (`SMOKE_POLL_ID`), O
 - **Handoff to recovery:** R (the #28 evidence: its dump recovered the
   manifest's smoke poll, and recovery was claimed only after it)
 
@@ -1004,6 +1003,12 @@ These boxes stay unchecked:
     HTTPS was observed
   - Public URL: the validated reload with rollback. The existing sites kept
     working
+  - Post-deploy verification: existing Caddy-hosted projects responding after
+    the validated reload, with healthy Ranking Vote services. The owner
+    confirmed that the existing sites kept working, and `internal_verify` found
+    the Ranking Vote services running and healthy before and after public
+    verification, but the validated reload itself is not recorded, so the
+    combined criterion stays unchecked
 - **Partly recorded:**
   - Prerequisites: the read-only preflight. The facts in source 3 are recorded,
     but not the SSH alias used or an initial inspection of Caddy's Docker
