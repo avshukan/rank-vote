@@ -101,7 +101,9 @@ repository checkout or with the GitHub repository contents tool.
 1. **Verdict** — exactly one of:
    - `Keep` — a new, actionable idea worth a backlog item.
    - `Discard` — out of scope, contradicts an accepted decision, or not
-     actionable. Give the reason and the document that supports it.
+     actionable. Give the reason. For scope or an accepted decision, cite the
+     repository document that supports it; for an Issue that is not
+     actionable, the Issue itself is the evidence and needs no document.
    - `Duplicate` — already covered by a `Todo` or `Done` backlog item (cite it
      as `ID-N`) or by another open Issue (cite it as `#N`).
 
