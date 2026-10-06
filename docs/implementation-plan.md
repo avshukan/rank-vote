@@ -157,8 +157,8 @@ Work is pulled continuously from `docs/backlog.md`, where current priorities are
 ## Phase 5 — Deployment & Recovery
 
 **Status:** PostgreSQL migration, application containerization, write rate
-limiting and graceful API shutdown (#35) shipped. The owner operated verified
-release `v0.1.0`, while #29 still awaits its separate post-deployment record.
+limiting and graceful API shutdown (#35) shipped. The owner deployed verified
+release `v0.1.0` (#29) on 2026-09-19, and ID-40 recorded its runtime evidence.
 The #28 manual offsite backup/restore drill completed on 2026-09-19; #32
 (automated offsite backups) is next. Both `checks` and `containers` are required
 by `protect-main`, and the operator runbook is `docs/production.md`.

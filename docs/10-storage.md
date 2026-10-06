@@ -188,8 +188,8 @@ Its first-initialization SQL hook creates the non-superuser app/database owner
 using a separate bootstrap credential; normal deploy requires the existing
 external volume. Prisma's schema engine is preloaded during image build, since
 the migration container's internal database network has no internet access.
-Production deployment evidence and closure of #29 remain a separate
-documentation task from the completed #28 recovery drill.
+The deployment evidence for `v0.1.0` is recorded under #29 in
+`docs/acceptance-criteria.md`, separately from the #28 recovery drill.
 
 ### Backup / restore
 

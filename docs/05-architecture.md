@@ -235,7 +235,8 @@ Repository implementation is in `docker-compose.prod.yml` and the Python
 standard-library CLI under `scripts/production/`; the operator sequence is in
 `docs/production.md`. API has a 30-second stop grace period. The CLI validates
 and builds a clean archived SHA before downtime, runs migrations once, then
-records a release after public smoke. Production is not live yet.
+records a release after public smoke. The first release, `v0.1.0`, was
+deployed to `https://rankvote.avshukan.com` on 2026-09-19.
 
 ## Future Extensions
 

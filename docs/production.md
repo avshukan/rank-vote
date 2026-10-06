@@ -1,10 +1,11 @@
 # Production operator runbook (#29)
 
-**This runbook records the repository implementation for #29, which remains
-Todo pending its separate post-deployment documentation closure.** Host-changing
-commands require owner operation from a reviewed, merged `main` SHA with
-successful `checks` **and** `containers`; never deploy a PR branch. The owner
-completed the #28 offsite backup and recovery drill for `v0.1.0` on 2026-09-19.
+**This runbook records the repository implementation for #29. The owner
+deployed it as verified release `v0.1.0` on 2026-09-19; the evidence is under
+the #29 section of `docs/acceptance-criteria.md`.** Host-changing commands
+require owner operation from a reviewed, merged `main` SHA with successful
+`checks` **and** `containers`; never deploy a PR branch. The owner completed
+the #28 offsite backup and recovery drill for `v0.1.0` on 2026-09-19.
 
 ## Fixed contract and prerequisites
 
@@ -370,11 +371,11 @@ This step belongs here, after the deployment and its production verification
 succeeded; pushing the tag never requests a sweep by itself. For v0.1.0 the
 owner then completed #28: an offsite logical dump was copied outside
 VPS/DigitalOcean, restored into clean PostgreSQL 17 and verified through the
-recorded smoke poll. The volume is storage, **not backup**. A separate docs PR
-still records the release, dates the changelog, checks actual host/public AC
-and moves #29 to Done; #28 did not wait for that record.
+recorded smoke poll. The volume is storage, **not backup**. #28 did not wait for
+the post-deployment record, which ID-40 made later: it dated the changelog and
+recorded the runtime evidence for `v0.1.0`.
 
-## Repository evidence and pending AC
+## Repository evidence and recorded runtime evidence
 
 Repository tests cover config/model rejection, exact source/CI checks, missing
 volume, locking, manifest transitions, migration failure and rollback refusals.
@@ -387,9 +388,10 @@ vote and recreation/recovery. It never depends on production resources.
 The repository tests alone do not establish actual VPS identity/resources,
 firewall/DNS/IPv6, installed Caddy layout and existing sites, production
 secrets/storage, exact merged-SHA build, external HTTPS/browser/client-IP proof,
-production persistence, manifests or tag. Their #29 runtime evidence remains a
-separate documentation task. The owner-supplied evidence for completed #28 is
-recorded in `docs/acceptance-criteria.md`.
+production persistence, manifests or tag. The runtime evidence for `v0.1.0` is
+the _Completion evidence_ of the #29 section in `docs/acceptance-criteria.md`,
+which also names the criteria that have no recorded runtime evidence. The
+owner-supplied evidence for completed #28 is recorded in the same file.
 
 Reference semantics: [Docker Compose services](https://docs.docker.com/reference/compose-file/services/),
 [Caddy CLI validation/reload](https://caddyserver.com/docs/command-line),

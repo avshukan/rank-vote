@@ -533,9 +533,11 @@ This slice creates the first reproducible production release on the owner's
 existing DigitalOcean VPS. It uses the images and one-shot migration contract
 from #27, the single-replica proxy boundary from #31, and the graceful shutdown
 lifecycle from #35. Repository tooling is implemented in the separate production
-Compose and `scripts/production/`; see `docs/production.md` for evidence and the
-operator sequence. Actual VPS/public deployment remains pending after review
-and merge. Repository-only tests do not complete the runtime criteria below.
+Compose and `scripts/production/`; see `docs/production.md` for the operator
+sequence. The owner deployed release `v0.1.0` on 2026-09-19, and ID-40 recorded
+its evidence afterwards under _Completion evidence_ below. A box is checked only
+where that evidence supports it; repository-only tests do not complete a
+runtime criterion.
 
 ### Prerequisites
 
@@ -544,7 +546,7 @@ and merge. Repository-only tests do not complete the runtime criteria below.
       ruleset requires both CI jobs, `checks` and `containers`; changing the
       GitHub repository setting is an owner action and does not need a backlog
       item
-- [ ] The target commit is on `main`, both required CI jobs succeeded for that
+- [x] The target commit is on `main`, both required CI jobs succeeded for that
       exact commit, and the production checkout is clean and detached at its
       full SHA before images are built
 - [ ] A read-only VPS preflight through SSH alias `pet-projects-1` verifies that
@@ -555,18 +557,18 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 
 ### Host layout and stable identity
 
-- [ ] Ranking Vote uses the stable checkout `/opt/apps/rank-vote`; release
+- [x] Ranking Vote uses the stable checkout `/opt/apps/rank-vote`; release
       directories with one checkout per SHA are not introduced
-- [ ] Production is defined in a separate repository-owned Compose file and is
+- [x] Production is defined in a separate repository-owned Compose file and is
       always invoked with the explicit project name `rank-vote-prod`; the local
       `docker-compose.yml` and its development defaults remain local tooling
-- [ ] The single production entry point is
+- [x] The single production entry point is
       `make prod-deploy RELEASE_SHA=<full-sha>` and refuses a short, missing,
       dirty, non-`main`, or failed-CI target; concurrent deploys are serialized
       or rejected
-- [ ] Caddy remains a separately managed Compose project under
+- [x] Caddy remains a separately managed Compose project under
       `/opt/infrastructure/caddy`; Ranking Vote neither recreates nor stops it
-- [ ] Root-only release manifests under
+- [x] Root-only release manifests under
       `/opt/apps/rank-vote/deploy-state/current.env` and `previous.env` record
       the full commit SHA, application image tags and immutable image IDs,
       release tag when present, production URL and deployment timestamp
@@ -576,7 +578,7 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 
 ### Public URL, reverse proxy and TLS
 
-- [ ] The only public application origin is
+- [x] The only public application origin is
       `https://rankvote.avshukan.com`
 - [ ] Caddy routes the `/api/v1` prefix, including the exact path and all
       descendants, to the production API on container port `3000`; every other
@@ -587,16 +589,16 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 - [ ] Caddy terminates TLS and retains ownership of automatic certificate
       issuance, renewal and certificate storage; Ranking Vote serves plain HTTP
       only on Docker networks
-- [ ] DNS resolves the production hostname directly to the VPS. Adding a CDN or
+- [x] DNS resolves the production hostname directly to the VPS. Adding a CDN or
       another public proxy later requires a new proxy-trust decision before it
       is enabled
 - [ ] The Caddy configuration is validated before a graceful reload, preserves
       every existing site, and is rolled back to its previous valid config if
       the new route cannot be loaded
-- [ ] `VITE_API_URL=https://rankvote.avshukan.com/api/v1` is passed explicitly
+- [x] `VITE_API_URL=https://rankvote.avshukan.com/api/v1` is passed explicitly
       while building the production web image and is verified in the served
       bundle; changing it requires a new web image
-- [ ] The API receives
+- [x] The API receives
       `CORS_ORIGIN=https://rankvote.avshukan.com`; no development origin or
       wildcard is accepted in production
 
@@ -607,7 +609,7 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 - [ ] The API does not join `web`; it and Caddy are the only members of the
       stable external network `rank-vote-api-proxy`, where Caddy reaches the
       project-unique alias `rank-vote-api`
-- [ ] PostgreSQL, migrate and API share a Ranking Vote network with the explicit
+- [x] PostgreSQL, migrate and API share a Ranking Vote network with the explicit
       stable name `rank-vote-prod-db` and `internal: true`; PostgreSQL joins no
       Caddy or shared application network
 - [ ] PostgreSQL, API and web declare no host `ports`, use no host networking and
@@ -617,12 +619,12 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 - [ ] VPS firewall and Docker networking expose only the already intended host
       services such as SSH and Caddy's public `80`/`443`; checks cover both IPv4
       and IPv6 and do not assume CORS provides a security boundary
-- [ ] The production API runs exactly one container and one Node process. Any
+- [x] The production API runs exactly one container and one Node process. Any
       move to multiple API replicas waits for shared limiter state in #34
 
 ### Trusted client IP boundary
 
-- [ ] The API receives `TRUSTED_PROXY_HOPS=1` only after inspection proves that
+- [x] The API receives `TRUSTED_PROXY_HOPS=1` only after inspection proves that
       all browser traffic has exactly one hop, Caddy, and no direct API route
       exists
 - [ ] Caddy replaces or safely normalizes client-supplied forwarding headers and
@@ -644,14 +646,14 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 - [ ] A separate bootstrap/admin credential creates the database and application
       role only during first initialization. It is never passed to API or migrate
       and its handling is documented as part of the initial provisioning ritual
-- [ ] API and the one-shot migrate service receive the same production
+- [x] API and the one-shot migrate service receive the same production
       `DATABASE_URL`, pointing to `rank_vote_app@postgres:5432/rank_vote_prod`
       with `schema=public`; passwords are generated, not repository defaults,
       and are percent-encoded correctly in the URL
-- [ ] Production does not mount or run the development
+- [x] Production does not mount or run the development
       `init-test-database.sql`, does not create `rank_vote_test`, and does not
       use development/test reset or migration commands
-- [ ] PostgreSQL data is mounted at `/var/lib/postgresql/data` from the external
+- [x] PostgreSQL data is mounted at `/var/lib/postgresql/data` from the external
       Docker volume `rank_vote_prod_postgres_data`. Initial setup creates that
       exact volume explicitly, and every deployment refuses to continue if it
       is absent instead of silently creating an empty replacement
@@ -661,27 +663,27 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 
 ### Secrets and configuration
 
-- [ ] Production configuration lives outside the repository and Docker build
+- [x] Production configuration lives outside the repository and Docker build
       context at `/etc/rank-vote/prod.env`; `/etc/rank-vote` is `root:root`
       mode `0700` and `prod.env` is `root:root` mode `0600`
-- [ ] The production Compose invocation explicitly reads that file for
+- [x] The production Compose invocation explicitly reads that file for
       interpolation and passes each service only the settings it needs; it does
       not load the entire file into every container
-- [ ] At minimum the file supplies `DATABASE_URL`, `PORT=3000`,
+- [x] At minimum the file supplies `DATABASE_URL`, `PORT=3000`,
       `CORS_ORIGIN=https://rankvote.avshukan.com` and
       `TRUSTED_PROXY_HOPS=1`, together with the production PostgreSQL bootstrap
       and application secrets required by the chosen initialization mechanism
-- [ ] Production Compose fails before changing running services when any
+- [x] Production Compose fails before changing running services when any
       required value is absent or still equals a repository development
       credential/origin; no `${VAR:-development-default}` form is used
-- [ ] `VITE_API_URL=https://rankvote.avshukan.com/api/v1` is an explicit,
+- [x] `VITE_API_URL=https://rankvote.avshukan.com/api/v1` is an explicit,
       non-secret build input to the deploy command rather than a runtime setting
-- [ ] Secrets never enter git, image layers, image metadata, release manifests,
+- [x] Secrets never enter git, image layers, image metadata, release manifests,
       command-line arguments, CI output or deployment logs
 
 ### Build and release identity
 
-- [ ] The implementation PR adds the production Compose/config validation,
+- [x] The implementation PR adds the production Compose/config validation,
       deploy and rollback entry points, tests and operator documentation, then
       stops at green CI for owner review without changing VPS state or marking
       #29 Done
@@ -689,19 +691,19 @@ and merge. Repository-only tests do not complete the runtime criteria below.
       CI-green `main` SHA. A small post-deploy documentation PR records the
       deployed release and moves #29 to `Done`; the operational start of #28
       does not wait for that record PR to merge
-- [ ] Images are built on the VPS, sequentially if host resources require it,
+- [x] Images are built on the VPS, sequentially if host resources require it,
       from the clean checkout at `RELEASE_SHA`; no registry or CD pipeline is
       introduced
-- [ ] Images are tagged `rank-vote-api:<full-sha>` and
+- [x] Images are tagged `rank-vote-api:<full-sha>` and
       `rank-vote-web:<full-sha>`. Production Compose references these immutable
       release tags and never `latest` or the local `:local` tags
-- [ ] The build finishes and both images pass their preflight checks before the
+- [x] The build finishes and both images pass their preflight checks before the
       running web/API containers are stopped; a build failure leaves the current
       release untouched
-- [ ] The release manifest makes the deployed version answerable from the full
+- [x] The release manifest makes the deployed version answerable from the full
       source SHA plus immutable image IDs, even if rebuilding the same SHA later
       would resolve a changed upstream base image
-- [ ] #29 adds the first changelog entry. After successful deployment and smoke
+- [x] #29 adds the first changelog entry. After successful deployment and smoke
       verification, annotated SemVer tag `v0.1.0` is created on the deployed
       commit and pushed; the manifest is amended with that tag without changing
       its recorded SHA/image IDs
@@ -716,25 +718,25 @@ and merge. Repository-only tests do not complete the runtime criteria below.
       stop old web and API while leaving PostgreSQL running → run the one-shot
       migrate service → start and health-check one new API → start web → run
       smoke verification
-- [ ] The API image entrypoint never runs migrations. The migrate service uses
+- [x] The API image entrypoint never runs migrations. The migrate service uses
       the exact API image selected for the release, runs
       `prisma migrate deploy` once and has `restart: "no"`
 - [ ] A failed migration stops the release with PostgreSQL left running and the
       application stopped. The deploy command preserves diagnostics and does not
       automatically retry, mark the migration resolved, reset/restore the
       database, or start either application version against uncertain schema
-- [ ] The public route may briefly return an error while web/API are stopped;
+- [x] The public route may briefly return an error while web/API are stopped;
       this bounded downtime is accepted for the MVP and zero-downtime deployment
       is not implied
-- [ ] Production deploy and rollback commands never stop, recreate or otherwise
+- [x] Production deploy and rollback commands never stop, recreate or otherwise
       take ownership of the existing Caddy service
 
 ### Restart and shutdown lifecycle
 
-- [ ] PostgreSQL, API and web use `restart: unless-stopped`; migrate remains a
+- [x] PostgreSQL, API and web use `restart: unless-stopped`; migrate remains a
       completed one-shot service with `restart: "no"` and is not rerun merely
       because Docker or the VPS restarts
-- [ ] API has an explicit stop grace period long enough for the #35 SIGTERM
+- [x] API has an explicit stop grace period long enough for the #35 SIGTERM
       lifecycle to drain active requests and close Prisma before Docker may send
       `SIGKILL`
 - [ ] Controlled container stop/recreate checks confirm the long-running
@@ -748,13 +750,13 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 
 ### Post-deploy verification
 
-- [ ] Internal health checks pass before public routing is considered ready;
+- [x] Internal health checks pass before public routing is considered ready;
       public `GET https://rankvote.avshukan.com/api/v1/health` returns
       `{ "status": "ok" }`
-- [ ] The frontend loads over HTTPS with a valid certificate, no mixed content
+- [x] The frontend loads over HTTPS with a valid certificate, no mixed content
       or browser console errors, and a direct request to
       `/poll/<known-id>/results` returns the SPA rather than a proxy 404
-- [ ] Through the public origin, a uniquely named smoke poll is created, loaded,
+- [x] Through the public origin, a uniquely named smoke poll is created, loaded,
       ranked with one full ballot and shown with the expected Borda results; its
       ID is recorded for persistence and #28 verification
 - [ ] The same poll, ballot and results remain available after controlled API,
@@ -762,7 +764,7 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 - [ ] The client-IP/proxy checks above pass, while direct connections to API
       port `3000` and PostgreSQL port `5432` fail through both the VPS IPv4 and
       IPv6 addresses
-- [ ] Existing Caddy-hosted projects still respond after its validated reload;
+- [x] Existing Caddy-hosted projects still respond after its validated reload;
       deployment logs and `docker compose ps` show no unhealthy or restarting
       Ranking Vote service
 
@@ -784,13 +786,252 @@ and merge. Repository-only tests do not complete the runtime criteria below.
 
 ### Handoff to recovery
 
-- [ ] After #29 succeeds and `v0.1.0` identifies the verified deployment, the
+- [x] After #29 succeeds and `v0.1.0` identifies the verified deployment, the
       immediate next operational step is #28: create an offsite logical
       `pg_dump`, copy it outside both the VPS and DigitalOcean, restore it into a
       clean PostgreSQL instance, and verify the recorded smoke poll through the
       restored application data
-- [ ] #29 does not claim production recovery is proven until #28 completes; the
+- [x] #29 does not claim production recovery is proven until #28 completes; the
       persistent Docker volume is explicitly treated as data storage, not backup
+
+### Completion evidence
+
+ID-40 recorded this evidence on 2026-10-07 from the four sources below. The
+record neither accessed nor changed production, and no probe was rerun for it.
+
+#### 1. Repository and GitHub history
+
+- Annotated tag `v0.1.0` ("First verified production release", tagged
+  `2026-09-19T10:15:33Z`) points at
+  `7021f3137b597119e39ca13e6a86275da58b28e1`, the merge of PR #53. Push CI run
+  `35417067634` on that SHA passed `checks` and `containers`.
+- Implementation PR #51, merged on 2026-09-16, added the production tooling, its
+  tests, the operator runbook and the first changelog entry, and left #29 in
+  `Todo`. The implementation environment neither inspected nor changed the VPS
+  (`docs/production.md`, recorded implementation-phase checks). PR #52 changed
+  the hostname to `rankvote.avshukan.com`. PR #53 states that the first
+  deployment attempt failed on Docker 29.7.2, because `docker top` omitted the
+  PID column, and fixed that check.
+- The backlog sweep in PR #56 moved ID-29 to `Done` on 2026-09-25, before this
+  record existed.
+- The #28 drill, recorded under _Completion evidence_ of #28, dumped production
+  at `2026-09-19T14:01:18Z`, after the tag, and recovered the same smoke poll
+  with one ballot scoring `2`/`1`/`0`.
+- CI references no repository secret; its only credentials are the test
+  database's.
+
+#### 2. Release manifest
+
+On 2026-10-06 the owner read `/opt/apps/rank-vote/deploy-state/current.env`
+without changing production. It contains no secret:
+
+```text
+API_IMAGE=rank-vote-api:7021f3137b597119e39ca13e6a86275da58b28e1
+API_IMAGE_ID=sha256:e87b2b723455653241138cb32c410488dec80e36ed12153634962d9feb8a1e9c
+DEPLOYED_AT=2026-09-19T09:21:41Z
+PRODUCTION_URL=https://rankvote.avshukan.com
+RELEASE_SHA=7021f3137b597119e39ca13e6a86275da58b28e1
+RELEASE_TAG=v0.1.0
+SMOKE_POLL_ID=4647e500-8940-41a2-9b25-6261d82e9ace
+WEB_IMAGE=rank-vote-web:7021f3137b597119e39ca13e6a86275da58b28e1
+WEB_IMAGE_ID=sha256:41ca72caf1a2a7fc7ca7a4feee3e750481dbbd0b31fd36afc7a403992cb5d033
+```
+
+`deploy-state/previous.env` did not exist, as expected after a first release.
+
+#### 3. Owner observations from the deployment
+
+The owner confirms these from the original deployment:
+
+- At `HOST VERIFIED`: the preflight output was reviewed; the DigitalOcean cloud
+  firewall was checked, though no rule listing was preserved; the API was
+  reachable only through Caddy; and the other projects on the VPS still worked.
+- At `PROXY VERIFIED`: the existing Caddy-hosted sites kept working.
+- At `PUBLIC VERIFIED`: the frontend opened in an external browser over valid
+  HTTPS, with no mixed-content or noticeable browser-console errors observed;
+  the direct results route, the smoke poll and its results were checked; and
+  the existing Caddy-hosted sites still worked after these checks.
+- The initial host audit recorded Ubuntu 24.04.4 LTS on x86_64 and public IPv4
+  `165.22.91.190`, and recorded no public IPv6 address; Docker Engine 29.7.2,
+  Docker Compose 5.5.0 and Caddy 2.11.4; 1 vCPU; about 1.92 GiB of RAM with
+  about 1.45 GiB available and no swap; and about 47.39 GiB of disk with about
+  43.7 GiB available.
+- Listeners and firewall from the deployment session: Caddy listened publicly
+  on TCP 80/443 and UDP 443, and SSH on TCP 22; the application containers
+  exposed only their container ports (API `3000/tcp`, web `80/tcp`, PostgreSQL
+  `5432/tcp`); the IPv4 `INPUT` policy was `DROP`; UFW was active, and its IPv6
+  rules allowed 22/tcp, 80/tcp, 443/tcp and 443/udp.
+- Later production-tool output, around release and tagging, reported about
+  40049 MiB of free disk and 1276–1278 MiB of available RAM plus swap. The
+  deployment tooling printed `DNS addresses: 165.22.91.190`.
+- No planned VPS reboot has happened since the release.
+
+#### 4. Automatic checks of `make prod-deploy` at `7021f31`
+
+Three code paths write `current.env`: `deploy` and `rollback` in
+`scripts/production/release.py`, each as its last step, and the `tag` command
+in `cli.py`, which only amends an existing manifest. Rollback needs a
+`previous.env`, which did not exist, and `deploy` saves any current manifest as
+`previous.env` before it stops the application, so this manifest came from the
+one successful `deploy` run. That run passed every check before its last step,
+using the tooling of `7021f31`: `check_source` requires the checkout to be clean
+and detached at exactly `RELEASE_SHA`, and `local_host` requires it to be
+`/opt/apps/rank-vote`.
+
+That run held `deployment_lock` and passed `validate_sha`, `read_config` (with
+`private_path` and `validate_config`), `check_source` (with `validate_ci`),
+`Runner.model` (with `validate_model`) and `preflight` (`local_host`, Docker
+versions, disk, memory, DNS, `caddy_container`, `network_boundary`). It took
+the typed `HOST VERIFIED` confirmation before `deploy` started any container.
+Inside `deploy` it passed `prepare_images` (with `image_identity`),
+`verify_image_ids`, one migrate run and `internal_verify`; it then took the
+typed `PROXY VERIFIED` confirmation, restarted the API, and passed `smoke` (with
+`verify_poll`). After the typed `PUBLIC VERIFIED` confirmation it passed
+`verify_poll` and `internal_verify` again. The later `tag` command checked that
+`v0.1.0` is an annotated tag on the manifest's SHA before adding it.
+
+A typed confirmation shows only that the operator answered the prompt; the
+checks behind it count only where source 3 confirms them. An automatic check is
+cited for what its own function verifies, never for an operator's observation
+or for configuration that it does not inspect.
+
+#### Checked criteria and their evidence
+
+R is repository or GitHub history, M the manifest, O an owner observation, and
+T an automatic check, named by its function in `scripts/production/`.
+
+- **Prerequisites:** exact `main` SHA with both CI jobs — R (CI run), T
+  (`check_source`, `validate_ci`); a clean, detached checkout before images are
+  built — T (`check_source` runs before `deploy`)
+- **Host layout and stable identity:** stable checkout — T (`local_host`,
+  `check_source`); separate Compose, always run as `rank-vote-prod` — T
+  (`Runner.compose`, `validate_model`); single entry point, with its refusal
+  checks and lock — T (`validate_sha`, `check_source`, `deployment_lock`);
+  separately managed Caddy, left alone — T (`caddy_container`; `Runner.compose`
+  and `validate_model` limit commands to the four Ranking Vote services), O
+  (other sites kept working); root-only manifests with every field — M, T
+  (`private_path` in `main`, `ReleaseState.write`)
+- **Public URL, reverse proxy and TLS:** one public origin — M, O (browser), T
+  (`validate_config`, `network_boundary`, `smoke`); DNS directly to the VPS — T
+  (`preflight`), O (printed DNS addresses); `VITE_API_URL` passed at build and
+  checked in the image and in the served bundle — T (`prepare_images`, `smoke`
+  through `validate_web_bundle`); the CORS origin — T (`validate_config`,
+  `validate_model`)
+- **Docker networks and public exposure:** the internal `rank-vote-prod-db`
+  network — T (`validate_model`, `network_boundary`); one API container and one
+  Node process — T (`validate_model`, `internal_verify`, `network_boundary`)
+- **Trusted client IP boundary:** `TRUSTED_PROXY_HOPS=1` only after the
+  inspection — O (API reachable only through Caddy, confirmed at
+  `HOST VERIFIED`, which `main` requires before `deploy` starts any container),
+  T (`validate_config`, the DNS check in `preflight`)
+- **Production PostgreSQL:** the same production `DATABASE_URL` for API and
+  migrate, with strong passwords that are not repository defaults — T
+  (`validate_config`, `validate_model`); no development SQL, test database or
+  reset command — T (`validate_model` allows only the data volume and
+  `init-production.sql`, and migrate runs `db:deploy`, which is
+  `prisma migrate deploy`); the external volume at the data path, with a refusal
+  if it is absent — T (`validate_model`, `network_boundary`); Compose never
+  creates an external volume, so the mounted one was created explicitly
+- **Secrets and configuration:** root-only `/etc/rank-vote/prod.env` outside the
+  repository and build context — T (`read_config`, `private_path`;
+  `prepare_images` builds from `git archive`); per-service settings through
+  `--env-file` — T (`Runner.compose`, `validate_model`); required keys, checked
+  fail-closed before any change — T (`validate_config`, `validate_model`);
+  `VITE_API_URL` as a build input — T (`prepare_images`); secrets kept out of
+  git, images, manifests, arguments, CI and logs — M (no secret in the
+  manifest), T (`prepare_images`, `Runner.compose`, `Runner.run` with `redact`,
+  the redacted migration log in `deploy`), R (CI holds no secret)
+- **Build and release identity:** the implementation PR stopped at green CI,
+  left #29 in `Todo` and did not change the VPS — R (PR #51,
+  `docs/production.md`); built on the VPS from the clean SHA, with no registry
+  or CD — T (`local_host`, `prepare_images`); full-SHA tags, never `latest` or
+  `:local` — M, T (`validate_model`); the build and image checks finish before
+  web and API stop — T (`deploy`, `prepare_images`, `verify_image_ids`); version
+  identified by SHA plus image IDs — M; the first changelog entry, and the
+  annotated tag created after deployment and added to the manifest — R (PR #51
+  changelog; tag at `10:15:33Z`, after `DEPLOYED_AT`), M (`RELEASE_TAG`), T
+  (`tag` in `main`)
+- **Migrations and deployment ritual:** no entrypoint migration, and one migrate
+  run with the release's API image and `restart: "no"` — T (`image_identity`,
+  `validate_model`, `internal_verify`, `deploy`); bounded downtime — T (`deploy`
+  stops web and API before migrating; the downtime is accepted, not measured);
+  deploy and rollback leave Caddy alone — T (`Runner.compose`,
+  `validate_model`), O (other sites kept working); rollback never ran
+- **Restart and shutdown lifecycle:** restart policies and the 30-second API
+  stop grace period — T (`validate_model`)
+- **Post-deploy verification:** internal health before public use, and public
+  health `{ "status": "ok" }` — T (`internal_verify`, `smoke`); HTTPS, no mixed
+  content and the direct results route — O (browser), T (`verify_poll` requests
+  the route, and `request` keeps TLS verification); the smoke poll — T
+  (`smoke`, `verify_poll`), M (`SMOKE_POLL_ID`), O; existing sites and healthy
+  services — O, T (`internal_verify`, before and after public verification)
+- **Handoff to recovery:** R (the #28 evidence: its dump recovered the
+  manifest's smoke poll, and recovery was claimed only after it)
+
+#### Criteria without recorded runtime evidence
+
+These boxes stay unchecked:
+
+- **Operator checks without a recorded result.** The owner supplied no result
+  for these, and ID-40 did not rerun them:
+  - Docker networks: unreachability through the VPS public and loopback
+    interfaces. `validate_model` and `network_boundary` enforce no host ports
+    and no host networking, but no external or loopback probe result is
+    recorded
+  - Docker networks: firewall exposure on IPv4 and IPv6. The host IPv4 and UFW
+    rules are recorded and the cloud firewall was reviewed, but no cloud rule
+    listing and no IPv6 route check are recorded
+  - Trusted client IP boundary: forwarding-header normalization, which also
+    depends on the unrecorded Caddy site; the external proxy probe; and the
+    rate-limit probe. `public_verification` restarts the API after the probe,
+    but no probe or peer-check result is recorded
+  - Production PostgreSQL: data surviving PostgreSQL recreation
+  - Restart and shutdown lifecycle: API recovery when PostgreSQL starts later
+  - Post-deploy verification: data after controlled recreation, and the
+    client-IP and direct-port checks
+- **Host reboot.** No planned VPS reboot has happened since the release, so
+  recovery of Ranking Vote after a full host reboot is not verified. The
+  controlled stop/recreate check in the same criterion is not recorded either
+- **Caddy configuration.** `prod-caddy` is separate from `prod-deploy`, and its
+  use and output are not recorded. The Ranking Vote side (aliases, network
+  membership, no host ports) is enforced; the applied Caddy site is not:
+  - Public URL: routing of the exact `/api/v1` path and of every other path.
+    `smoke` proved `/api/v1/health`, the poll, ballot and results API, `/`, the
+    script assets and `/poll/<id>/results`
+  - Public URL: Caddy's upstream names; Docker networks: Caddy reaching web and
+    API only through `rank-vote-web` and `rank-vote-api`
+  - Public URL: automatic certificate issuance and renewal by Caddy. Valid
+    HTTPS was observed
+  - Public URL: the validated reload with rollback. The existing sites kept
+    working
+- **Partly recorded:**
+  - Prerequisites: the read-only preflight. The facts in source 3 are recorded,
+    but not the SSH alias used or an initial inspection of Caddy's Docker
+    networks
+  - Host layout: the manifests' atomic promotion after smoke is enforced by
+    `deploy`, but continued presence of the release images is not recorded,
+    and no previous release exists
+  - Production PostgreSQL: the role and the bootstrap credential. PostgreSQL 17,
+    the database, use of the application role and the credential separation
+    are enforced by `validate_model` and `validate_config`, and migrate
+    succeeded as `rank_vote_app`, but the role's privileges and their creation
+    at first initialization were not inspected
+  - Migrations: the first-deploy order. `deploy` enforces build, PostgreSQL,
+    migrate, API, web and smoke in that order, but provisioning, bootstrap and
+    the Caddy step are not recorded, and the first attempt failed (PR #53)
+    before the run at `7021f31`
+  - Rollback and failure recovery: the failed first deployment. It was fixed
+    and succeeded before the tag, and `network_boundary` found the external
+    volume mounted in the successful run, but restoring Caddy after the failed
+    attempt, if it was needed, is not recorded
+- **Not exercised by the first release:** the redeploy order, a failed migration
+  and the three rollback criteria. Repository tests cover them; production has
+  not run them
+- **Met differently than written:** production was deployed from `7021f31`, two
+  PRs after the implementation PR's merge `fa3d8e7`: #52 changed the hostname
+  and #53 fixed the check that failed the first attempt. ID-29 then moved to `Done` in PR #56,
+  before this record (ID-40) existed. #28 did not wait for the record, as
+  written
 
 ### Out of Scope (tracked separately)
 
@@ -955,7 +1196,7 @@ The owner-supplied recovery target is release `v0.1.0` at
 
 ### Out of Scope (tracked separately)
 
-- Post-deployment runtime record and closure of the first deployment → #29
+- Post-deployment runtime record of the first deployment → ID-40
 - Backup scheduling, retention automation, independent object-storage
   selection, backup-service encryption policy, monitoring/alerts and periodic
   restore tests → #32
@@ -1650,37 +1891,37 @@ the criteria it would support unchecked; it does not stop the work.
 
 ### #29 evidence record
 
-- [ ] The `## #29 First Production Deploy` section gains a
+- [x] The `## #29 First Production Deploy` section gains a
       `### Completion evidence` block that records `v0.1.0`: tag, full SHA, CI
       run, the manifest fields, deployment time, smoke poll and the supplied
       checks
-- [ ] A #29 criterion is checked only when the record cites its evidence, of
+- [x] A #29 criterion is checked only when the record cites its evidence, of
       one of three kinds: owner-supplied input, repository or GitHub history, or
       a check that `make prod-deploy` at `7021f31` performs automatically before
       it writes `current.env`. The third kind needs the owner-supplied manifest
       for that SHA, and the record names the function in `scripts/production/`
       that performs the check
-- [ ] Criteria that depend on the operator's own observation (browser, port and
+- [x] Criteria that depend on the operator's own observation (browser, port and
       proxy probes, firewall, IPv6, existing sites, reboot) are checked only from
       the owner's supplied results or explicit confirmation, never from the
       manifest alone
-- [ ] Criteria still unchecked are named, grouped, in the Completion evidence
+- [x] Criteria still unchecked are named, grouped, in the Completion evidence
       block as having no recorded runtime evidence. Their boxes stay unchecked
       and their wording is unchanged
-- [ ] The section's opening paragraph no longer says that the deployment is
+- [x] The section's opening paragraph no longer says that the deployment is
       pending; it points to the Completion evidence. The criteria wording and the
       Readiness Decisions stay as written
-- [ ] The record contains no secret: no database URL, password, `prod.env`
+- [x] The record contains no secret: no database URL, password, `prod.env`
       value, private Caddy configuration or unredacted audit output
-- [ ] ID-29's `Done` row stays unchanged
+- [x] ID-29's `Done` row stays unchanged
 
 ### Changelog
 
-- [ ] `## Unreleased — first production release preparation (#29)` becomes
+- [x] `## Unreleased — first production release preparation (#29)` becomes
       `## v0.1.0 — 2026-09-19`, the tag date. The two content bullets stay; the
       "not deployed, no release tag" bullet is replaced by the deployed identity
       (`https://rankvote.avshukan.com`, full SHA) and the #28 recovery drill
-- [ ] No `Unreleased` section is added, since nothing in the images has changed
+- [x] No `Unreleased` section is added, since nothing in the images has changed
       since the tag
 
 ### Stale documentation
@@ -1688,40 +1929,40 @@ the criteria it would support unchecked; it does not stop the work.
 Each passage stops describing the first deployment, `v0.1.0` or #29 as pending,
 `Todo`, not live or awaiting a record PR, and states the completed state:
 
-- [ ] `README.md`, Production operations
-- [ ] `AGENTS.md`: the sentence "Repository preparation alone does not complete
+- [x] `README.md`, Production operations
+- [x] `AGENTS.md`: the sentence "Repository preparation alone does not complete
       #29." goes; the owner-operated rule for host-changing `make prod-*`
       commands stays
-- [ ] `docs/production.md`: the opening paragraph, the end of section 8, and
+- [x] `docs/production.md`: the opening paragraph, the end of section 8, and
       "Repository evidence and pending AC" including its heading, which points
       to the #29 Completion evidence
-- [ ] `docs/05-architecture.md`: "Production is not live yet."
-- [ ] `docs/06-decisions.md`, "First production release on the shared VPS": its
+- [x] `docs/05-architecture.md`: "Production is not live yet."
+- [x] `docs/06-decisions.md`, "First production release on the shared VPS": its
       Status line and the "remain pending" sentence
-- [ ] `docs/07-process.md`: the `v0.1.0` paragraph under Release, the #29 clause
+- [x] `docs/07-process.md`: the `v0.1.0` paragraph under Release, the #29 clause
       of the "CD does not exist yet" principle, "releases will be tagged
       manually once there is something to release", and the first-deployment
       paragraph after the principles
-- [ ] `docs/08-known-limitations.md`: the opening of Operations
-- [ ] `docs/09-api-design.md`, Base URL: "not a statement that the service is
+- [x] `docs/08-known-limitations.md`: the opening of Operations
+- [x] `docs/09-api-design.md`, Base URL: "not a statement that the service is
       live yet"
-- [ ] `docs/10-storage.md`: the sentence on production evidence and closure of
+- [x] `docs/10-storage.md`: the sentence on production evidence and closure of
       #29
-- [ ] `docs/implementation-plan.md`: the Phase 5 status
-- [ ] `docs/acceptance-criteria.md`, #28 Out of Scope: the post-deployment record
+- [x] `docs/implementation-plan.md`: the Phase 5 status
+- [x] `docs/acceptance-criteria.md`, #28 Out of Scope: the post-deployment record
       points to ID-40 instead of #29
 
 ### Verification
 
-- [ ] Every hit of
+- [x] Every hit of
       `grep -rnE "#29|ID-29|v0\.1\.0|pending|live yet" --include='*.md' .`
       outside `node_modules` and this section is reviewed in context: none
       describes the first deployment or #29 as still pending. A search for exact
       phrases misses wrapped lines, which is why each hit is read
-- [ ] Every checked #29 box traces to a fact in the Completion evidence; the PR
+- [x] Every checked #29 box traces to a fact in the Completion evidence; the PR
       description summarizes which evidence kinds were used
-- [ ] The Definition of Done gate passes and CI is green
-- [ ] ID-40 moves to `Done` in its implementation PR
+- [x] The Definition of Done gate passes and CI is green
+- [x] ID-40 moves to `Done` in its implementation PR
 
 ### Out of Scope (tracked separately)
 

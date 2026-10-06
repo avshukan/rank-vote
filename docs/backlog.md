@@ -143,7 +143,6 @@ adapts to the column rather than moving the column.
 | 36  | Export results as CSV      | Value    | Low    | —       | Download scores/ranks from results page or API      |
 | 37  | Add short poll links       | Quality  | Low    | —       | Replace/alias UUID with short ID; redirect needed   |
 | 38  | Breakdown hover preview    | Value    | Low    | —       | Hover preview of score breakdown; needs ID-19       |
-| 40  | Record v0.1.0 evidence     | Ops      | Medium | Ready   | Fix stale docs; record runtime evidence for v0.1.0  |
 
 ---
 
@@ -167,6 +166,7 @@ adapts to the column rather than moving the column.
 |  28 | Manual offsite backup      | Quality  | High   | Offsite dump + clean restore + v0.1.0 API proof               |
 |  29 | First production deploy    | Ops      | High   | Production deployment completed; VPS live                     |
 |  39 | Add backlog sweep process  | Ops      | Medium | Sweep skill; request workflow + tracker Issue; `Cancelled`    |
+|  40 | Record v0.1.0 evidence     | Ops      | Medium | #29 Completion evidence; changelog dated; stale docs fixed    |
 
 ---
 

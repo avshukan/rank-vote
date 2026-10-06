@@ -161,7 +161,7 @@ Notes:
 
 Status:
 
-- accepted for backlog #29; repository tooling implemented, deployment pending
+- accepted; implemented by backlog #29 and deployed as `v0.1.0` on 2026-09-19
 
 Chosen:
 
@@ -224,7 +224,8 @@ and PostgreSQL's first-initialization SQL hook. Prisma's schema engine is
 downloaded into the API image during build so the one-shot migration can run on
 the internal database network without internet access. The Caddy snippet and
 validate/reload command preserve the independently managed proxy lifecycle.
-See `docs/production.md`; actual host and public verification remain pending.
+See `docs/production.md`; the host and public evidence for `v0.1.0` is recorded
+under #29 in `docs/acceptance-criteria.md`.
 
 Rejected for the first release:
 
