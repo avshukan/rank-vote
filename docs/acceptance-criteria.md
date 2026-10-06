@@ -1600,6 +1600,167 @@ and tooling only: no app, API, shared-package or storage change.
 
 ---
 
+## ID-40 Record v0.1.0 evidence
+
+The post-deployment record for the first production release, from Issue #78.
+The owner deployed and tagged `v0.1.0`, and ID-29 moved to `Done` in the backlog
+sweep of PR #56, but the record that #29 promised was never made: the #29
+runtime criteria are unchecked, the changelog has no release, and several docs
+still describe the deployment as pending. Docs and changelog only: no app, API,
+shared-package, storage or production-tooling change, and the implementation
+neither accesses nor changes production.
+
+### Facts verified during readiness
+
+Verified from the repository and GitHub; the record may cite them without
+owner input:
+
+- Annotated tag `v0.1.0` ("First verified production release", tagged
+  `2026-09-19T10:15:33Z`) points at
+  `7021f3137b597119e39ca13e6a86275da58b28e1`, the merge of PR #53
+- Push CI run `35417067634` on that SHA passed both `checks` and `containers`
+- Since the tag, `main` has not changed `apps/`, `packages/`,
+  `scripts/production/`, `deploy/` or either Compose file
+- PR #53 states that the first deployment attempt failed on Docker 29.7.2,
+  before its fix
+- The #28 record already holds the owner-supplied smoke poll
+  `4647e500-8940-41a2-9b25-6261d82e9ace`: present in production, with one ballot
+  scoring `2`/`1`/`0`, by `2026-09-19T14:01:18Z`
+
+### Owner-supplied input
+
+The owner supplies these at the start of implementation. A missing item leaves
+the criteria it would support unchecked; it does not stop the work.
+
+- The fields of `deploy-state/current.env` (`RELEASE_SHA`, `API_IMAGE`,
+  `WEB_IMAGE`, `API_IMAGE_ID`, `WEB_IMAGE_ID`, `PRODUCTION_URL`, `DEPLOYED_AT`,
+  `RELEASE_TAG`, `SMOKE_POLL_ID`; none is a secret), and whether `previous.env`
+  exists
+- Whether the deployment of `7021f31` passed the `HOST VERIFIED`,
+  `PROXY VERIFIED` and `PUBLIC VERIFIED` confirmations with the checks they
+  list actually performed, followed by `tag --tag v0.1.0`
+- A summary of the read-only host preflight: Ubuntu, Docker Engine, Compose and
+  Caddy versions, disk and memory headroom, host and cloud firewall, IPv4/IPv6
+  exposure and DNS A/AAAA records
+- Results of `probe ports` (IPv4, any IPv6, loopback), `probe proxy` and
+  `probe peer-check`
+- The external browser, existing Caddy sites and controlled persistence checks
+- Whether a planned host reboot has happened since, and whether the services
+  recovered from it
+
+### #29 evidence record
+
+- [ ] The `## #29 First Production Deploy` section gains a
+      `### Completion evidence` block that records `v0.1.0`: tag, full SHA, CI
+      run, the manifest fields, deployment time, smoke poll and the supplied
+      checks
+- [ ] A #29 criterion is checked only when the record cites its evidence, of
+      one of three kinds: owner-supplied input, repository or GitHub history, or
+      a check that `make prod-deploy` at `7021f31` performs automatically before
+      it writes `current.env`. The third kind needs the owner-supplied manifest
+      for that SHA, and the record names the function in `scripts/production/`
+      that performs the check
+- [ ] Criteria that depend on the operator's own observation (browser, port and
+      proxy probes, firewall, IPv6, existing sites, reboot) are checked only from
+      the owner's supplied results or explicit confirmation, never from the
+      manifest alone
+- [ ] Criteria still unchecked are named, grouped, in the Completion evidence
+      block as having no recorded runtime evidence. Their boxes stay unchecked
+      and their wording is unchanged
+- [ ] The section's opening paragraph no longer says that the deployment is
+      pending; it points to the Completion evidence. The criteria wording and the
+      Readiness Decisions stay as written
+- [ ] The record contains no secret: no database URL, password, `prod.env`
+      value, private Caddy configuration or unredacted audit output
+- [ ] ID-29's `Done` row stays unchanged
+
+### Changelog
+
+- [ ] `## Unreleased — first production release preparation (#29)` becomes
+      `## v0.1.0 — 2026-09-19`, the tag date. The two content bullets stay; the
+      "not deployed, no release tag" bullet is replaced by the deployed identity
+      (`https://rankvote.avshukan.com`, full SHA) and the #28 recovery drill
+- [ ] No `Unreleased` section is added, since nothing in the images has changed
+      since the tag
+
+### Stale documentation
+
+Each passage stops describing the first deployment, `v0.1.0` or #29 as pending,
+`Todo`, not live or awaiting a record PR, and states the completed state:
+
+- [ ] `README.md`, Production operations
+- [ ] `AGENTS.md`: the sentence "Repository preparation alone does not complete
+      #29." goes; the owner-operated rule for host-changing `make prod-*`
+      commands stays
+- [ ] `docs/production.md`: the opening paragraph, the end of section 8, and
+      "Repository evidence and pending AC" including its heading, which points
+      to the #29 Completion evidence
+- [ ] `docs/05-architecture.md`: "Production is not live yet."
+- [ ] `docs/06-decisions.md`, "First production release on the shared VPS": its
+      Status line and the "remain pending" sentence
+- [ ] `docs/07-process.md`: the `v0.1.0` paragraph under Release, the #29 clause
+      of the "CD does not exist yet" principle, "releases will be tagged
+      manually once there is something to release", and the first-deployment
+      paragraph after the principles
+- [ ] `docs/08-known-limitations.md`: the opening of Operations
+- [ ] `docs/09-api-design.md`, Base URL: "not a statement that the service is
+      live yet"
+- [ ] `docs/10-storage.md`: the sentence on production evidence and closure of
+      #29
+- [ ] `docs/implementation-plan.md`: the Phase 5 status
+- [ ] `docs/acceptance-criteria.md`, #28 Out of Scope: the post-deployment record
+      points to ID-40 instead of #29
+
+### Verification
+
+- [ ] Every hit of
+      `grep -rnE "#29|ID-29|v0\.1\.0|pending|live yet" --include='*.md' .`
+      outside `node_modules` and this section is reviewed in context: none
+      describes the first deployment or #29 as still pending. A search for exact
+      phrases misses wrapped lines, which is why each hit is read
+- [ ] Every checked #29 box traces to a fact in the Completion evidence; the PR
+      description summarizes which evidence kinds were used
+- [ ] The Definition of Done gate passes and CI is green
+- [ ] ID-40 moves to `Done` in its implementation PR
+
+### Out of Scope (tracked separately)
+
+- Production access, redeployment, re-running probes, or reconstructing
+  evidence the owner did not supply — excluded by the owner's decision below
+- Changes to the release process, the runbook procedure or production tooling —
+  not planned
+- Recovery after the next planned reboot, if none has happened yet — stays an
+  unchecked #29 criterion; production monitoring is ID-33
+- A backlog sweep request for `v0.1.0`, which predates the sweep workflow (see
+  `docs/production.md`, section 8) — not planned
+- Renaming older `#N` backlog references in docs to `ID-N` — not planned
+
+### Readiness Decisions
+
+- Accepted by the owner on 2026-10-06:
+  - Record only what is evidenced. Criteria without evidence stay unchecked and
+    are named as unrecorded; neither a full per-criterion proof as in #28 nor a
+    history-only note
+  - Automatic checks of `make prod-deploy` at `7021f31` count as evidence under
+    the citation rule above; checks that need the operator's own observation
+    need the owner's input
+  - `Ready`: the owner supplies the input at the start of implementation, and a
+    missing item leaves its criteria unchecked instead of blocking ID-40
+- Settled during readiness, open to review in this PR:
+  - Issue #78's list of stale passages was not exhaustive. The same pending
+    wording in `README.md`, `AGENTS.md`, `docs/05`, `docs/06`, `docs/09`,
+    `docs/10` and the #28 Out of Scope line belongs to ID-40
+  - The changelog dates `v0.1.0` by its tag, and no `Unreleased` section is
+    added while nothing shipped in the images has changed
+  - The evidence lives in the #29 section as `Completion evidence`, as the #28
+    evidence does; `docs/production.md` points to it
+- Implementation choices: the wording of each corrected passage, how the
+  unrecorded criteria are grouped, and how much of the CI run the record
+  repeats.
+- No architectural or product questions remain open for ID-40.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
