@@ -53,6 +53,8 @@
   promotion cannot proceed safely, it changes nothing and comments the reason
   and the recovery step on the Issue. A manual run of the workflow with
   `dry_run` checks an Issue without changing anything.
+- To accept a `Discard` recommendation, the owner closes the Issue as
+  `not planned` by hand; no workflow closes it.
 - New backlog items start with `State = —`.
 - Task-readiness can run on demand for a chosen item or proactively for likely
   next work. It sets `State` to `Ready`, `Design`, or `Blocked`.
