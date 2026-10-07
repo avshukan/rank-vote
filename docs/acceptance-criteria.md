@@ -1495,97 +1495,97 @@ and its entry point. Borda semantics do not change.
 
 ### API and shared contract
 
-- [ ] The shared results contract is discriminated by `method`:
+- [x] The shared results contract is discriminated by `method`:
       `PollResultsResponseDto` is a union whose only member is
       `BordaResultsResponseDto`, typed `method: CountingMethod.BORDA`. Other
       methods add their own variants in their own items
-- [ ] Every entry of the Borda variant's `scores` and `winners` carries
+- [x] Every entry of the Borda variant's `scores` and `winners` carries
       `breakdown` as specified in `docs/09-api-design.md`: `N` rows for places
       `1..N` in ascending order, each `{ place, points, ballots, subtotal }`,
       places with `ballots: 0` included
-- [ ] The entry type that carries `breakdown` belongs to the Borda variant. No
+- [x] The entry type that carries `breakdown` belongs to the Borda variant. No
       method-neutral type carries Borda fields
-- [ ] `points` is `N − place`, `ballots` counts the ballots that ranked the
+- [x] `points` is `N − place`, `ballots` counts the ballots that ranked the
       option at that place, `subtotal` is `points × ballots`. The API computes
       all three, so the web holds no Borda formula
-- [ ] The subtotals add up to `score`, and each option's `ballots` add up to
+- [x] The subtotals add up to `score`, and each option's `ballots` add up to
       `totalBallots`
-- [ ] Zero ballots: every row has `ballots: 0` and `subtotal: 0`
-- [ ] On the wire `breakdown` is the only addition: `score`, the order of
+- [x] Zero ballots: every row has `ballots: 0` and `subtotal: 0`
+- [x] On the wire `breakdown` is the only addition: `score`, the order of
       `scores`, `winners`, `totalBallots` and `method` are unchanged for any
       set of valid ballots. Entries for an option outside the poll stay
       ignored, in the breakdown as in the score
-- [ ] No new endpoint
+- [x] No new endpoint
 
 ### Results table entry point
 
-- [ ] In the score table, each row's Score value is a link to that option's
+- [x] In the score table, each row's Score value is a link to that option's
       Details view, `/poll/:id/results/options/:optionId`. No separate icon or
       button is added, and the table keeps its three columns
-- [ ] Each score link's accessible name contains its score and the option text,
+- [x] Each score link's accessible name contains its score and the option text,
       so the links can be told apart outside their table row
-- [ ] The winner badge, the tie labels and the zero-ballot state are unchanged.
+- [x] The winner badge, the tie labels and the zero-ballot state are unchanged.
       With no ballots there is no table, so there are no score links
 
 ### Details view
 
-- [ ] Public like the results page: the URL opens directly, with no vote and no
+- [x] Public like the results page: the URL opens directly, with no vote and no
       prior visit to the results page
-- [ ] Shows the poll title, the option text, and a link back to
+- [x] Shows the poll title, the option text, and a link back to
       `/poll/:id/results`
-- [ ] A breakdown table with the columns Place, Points, Count and Subtotal, one
+- [x] A breakdown table with the columns Place, Points, Count and Subtotal, one
       row per place from first to last. Place reads as an ordinal (1st, 2nd,
       …). Rows with a count of 0 are shown. The values come from the API
       `breakdown` as they are
-- [ ] Reached by click, tap or keyboard. Nothing depends on hover
+- [x] Reached by click, tap or keyboard. Nothing depends on hover
 
 ### States and edge cases
 
-- [ ] Unknown poll (API `404`): the shared `NotFound` with "Poll not found",
+- [x] Unknown poll (API `404`): the shared `NotFound` with "Poll not found",
       no Retry, as on the results page
-- [ ] An `optionId` that is not one of the poll's options: the shared
+- [x] An `optionId` that is not one of the poll's options: the shared
       `NotFound` with option-specific copy, no Retry
-- [ ] Network error or 5xx: an error message with Retry
-- [ ] Zero ballots: "No votes yet" replaces the breakdown table, the same as
+- [x] Network error or 5xx: an error message with Retry
+- [x] Zero ballots: "No votes yet" replaces the breakdown table, the same as
       on the results page in #5. The back link stays
-- [ ] `/poll/:id/results/extra` still renders the generic not-found page (#18)
+- [x] `/poll/:id/results/extra` still renders the generic not-found page (#18)
 
 ### Mobile (ID-6 contract)
 
 These rules hold whether ID-6 ships before or after ID-19.
 
-- [ ] From 320 CSS px upward the Details view needs no horizontal scrolling
+- [x] From 320 CSS px upward the Details view needs no horizontal scrolling
       (`document.documentElement.scrollWidth <= W` at 320 and 375 px). The
       breakdown stays a four-column table with no horizontally scrolling
       container. The poll title and the option text wrap, including a single
       unbroken token
-- [ ] Every interactive control on the Details view, and every score link in
+- [x] Every interactive control on the Details view, and every score link in
       the results table, is at least 24×24 CSS px
 
 ### Verification
 
-- [ ] **Domain** (`borda.spec.ts`): breakdown rows for a multi-ballot fixture.
+- [x] **Domain** (`borda.spec.ts`): breakdown rows for a multi-ballot fixture.
       Subtotals add up to the score, counts add up to the ballot count. Zero
       ballots give zero rows. Foreign-option entries are ignored
-- [ ] **API e2e** (`polls.e2e-spec.ts`): the results response carries the
+- [x] **API e2e** (`polls.e2e-spec.ts`): the results response carries the
       breakdown in the zero-ballot and multi-ballot cases
-- [ ] **Web** (Vitest): the score links and their targets, the breakdown rows,
+- [x] **Web** (Vitest): the score links and their targets, the breakdown rows,
       each state above, and `App` routing for the Details route and the #18
       over-run path
-- [ ] **End-to-end** (`verify-app`, against `make web` and `make api`): on a
+- [x] **End-to-end** (`verify-app`, against `make web` and `make api`): on a
       seeded poll, clicking a score opens that option's breakdown. Its
       subtotals add up to the score in the table, and the back link returns
       to the results
-- [ ] **Mobile:** Chromium mobile emulation at 320 and 375 px on a 10-option
+- [x] **Mobile:** Chromium mobile emulation at 320 and 375 px on a 10-option
       poll with ID-6's long-content options. The two Mobile checks pass; the PR
       includes a 320 px screenshot of the Details view
 
 ### Documentation
 
-- [ ] `docs/09-api-design.md` drops its "not shipped yet" note for
+- [x] `docs/09-api-design.md` drops its "not shipped yet" note for
       `breakdown`, and the contract matches the code
-- [ ] `docs/03-ux-flow.md` Results step mentions the per-option breakdown
-- [ ] `docs/backlog.md` moves ID-19 to `Done`
+- [x] `docs/03-ux-flow.md` Results step mentions the per-option breakdown
+- [x] `docs/backlog.md` moves ID-19 to `Done`
 
 ### Out of Scope (tracked separately)
 
