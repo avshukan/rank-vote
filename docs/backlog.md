@@ -142,6 +142,7 @@ adapts to the column rather than moving the column.
 | 36  | Export results as CSV      | Value    | Low    | —       | Download scores/ranks from results page or API      |
 | 37  | Add short poll links       | Quality  | Low    | —       | Replace/alias UUID with short ID; redirect needed   |
 | 38  | Breakdown hover preview    | Value    | Low    | —       | Hover preview of score breakdown; needs ID-19       |
+| 41  | Fix backlog lint fixture   | Ops      | Medium | —       | Fixture backlog; drop hard-coded live-file IDs      |
 
 ---
 
