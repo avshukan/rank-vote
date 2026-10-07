@@ -7,8 +7,8 @@
 ```
 
 Backlog #29 publishes this prefix at
-`https://rankvote.avshukan.com/api/v1`. That production URL is an accepted
-deployment contract, not a statement that the service is live yet.
+`https://rankvote.avshukan.com/api/v1`, where release `v0.1.0` was deployed on
+2026-09-19.
 
 ---
 

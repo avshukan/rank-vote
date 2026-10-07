@@ -30,9 +30,9 @@ A deployed increment with:
 Versioning follows SemVer.
 
 The first verified release is tagged `v0.1.0` at
-`7021f3137b597119e39ca13e6a86275da58b28e1`. #29 remains Todo until its separate
-post-deployment record PR updates the changelog and runtime acceptance evidence.
-See `docs/production.md` for the reviewed tooling and operator sequence.
+`7021f3137b597119e39ca13e6a86275da58b28e1` and recorded in `CHANGELOG.md`; its
+runtime evidence is under #29 in `docs/acceptance-criteria.md`. See
+`docs/production.md` for the reviewed tooling and operator sequence.
 
 ---
 
@@ -150,20 +150,20 @@ Examples:
   its criteria stay weekly and 60 days
 - **CD does not exist yet.** Images are verified but are not pushed, deployed or
   released on merge. The owner-operated first release and the #28 manual offsite
-  backup/restore drill have completed; #29 awaits its separate post-deployment
-  documentation closure, and #32 remains the next backup stage
+  backup/restore drill have completed, and #32 remains the next backup stage
 - each merge should be production-ready
-- releases will be tagged manually once there is something to release
+- releases are tagged manually; `v0.1.0` was the first
 - a future release workflow requests a backlog sweep through the same
   `workflow_dispatch` entry point, with the release tag and full SHA as the
   reason, and only after a successful deployment and production verification.
   A tag push itself never requests a sweep
 
 For the first production deployment (#29), the infrastructure/tooling PR was
-reviewed and merged before the shared VPS was changed, and deployment used its
-exact CI-green `main` SHA. A small post-deploy record PR still moves #29 to
-`Done`. The required #28 backup/restore drill completed after the verified
-deployment without waiting for that record PR to merge.
+reviewed and merged before the shared VPS was changed, and deployment used an
+exact CI-green `main` SHA, `7021f31`, which also carried the follow-up fixes
+#52 and #53. ID-29 moved to `Done` in a backlog sweep, and ID-40 recorded the
+post-deployment evidence afterwards. The required #28 backup/restore drill
+completed after the verified deployment without waiting for that record.
 
 ---
 

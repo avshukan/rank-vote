@@ -37,8 +37,9 @@ both images and exercises an isolated stack with fresh temporary storage.
 
 ## Production operations
 
-Verified release `v0.1.0` has been operated; #29 remains Todo pending its
-separate post-deployment documentation closure. Production uses a separate
+Verified release `v0.1.0` was deployed to `https://rankvote.avshukan.com` on
+2026-09-19; its evidence is recorded under #29 in `docs/acceptance-criteria.md`.
+Production uses a separate
 `docker-compose.prod.yml`, `make prod-deploy RELEASE_SHA=<full-sha>` and
 `make prod-rollback`. Follow the [operator runbook](docs/production.md) only
 from a reviewed, merged SHA with successful `checks` and `containers`. Local

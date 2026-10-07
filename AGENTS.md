@@ -57,7 +57,7 @@ validates the model with dummy credentials and `make prod-smoke` exercises it
 with isolated local Docker resources. Both are part of CI's `containers` job.
 Host-changing `make prod-*` commands are owner-operated only after the
 implementation PR is reviewed/merged and both CI jobs pass on its exact `main`
-SHA. Repository preparation alone does not complete #29.
+SHA.
 
 `packages/shared` builds twice — CommonJS for the API to `require`, ESM for
 Vite and the browser to `import` — and its `exports` map routes each consumer

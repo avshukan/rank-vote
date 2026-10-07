@@ -106,8 +106,9 @@ prevention.
 
 ## Operations
 
-The owner has operated verified release `v0.1.0`; #29 remains Todo pending its
-separate post-deployment documentation closure. The repository contains a
+The owner deployed verified release `v0.1.0` on 2026-09-19, and its runtime
+evidence is recorded under #29 in `docs/acceptance-criteria.md`, including the
+checks that have no recorded result. The repository contains a
 complete local Compose stack for PostgreSQL, migrations, the API and the web
 application. The single-VPS production contract is specified under #29 in
 `docs/acceptance-criteria.md`; `docs/production.md` documents its operator
