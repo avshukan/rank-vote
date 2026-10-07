@@ -1,4 +1,4 @@
-import { calculateBorda, type CountedBallot } from './borda';
+import { calculateBorda, type CountedBallot, type OptionScore } from './borda';
 
 const OPTIONS = [
   { id: 'a', text: 'Pizza', order: 0 },
@@ -14,11 +14,15 @@ const ballot = (...optionIds: string[]): CountedBallot => ({
   })),
 });
 
+/** Scores without their breakdowns, for the tests about the totals alone. */
+const totals = (entries: OptionScore[]) =>
+  entries.map(({ optionId, text, score }) => ({ optionId, text, score }));
+
 describe('calculateBorda', () => {
   it('awards N − rank points per ballot', () => {
     const { scores } = calculateBorda(OPTIONS, [ballot('a', 'b', 'c')]);
 
-    expect(scores).toEqual([
+    expect(totals(scores)).toEqual([
       { optionId: 'a', text: 'Pizza', score: 2 },
       { optionId: 'b', text: 'Sushi', score: 1 },
       { optionId: 'c', text: 'Salad', score: 0 },
@@ -32,12 +36,14 @@ describe('calculateBorda', () => {
       ballot('b', 'c', 'a'),
     ]);
 
-    expect(scores).toEqual([
+    expect(totals(scores)).toEqual([
       { optionId: 'b', text: 'Sushi', score: 5 },
       { optionId: 'a', text: 'Pizza', score: 3 },
       { optionId: 'c', text: 'Salad', score: 1 },
     ]);
-    expect(winners).toEqual([{ optionId: 'b', text: 'Sushi', score: 5 }]);
+    expect(totals(winners)).toEqual([
+      { optionId: 'b', text: 'Sushi', score: 5 },
+    ]);
   });
 
   it('returns every option tied at the top as a winner', () => {
@@ -46,7 +52,7 @@ describe('calculateBorda', () => {
       ballot('b', 'a', 'c'),
     ]);
 
-    expect(winners).toEqual([
+    expect(totals(winners)).toEqual([
       { optionId: 'a', text: 'Pizza', score: 3 },
       { optionId: 'b', text: 'Sushi', score: 3 },
     ]);
@@ -73,7 +79,7 @@ describe('calculateBorda', () => {
   it('scores all options 0 and picks no winner without ballots', () => {
     const { scores, winners } = calculateBorda(OPTIONS, []);
 
-    expect(scores).toEqual([
+    expect(totals(scores)).toEqual([
       { optionId: 'a', text: 'Pizza', score: 0 },
       { optionId: 'b', text: 'Sushi', score: 0 },
       { optionId: 'c', text: 'Salad', score: 0 },
@@ -101,16 +107,135 @@ describe('calculateBorda', () => {
       },
     ]);
 
-    expect(scores).toEqual([
+    expect(totals(scores)).toEqual([
       { optionId: 'a', text: 'Pizza', score: 2 },
       { optionId: 'b', text: 'Sushi', score: 1 },
       { optionId: 'c', text: 'Salad', score: 0 },
     ]);
   });
 
+  it('keeps counting N − rank for a stored rank outside 1..N', () => {
+    // The validator rejects such ranks on submit. Should one reach the count,
+    // the score and the winners stay what they were before the breakdown
+    // existed: every entry of a known option adds N − rank. Here a: 1 + 3,
+    // b: 2 − 1, c: 0 + 1.
+    const { scores, winners } = calculateBorda(OPTIONS, [
+      ballot('b', 'a', 'c'),
+      {
+        entries: [
+          { optionId: 'a', rank: 0 },
+          { optionId: 'b', rank: 4 },
+          { optionId: 'c', rank: 2 },
+        ],
+      },
+    ]);
+
+    expect(totals(scores)).toEqual([
+      { optionId: 'a', text: 'Pizza', score: 4 },
+      { optionId: 'b', text: 'Sushi', score: 1 },
+      { optionId: 'c', text: 'Salad', score: 1 },
+    ]);
+    expect(totals(winners)).toEqual([
+      { optionId: 'a', text: 'Pizza', score: 4 },
+    ]);
+    // The breakdown keeps exactly the rows 1..N of the contract.
+    for (const entry of scores) {
+      expect(entry.breakdown.map((row) => row.place)).toEqual([1, 2, 3]);
+    }
+  });
+
   it('scores an option nobody ranked as 0', () => {
     const { scores } = calculateBorda(OPTIONS, [ballot('a', 'b')]);
 
-    expect(scores).toContainEqual({ optionId: 'c', text: 'Salad', score: 0 });
+    expect(totals(scores)).toContainEqual({
+      optionId: 'c',
+      text: 'Salad',
+      score: 0,
+    });
+  });
+
+  describe('breakdown', () => {
+    const THREE_BALLOTS = [
+      ballot('a', 'b', 'c'),
+      ballot('b', 'a', 'c'),
+      ballot('b', 'c', 'a'),
+    ];
+
+    /** The breakdown of one option, by id. */
+    const breakdownOf = (entries: OptionScore[], optionId: string) =>
+      entries.find((entry) => entry.optionId === optionId)?.breakdown;
+
+    it('lists every place with its points, ballot count and subtotal', () => {
+      const { scores } = calculateBorda(OPTIONS, THREE_BALLOTS);
+
+      expect(breakdownOf(scores, 'b')).toEqual([
+        { place: 1, points: 2, ballots: 2, subtotal: 4 },
+        { place: 2, points: 1, ballots: 1, subtotal: 1 },
+        { place: 3, points: 0, ballots: 0, subtotal: 0 },
+      ]);
+      expect(breakdownOf(scores, 'a')).toEqual([
+        { place: 1, points: 2, ballots: 1, subtotal: 2 },
+        { place: 2, points: 1, ballots: 1, subtotal: 1 },
+        { place: 3, points: 0, ballots: 1, subtotal: 0 },
+      ]);
+      expect(breakdownOf(scores, 'c')).toEqual([
+        { place: 1, points: 2, ballots: 0, subtotal: 0 },
+        { place: 2, points: 1, ballots: 1, subtotal: 1 },
+        { place: 3, points: 0, ballots: 2, subtotal: 0 },
+      ]);
+    });
+
+    it('adds up to the score and to the ballot count for every option', () => {
+      const { scores } = calculateBorda(OPTIONS, THREE_BALLOTS);
+
+      for (const entry of scores) {
+        const sum = (field: 'subtotal' | 'ballots') =>
+          entry.breakdown.reduce((total, row) => total + row[field], 0);
+        expect(sum('subtotal')).toBe(entry.score);
+        expect(sum('ballots')).toBe(THREE_BALLOTS.length);
+      }
+    });
+
+    it('gives winners the same breakdown as their score entry', () => {
+      const { scores, winners } = calculateBorda(OPTIONS, THREE_BALLOTS);
+
+      expect(winners).toEqual([scores[0]]);
+      expect(winners[0].breakdown).toHaveLength(OPTIONS.length);
+    });
+
+    it('lists every place with zero ballots when nobody voted', () => {
+      const { scores } = calculateBorda(OPTIONS, []);
+
+      for (const entry of scores) {
+        expect(entry.breakdown).toEqual([
+          { place: 1, points: 2, ballots: 0, subtotal: 0 },
+          { place: 2, points: 1, ballots: 0, subtotal: 0 },
+          { place: 3, points: 0, ballots: 0, subtotal: 0 },
+        ]);
+      }
+    });
+
+    it('ignores entries pointing at an option from another poll', () => {
+      const { scores } = calculateBorda(OPTIONS, [
+        {
+          entries: [
+            { optionId: 'foreign', rank: 1 },
+            ...ballot('a', 'b', 'c').entries,
+          ],
+        },
+      ]);
+
+      expect(breakdownOf(scores, 'a')).toEqual([
+        { place: 1, points: 2, ballots: 1, subtotal: 2 },
+        { place: 2, points: 1, ballots: 0, subtotal: 0 },
+        { place: 3, points: 0, ballots: 0, subtotal: 0 },
+      ]);
+      expect(breakdownOf(scores, 'b')).toEqual([
+        { place: 1, points: 2, ballots: 0, subtotal: 0 },
+        { place: 2, points: 1, ballots: 1, subtotal: 1 },
+        { place: 3, points: 0, ballots: 0, subtotal: 0 },
+      ]);
+      expect(scores.map((entry) => entry.optionId)).not.toContain('foreign');
+    });
   });
 });

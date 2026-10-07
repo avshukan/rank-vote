@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { PollResultsResponseDto } from '@rank-vote/shared';
 import { ApiError } from '../../shared/api/client';
 import { getResults } from '../../shared/api/polls';
 import { NotFound } from '../../shared/ui/NotFound';
 import { ShareLink } from '../../shared/ui/ShareLink';
+import { pointsLabel } from './format';
 import { positionLabels } from './positions';
 
 /**
@@ -115,7 +117,17 @@ export function ResultsView({ pollId }: { pollId: string }) {
                 <tr key={score.optionId} className="border-b border-gray-200">
                   <td className="py-2 pr-4 tabular-nums">{positions[row]}</td>
                   <td className="py-2 pr-4">{score.text}</td>
-                  <td className="py-2 tabular-nums">{score.score}</td>
+                  <td className="py-2 tabular-nums">
+                    {/* The score is the way into its breakdown; the label names
+                        the option so the links differ outside the table row. */}
+                    <Link
+                      to={`/poll/${pollId}/results/options/${score.optionId}`}
+                      aria-label={`${pointsLabel(score.score)} for ${score.text}, see breakdown`}
+                      className="inline-flex min-h-6 min-w-6 items-center text-blue-600 underline"
+                    >
+                      {score.score}
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

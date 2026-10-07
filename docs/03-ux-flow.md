@@ -40,6 +40,10 @@ Participant sees:
 - winner
 - score table
 
+→ clicks an option's score to open its breakdown: for each place on the
+ballots, the points it is worth, how many ballots put the option there, and
+the subtotal. The subtotals add up to the score
+
 ---
 
 ## Notes

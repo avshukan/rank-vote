@@ -198,9 +198,9 @@ Notes:
 - Borda scoring: an option ranked `r` out of `N` options earns `N − r` points
 - Results are calculated on the fly (no caching)
 
-Score breakdown — `breakdown` shows how an entry's Borda score was built. It is
-specified by backlog ID-19 and not shipped yet; until then entries carry no
-`breakdown`.
+Score breakdown — `breakdown` shows how an entry's Borda score was built
+(ID-19). The API computes every field, so a client renders the rows as they are
+and holds no counting formula; the web shows them on each option's Details view.
 
 - exactly `N` rows, one per place `1..N`, in ascending `place` order; a place
   no ballot gave the option is still listed, with `ballots: 0`

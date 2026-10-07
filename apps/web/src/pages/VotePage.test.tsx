@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { CountingMethod, type PollResponseDto } from '@rank-vote/shared';
+import {
+  CountingMethod,
+  type PollResponseDto,
+  type PollResultsResponseDto,
+} from '@rank-vote/shared';
 import { ResultsPage } from './ResultsPage';
 import { VotePage } from './VotePage';
 import { submitBallot } from '../shared/api/ballots';
@@ -30,14 +34,32 @@ const POLL: PollResponseDto = {
   ],
 };
 
-const RESULTS = {
+const PIZZA = {
+  optionId: 'o0',
+  text: 'Pizza',
+  score: 1,
+  breakdown: [
+    { place: 1, points: 1, ballots: 1, subtotal: 1 },
+    { place: 2, points: 0, ballots: 0, subtotal: 0 },
+  ],
+};
+
+const RESULTS: PollResultsResponseDto = {
   pollId: 'poll-1',
   title: 'Lunch?',
   method: CountingMethod.BORDA,
-  winners: [{ optionId: 'o0', text: 'Pizza', score: 1 }],
+  winners: [PIZZA],
   scores: [
-    { optionId: 'o0', text: 'Pizza', score: 1 },
-    { optionId: 'o1', text: 'Sushi', score: 0 },
+    PIZZA,
+    {
+      optionId: 'o1',
+      text: 'Sushi',
+      score: 0,
+      breakdown: [
+        { place: 1, points: 1, ballots: 0, subtotal: 0 },
+        { place: 2, points: 0, ballots: 1, subtotal: 0 },
+      ],
+    },
   ],
   totalBallots: 1,
 };

@@ -1,5 +1,3 @@
-import type { PollScoreDto } from '@rank-vote/shared';
-
 /**
  * Position label for every row of the score table, in the order the rows are
  * rendered. The API returns `scores` already sorted (score DESC, then option
@@ -9,7 +7,7 @@ import type { PollScoreDto } from '@rank-vote/shared';
  * it: scores 5, 4, 4, 2 become "1", "2-3", "2-3", "4". The rule covers the
  * whole table, not only the winners — see docs/acceptance-criteria.md (#5).
  */
-export function positionLabels(scores: PollScoreDto[]): string[] {
+export function positionLabels(scores: readonly { score: number }[]): string[] {
   const labels: string[] = [];
 
   for (let start = 0; start < scores.length; ) {

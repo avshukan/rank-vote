@@ -38,7 +38,9 @@ Work is pulled continuously from `docs/backlog.md`, where current priorities are
   - `CreatePollDto` / `PollResponseDto` (also the `GET /polls/:id` response)
   - `PollOptionDto`
   - `SubmitBallotDto` / `BallotResponseDto`, with `BallotEntryDto`
-  - `PollResultsResponseDto`, with `PollScoreDto`
+  - `PollResultsResponseDto`, discriminated by `method`: its Borda variant
+    `BordaResultsResponseDto` holds `BordaScoreDto` entries with a
+    `BordaPlaceDto` breakdown (ID-19)
 - Export validation constants (min/max options count: 2–10)
 
 ---

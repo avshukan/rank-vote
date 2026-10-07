@@ -1,4 +1,7 @@
-import { CountingMethod, type PollResultsResponseDto } from '@rank-vote/shared';
+import {
+  CountingMethod,
+  type BordaResultsResponseDto,
+} from '@rank-vote/shared';
 import type { BordaResult } from '../../domain/result/borda';
 
 /**
@@ -11,14 +14,15 @@ export interface PersistedPollHeader {
 }
 
 /**
- * Maps a tallied poll to the public API DTO (docs/09-api-design.md). The
- * counting method is Borda for every poll in the MVP.
+ * Maps a tallied poll to the Borda variant of the public results DTO
+ * (docs/09-api-design.md). The counting method is Borda for every poll in the
+ * MVP.
  */
 export function toPollResultsResponse(
   poll: PersistedPollHeader,
   result: BordaResult,
   totalBallots: number,
-): PollResultsResponseDto {
+): BordaResultsResponseDto {
   return {
     pollId: poll.id,
     title: poll.title,
