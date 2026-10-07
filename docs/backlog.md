@@ -120,7 +120,6 @@ adapts to the column rather than moving the column.
 | ID  | Title                      | Type     | Level  | State   | Notes                                               |
 | --- | -------------------------- | -------- | ------ | ------- | --------------------------------------------------- |
 | 6   | Mobile responsive layout   | Quality  | Medium | Ready   | Main flows from 320px; long-press touch drag        |
-| 19  | Explain score calculation  | Value    | Medium | Ready   | Borda per-place breakdown; score links to Details   |
 | 20  | Refresh results button     | Quality  | Medium | —       | Manual results refresh until ID-16                  |
 | 8   | Add IRV counting           | Value    | Medium | —       | Instant-runoff voting                               |
 | 9   | Add Condorcet counting     | Value    | Medium | —       | Pairwise comparison winner                          |
@@ -167,6 +166,7 @@ adapts to the column rather than moving the column.
 |  29 | First production deploy    | Ops      | High   | Production deployment completed; VPS live                     |
 |  39 | Add backlog sweep process  | Ops      | Medium | Sweep skill; request workflow + tracker Issue; `Cancelled`    |
 |  40 | Record v0.1.0 evidence     | Ops      | Medium | #29 Completion evidence; changelog dated; stale docs fixed    |
+|  19 | Explain score calculation  | Value    | Medium | Per-place Borda `breakdown`; score links to a Details view    |
 
 ---
 

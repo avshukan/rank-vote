@@ -6,10 +6,36 @@ const RESULTS: PollResultsResponseDto = {
   pollId: 'poll-1',
   title: 'Lunch?',
   method: CountingMethod.BORDA,
-  winners: [{ optionId: 'o0', text: 'Pizza', score: 1 }],
+  winners: [
+    {
+      optionId: 'o0',
+      text: 'Pizza',
+      score: 1,
+      breakdown: [
+        { place: 1, points: 1, ballots: 1, subtotal: 1 },
+        { place: 2, points: 0, ballots: 0, subtotal: 0 },
+      ],
+    },
+  ],
   scores: [
-    { optionId: 'o0', text: 'Pizza', score: 1 },
-    { optionId: 'o1', text: 'Sushi', score: 0 },
+    {
+      optionId: 'o0',
+      text: 'Pizza',
+      score: 1,
+      breakdown: [
+        { place: 1, points: 1, ballots: 1, subtotal: 1 },
+        { place: 2, points: 0, ballots: 0, subtotal: 0 },
+      ],
+    },
+    {
+      optionId: 'o1',
+      text: 'Sushi',
+      score: 0,
+      breakdown: [
+        { place: 1, points: 1, ballots: 0, subtotal: 0 },
+        { place: 2, points: 0, ballots: 1, subtotal: 0 },
+      ],
+    },
   ],
   totalBallots: 1,
 };

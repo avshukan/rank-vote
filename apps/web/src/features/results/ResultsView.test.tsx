@@ -17,10 +17,12 @@ const results = (
   entries: [text: string, score: number][],
   totalBallots: number,
 ): PollResultsResponseDto => {
+  // The results table never reads `breakdown`; the Details view tests cover it.
   const scores = entries.map(([text, score], index) => ({
     optionId: `o${index}`,
     text,
     score,
+    breakdown: [],
   }));
   const best = Math.max(...scores.map((score) => score.score));
   return {
@@ -77,6 +79,41 @@ describe('ResultsView', () => {
       ['2', 'Sushi', '2'],
     ]);
     expect(screen.getByText('3 ballots counted')).toBeInTheDocument();
+  });
+
+  it('links each score to its option breakdown, named by score and option', async () => {
+    getResultsMock.mockResolvedValue(
+      results(
+        [
+          ['Pizza', 4],
+          ['Sushi', 1],
+          ['Salad', 1],
+        ],
+        3,
+      ),
+    );
+
+    renderResults();
+
+    expect(await screen.findByRole('table')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '4 points for Pizza, see breakdown' })).toHaveAttribute(
+      'href',
+      '/poll/poll-1/results/options/o0',
+    );
+    expect(screen.getByRole('link', { name: '1 point for Sushi, see breakdown' })).toHaveAttribute(
+      'href',
+      '/poll/poll-1/results/options/o1',
+    );
+    expect(screen.getByRole('link', { name: '1 point for Salad, see breakdown' })).toHaveAttribute(
+      'href',
+      '/poll/poll-1/results/options/o2',
+    );
+    // The link is the score itself: the table keeps its three columns and values.
+    expect(scoreRows()).toEqual([
+      ['1', 'Pizza', '4'],
+      ['2-3', 'Sushi', '1'],
+      ['2-3', 'Salad', '1'],
+    ]);
   });
 
   it('labels a tie as tied winners and lists every leader', async () => {
@@ -138,6 +175,7 @@ describe('ResultsView', () => {
     expect(screen.getByText('0 ballots counted')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(screen.queryByText('Winner')).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('link')).toEqual([]);
   });
 
   it('shows the shared not-found copy for a poll that does not exist, with no retry', async () => {

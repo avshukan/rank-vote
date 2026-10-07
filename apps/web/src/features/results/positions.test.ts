@@ -1,9 +1,7 @@
-import type { PollScoreDto } from '@rank-vote/shared';
 import { positionLabels } from './positions';
 
-/** Only `score` drives the labels; the rest is filler to satisfy the DTO. */
-const withScores = (...scores: number[]): PollScoreDto[] =>
-  scores.map((score, index) => ({ optionId: `o${index}`, text: `Option ${index}`, score }));
+/** Only `score` drives the labels. */
+const withScores = (...scores: number[]) => scores.map((score) => ({ score }));
 
 describe('positionLabels', () => {
   it('numbers a table with no ties straight through', () => {

@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import type {
   BallotResponseDto,
+  BordaScoreDto,
   PollResponseDto,
   PollResultsResponseDto,
 } from '@rank-vote/shared';
@@ -30,6 +31,10 @@ const asBallot = (res: request.Response): BallotResponseDto =>
 /** Narrows supertest's `any` body to the results API contract for assertions. */
 const asResults = (res: request.Response): PollResultsResponseDto =>
   res.body as PollResultsResponseDto;
+
+/** Results entries without their breakdowns, for the tests about totals. */
+const totals = (entries: BordaScoreDto[]) =>
+  entries.map(({ optionId, text, score }) => ({ optionId, text, score }));
 
 describe('Polls (e2e)', () => {
   let app: INestApplication<App>;
@@ -281,6 +286,11 @@ describe('Polls (e2e)', () => {
 
     it('scores every option 0 with no winner before any vote', async () => {
       const results = await getResults();
+      const noBallots = [
+        { place: 1, points: 2, ballots: 0, subtotal: 0 },
+        { place: 2, points: 1, ballots: 0, subtotal: 0 },
+        { place: 3, points: 0, ballots: 0, subtotal: 0 },
+      ];
 
       expect(results).toEqual({
         pollId: poll.id,
@@ -288,9 +298,24 @@ describe('Polls (e2e)', () => {
         method: 'BORDA',
         winners: [],
         scores: [
-          { optionId: poll.options[0].id, text: 'Pizza', score: 0 },
-          { optionId: poll.options[1].id, text: 'Sushi', score: 0 },
-          { optionId: poll.options[2].id, text: 'Salad', score: 0 },
+          {
+            optionId: poll.options[0].id,
+            text: 'Pizza',
+            score: 0,
+            breakdown: noBallots,
+          },
+          {
+            optionId: poll.options[1].id,
+            text: 'Sushi',
+            score: 0,
+            breakdown: noBallots,
+          },
+          {
+            optionId: poll.options[2].id,
+            text: 'Salad',
+            score: 0,
+            breakdown: noBallots,
+          },
         ],
         totalBallots: 0,
       });
@@ -303,15 +328,48 @@ describe('Polls (e2e)', () => {
 
       const results = await getResults();
 
-      expect(results.scores).toEqual([
+      expect(totals(results.scores)).toEqual([
         { optionId: poll.options[1].id, text: 'Sushi', score: 5 },
         { optionId: poll.options[0].id, text: 'Pizza', score: 3 },
         { optionId: poll.options[2].id, text: 'Salad', score: 1 },
       ]);
-      expect(results.winners).toEqual([
+      expect(totals(results.winners)).toEqual([
         { optionId: poll.options[1].id, text: 'Sushi', score: 5 },
       ]);
       expect(results.totalBallots).toBe(3);
+    });
+
+    it('breaks every score down by place', async () => {
+      await vote('Pizza', 'Sushi', 'Salad');
+      await vote('Sushi', 'Pizza', 'Salad');
+      await vote('Sushi', 'Salad', 'Pizza');
+
+      const { scores, winners } = await getResults();
+
+      expect(scores.map((entry) => entry.breakdown)).toEqual([
+        [
+          { place: 1, points: 2, ballots: 2, subtotal: 4 },
+          { place: 2, points: 1, ballots: 1, subtotal: 1 },
+          { place: 3, points: 0, ballots: 0, subtotal: 0 },
+        ],
+        [
+          { place: 1, points: 2, ballots: 1, subtotal: 2 },
+          { place: 2, points: 1, ballots: 1, subtotal: 1 },
+          { place: 3, points: 0, ballots: 1, subtotal: 0 },
+        ],
+        [
+          { place: 1, points: 2, ballots: 0, subtotal: 0 },
+          { place: 2, points: 1, ballots: 1, subtotal: 1 },
+          { place: 3, points: 0, ballots: 2, subtotal: 0 },
+        ],
+      ]);
+      expect(winners[0].breakdown).toEqual(scores[0].breakdown);
+      for (const entry of scores) {
+        const sum = (field: 'subtotal' | 'ballots') =>
+          entry.breakdown.reduce((total, row) => total + row[field], 0);
+        expect(sum('subtotal')).toBe(entry.score);
+        expect(sum('ballots')).toBe(3);
+      }
     });
 
     it('returns every tied leader as a winner', async () => {
@@ -320,7 +378,7 @@ describe('Polls (e2e)', () => {
 
       const { winners, totalBallots } = await getResults();
 
-      expect(winners).toEqual([
+      expect(totals(winners)).toEqual([
         { optionId: poll.options[0].id, text: 'Pizza', score: 3 },
         { optionId: poll.options[1].id, text: 'Sushi', score: 3 },
       ]);

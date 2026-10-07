@@ -20,6 +20,22 @@ const POLL = {
   ],
 };
 
+/** Sushi after the single ballot above: ranked first once. */
+const SUSHI = {
+  optionId: 'o1',
+  text: 'Sushi',
+  score: 1,
+  breakdown: [
+    { place: 1, points: 1, ballots: 1, subtotal: 1 },
+    { place: 2, points: 0, ballots: 0, subtotal: 0 },
+  ],
+};
+
+const NO_BALLOTS = [
+  { place: 1, points: 1, ballots: 0, subtotal: 0 },
+  { place: 2, points: 0, ballots: 0, subtotal: 0 },
+];
+
 describe('ResultService', () => {
   let service: ResultService;
   let prisma: { poll: { findUnique: jest.Mock } };
@@ -38,10 +54,18 @@ describe('ResultService', () => {
       pollId: 'poll-1',
       title: 'Lunch',
       method: 'BORDA',
-      winners: [{ optionId: 'o1', text: 'Sushi', score: 1 }],
+      winners: [SUSHI],
       scores: [
-        { optionId: 'o1', text: 'Sushi', score: 1 },
-        { optionId: 'o0', text: 'Pizza', score: 0 },
+        SUSHI,
+        {
+          optionId: 'o0',
+          text: 'Pizza',
+          score: 0,
+          breakdown: [
+            { place: 1, points: 1, ballots: 0, subtotal: 0 },
+            { place: 2, points: 0, ballots: 1, subtotal: 0 },
+          ],
+        },
       ],
       totalBallots: 1,
     });
@@ -69,8 +93,8 @@ describe('ResultService', () => {
       method: 'BORDA',
       winners: [],
       scores: [
-        { optionId: 'o0', text: 'Pizza', score: 0 },
-        { optionId: 'o1', text: 'Sushi', score: 0 },
+        { optionId: 'o0', text: 'Pizza', score: 0, breakdown: NO_BALLOTS },
+        { optionId: 'o1', text: 'Sushi', score: 0, breakdown: NO_BALLOTS },
       ],
       totalBallots: 0,
     });
