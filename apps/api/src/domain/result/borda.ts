@@ -30,7 +30,10 @@ export interface OptionScore {
   optionId: string;
   text: string;
   score: number;
-  /** One row per place `1..N`, ascending; the subtotals add up to `score`. */
+  /**
+   * One row per place `1..N`, ascending. For valid ballots the subtotals add
+   * up to `score`.
+   */
   breakdown: PlaceTally[];
 }
 
@@ -46,28 +49,44 @@ export interface BordaResult {
  * Tallies ballots by Borda count: an option ranked `r` out of `N` options earns
  * `N − r` points, so the first choice gets `N − 1` and the last gets `0`.
  *
- * Every option appears in `scores`, unranked ones with `0`, and carries a
- * breakdown of how many ballots placed it at each place. Entries pointing at an
- * option outside `options`, or at a place outside `1..N`, are ignored — the
- * ballot validator rejects those on submit, and stale data must not skew a
- * count.
+ * Every option appears in `scores`, unranked ones with `0`. Entries pointing at
+ * an option outside `options` are ignored — the ballot validator rejects those
+ * on submit, and stale data must not skew a count.
+ *
+ * Each entry also carries a breakdown: for every place `1..N`, how many ballots
+ * put the option there and the points that earned. For valid ballots the
+ * subtotals add up to `score`.
  */
 export function calculateBorda(
   options: readonly CountedOption[],
   ballots: readonly CountedBallot[],
 ): BordaResult {
   const total = options.length;
-  // Ballots per place for each option: index `place − 1`.
+  const points = new Map(options.map((option) => [option.id, 0]));
+  // Ballots per option at each place `1..N`, at index `place − 1`.
   const placeCounts = new Map(
     options.map((option) => [option.id, new Array<number>(total).fill(0)]),
   );
 
   for (const ballot of ballots) {
     for (const entry of ballot.entries) {
+      const current = points.get(entry.optionId);
+      if (current === undefined) continue;
+      points.set(entry.optionId, current + total - entry.rank);
+
+      // The breakdown has rows for places 1..N only. A stored rank outside
+      // them, which the ballot validator rejects on submit, still adds to the
+      // score above as it did before the breakdown existed; it simply has no
+      // row to be counted in. What such data should mean is not decided here.
       const counts = placeCounts.get(entry.optionId);
-      // No slot means a foreign option or a place outside 1..N.
-      if (counts?.[entry.rank - 1] === undefined) continue;
-      counts[entry.rank - 1] += 1;
+      if (
+        counts !== undefined &&
+        Number.isInteger(entry.rank) &&
+        entry.rank >= 1 &&
+        entry.rank <= total
+      ) {
+        counts[entry.rank - 1] += 1;
+      }
     }
   }
 
@@ -76,14 +95,19 @@ export function calculateBorda(
       const breakdown = (placeCounts.get(option.id) ?? []).map(
         (count, index): PlaceTally => {
           const place = index + 1;
-          const points = total - place;
-          return { place, points, ballots: count, subtotal: points * count };
+          const worth = total - place;
+          return {
+            place,
+            points: worth,
+            ballots: count,
+            subtotal: worth * count,
+          };
         },
       );
       return {
         optionId: option.id,
         text: option.text,
-        score: breakdown.reduce((sum, row) => sum + row.subtotal, 0),
+        score: points.get(option.id) ?? 0,
         breakdown,
         order: option.order,
       };

@@ -114,6 +114,36 @@ describe('calculateBorda', () => {
     ]);
   });
 
+  it('keeps counting N − rank for a stored rank outside 1..N', () => {
+    // The validator rejects such ranks on submit. Should one reach the count,
+    // the score and the winners stay what they were before the breakdown
+    // existed: every entry of a known option adds N − rank. Here a: 1 + 3,
+    // b: 2 − 1, c: 0 + 1.
+    const { scores, winners } = calculateBorda(OPTIONS, [
+      ballot('b', 'a', 'c'),
+      {
+        entries: [
+          { optionId: 'a', rank: 0 },
+          { optionId: 'b', rank: 4 },
+          { optionId: 'c', rank: 2 },
+        ],
+      },
+    ]);
+
+    expect(totals(scores)).toEqual([
+      { optionId: 'a', text: 'Pizza', score: 4 },
+      { optionId: 'b', text: 'Sushi', score: 1 },
+      { optionId: 'c', text: 'Salad', score: 1 },
+    ]);
+    expect(totals(winners)).toEqual([
+      { optionId: 'a', text: 'Pizza', score: 4 },
+    ]);
+    // The breakdown keeps exactly the rows 1..N of the contract.
+    for (const entry of scores) {
+      expect(entry.breakdown.map((row) => row.place)).toEqual([1, 2, 3]);
+    }
+  });
+
   it('scores an option nobody ranked as 0', () => {
     const { scores } = calculateBorda(OPTIONS, [ballot('a', 'b')]);
 
@@ -185,13 +215,12 @@ describe('calculateBorda', () => {
       }
     });
 
-    it('ignores entries for a foreign option or a place outside 1..N', () => {
+    it('ignores entries pointing at an option from another poll', () => {
       const { scores } = calculateBorda(OPTIONS, [
         {
           entries: [
             { optionId: 'foreign', rank: 1 },
-            { optionId: 'c', rank: 4 },
-            ...ballot('a', 'b').entries,
+            ...ballot('a', 'b', 'c').entries,
           ],
         },
       ]);
@@ -201,9 +230,11 @@ describe('calculateBorda', () => {
         { place: 2, points: 1, ballots: 0, subtotal: 0 },
         { place: 3, points: 0, ballots: 0, subtotal: 0 },
       ]);
-      expect(breakdownOf(scores, 'c')?.every((row) => row.ballots === 0)).toBe(
-        true,
-      );
+      expect(breakdownOf(scores, 'b')).toEqual([
+        { place: 1, points: 2, ballots: 0, subtotal: 0 },
+        { place: 2, points: 1, ballots: 1, subtotal: 1 },
+        { place: 3, points: 0, ballots: 0, subtotal: 0 },
+      ]);
       expect(scores.map((entry) => entry.optionId)).not.toContain('foreign');
     });
   });
