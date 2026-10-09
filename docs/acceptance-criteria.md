@@ -2301,11 +2301,11 @@ Repository and CI:
 - [x] `node:test` covers `Prepare release` (version validation, every refusal, a
       second start, the changelog entry and its summary) and the validation
       before approval (tag, release-prep merge commit, CI result, changelog)
-- [ ] `make verify` passes and CI is green
+- [x] `make verify` passes and CI is green
 
 Local and isolated:
 
-- [ ] `make prod-check` and `make prod-smoke` pass, and `prod-smoke` also runs
+- [x] `make prod-check` and `make prod-smoke` pass, and `prod-smoke` also runs
       the automated public verification (`smoke` plus the previous-poll check)
       against its own local stack
 
