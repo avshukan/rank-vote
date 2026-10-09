@@ -2007,6 +2007,399 @@ Each passage stops describing the first deployment, `v0.1.0` or #29 as pending,
 
 ---
 
+## ID-42 Automate tagged releases
+
+The first CD workflow, from Issue #88. A release stays an explicit owner
+decision: the `Prepare release` workflow opens a changelog pull request for a
+chosen version, the owner reviews and merges it and tags its merge commit, and
+the tag starts a release workflow. That workflow validates the exact commit,
+waits for one owner approval, deploys the commit unattended through the
+existing production tooling, verifies it and requests a backlog sweep. Merging
+to `main` never deploys. The implementation PR merges first and changes no
+production state. The owner then performs the production setup below, and
+ID-42 moves to `Done` in a small record PR once the first release made this way
+(the one carrying ID-19) has supplied the production evidence.
+
+### Facts verified during readiness
+
+- `confirm()` in `scripts/production/cli.py` refuses without a terminal, so
+  `make prod-deploy` cannot run unattended. `HOST VERIFIED` is asked before any
+  change; `PROXY VERIFIED` and `PUBLIC VERIFIED` are asked inside `deploy()`
+  after the new release has started
+- The release tooling must run as root: `local_host` requires it,
+  `private_path` requires the root-owned `prod.env` and `deploy-state`, the
+  checkout is root-owned, `preflight` reads `iptables`, and Docker access is
+  root-equivalent
+- The VPS talks to GitHub only in `check_source`: `git fetch origin main` over
+  HTTPS, and three `gh api` reads (the CI runs for the SHA, their jobs, and the
+  rules for `main`). All three endpoints are public and answer without
+  authentication; the unauthenticated limit is 60 requests an hour per IP, and
+  a deployment makes three
+- The production checkout's `origin` is HTTPS. The GitHub CLI on the VPS is
+  logged in with a stored OAuth token that has the `repo`, `workflow`, `gist`
+  and `read:org` scopes, contrary to the read-only prerequisite in
+  `docs/production.md`. With `repo`, that token can push to every repository of
+  the owner, create or change Environments, and approve pending deployments as a
+  required reviewer. `gh auth logout` only removes it locally; revoking it means
+  revoking the GitHub CLI authorization, which signs the CLI out on every device
+- SSH listens on port 22 over IPv4 and IPv6, UFW allows 22/tcp from anywhere,
+  and no DigitalOcean Cloud Firewall is configured, so GitHub-hosted runners
+  reach SSH without a firewall change
+- `ReleaseState.prepare()` copies `current.env` to `previous.env` on every
+  deploy. After a failed candidate both name the last verified release, which is
+  the right rollback target. Deploying the already-current SHA again would lose
+  the real previous release; for the manual path that is Issue #92
+- `verify_poll` expects exactly one ballot. The `v0.1.0` smoke poll ID is public
+  in the #29 evidence, and duplicate-vote protection is client-side only, so
+  anyone can add a ballot to that poll
+- The repository is public, and so are its Actions logs. For the operator,
+  `preflight` prints listening sockets, firewall rules, the containers of every
+  project on the host, addresses and resources
+- A tag push runs no CI, and `ci.yml` cancels an in-progress `main` push run
+  when the next merge arrives. A `main` commit whose push run was cancelled has
+  no successful run, so `check_source` refuses it. Push runs exist only for the
+  head commit of each push to `main`, so the commits a release can use lie on
+  one line of history, ordered by Git ancestry
+- `make prod-smoke`, part of the `containers` job on the exact SHA, already
+  exercises the reviewed Caddy route, forged forwarding headers, a second peer,
+  a full vote, recovery from a database that starts late and data-preserving
+  recreation
+- The repository has no `production` Environment and no tag ruleset; required
+  reviewers are available to this public repository. Events created with
+  `GITHUB_TOKEN` start no workflow runs except `workflow_dispatch` and
+  `repository_dispatch`, so the release workflow can request the sweep with its
+  own token and `actions: write`
+
+### Release preparation
+
+- [ ] `.github/workflows/prepare-release.yml` runs only on `workflow_dispatch`
+      with one required `version` input. Its logic lives in a `scripts/` module
+      with `node:test` tests that `pnpm test` runs; the YAML only invokes it
+- [ ] `version` must match `^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$`. It is
+      read from the event payload and never interpolated into a shell command or
+      script source
+- [ ] It refuses and changes nothing when the tag already exists, `CHANGELOG.md`
+      on `main` already has a heading for the version, the version is not
+      greater than the highest existing `v*` tag, or the release-prep branch or
+      a pull request for the version already exists. The report links an
+      existing pull request or names the recovery step, so starting the same
+      preparation twice never opens a second pull request
+- [ ] The previous release is the highest existing `v*` tag. Above the top entry
+      of `CHANGELOG.md` it adds `## vX.Y.Z — YYYY-MM-DD`, dated with the run's
+      UTC date, and a summary drafted from the subjects of the first-parent
+      commits in `<previous tag>..main`. Nothing else changes, and no
+      `Unreleased` section is created; feature pull requests do not edit the
+      changelog
+- [ ] It opens one ordinary pull request from `chore/release-vX.Y.Z` with that
+      one commit. The description asks the owner to review and edit the entry
+      and gives the tag commands for after the merge. If opening the pull
+      request fails, it deletes the branch it created
+- [ ] `permissions: {}` at the top, and the job has only `contents: write` and
+      `pull-requests: write`; actions are pinned by SHA and checkout does not
+      persist credentials. It uses no Environment or secret and never creates a
+      tag, dispatches a workflow or touches production
+- [ ] Runs are serialized in one concurrency group that queues runs instead of
+      cancelling them. It is not a required check; CI on its pull requests
+      starts once the owner approves the workflow runs, as for backlog promotion
+
+### Release tag contract
+
+- [ ] A release tag is an annotated tag matching the version pattern, created by
+      the owner on the merge commit of the reviewed release-prep pull request
+      for that version, never on a later `main` commit. Changes merged after the
+      preparation need a new preparation before they can be released
+- [ ] Release tags are immutable: a `v*` tag ruleset blocks updates and
+      deletions, and the same tag always identifies the same SHA. A release that
+      fails in its code is never retagged; the fix ships as a new commit with a
+      new patch release
+- [ ] A tag push alone never changes production and never requests a sweep
+
+### Validation before approval
+
+- [ ] The release workflow runs only on pushes of `v*` tags. Its first job runs
+      on a GitHub-hosted runner with `contents: read`, `actions: read` and
+      `pull-requests: read`, without an Environment or secret, and checks: the
+      version pattern; an annotated tag whose commit is `GITHUB_SHA`; that this
+      commit is the merge commit of the merged `chore/release-vX.Y.Z` pull
+      request into `main` and is reachable from `origin/main`; that the latest
+      `ci.yml` `push` run on `main` for that exact SHA concluded `success`, with
+      `checks` and `containers` successful on that SHA (the rules of
+      `validate_ci`); that the version is the highest `v*` tag; and that the top
+      release heading of `CHANGELOG.md` at that commit is the tag, with a valid
+      date and a non-empty entry
+- [ ] The CI proof is that existing push run: the workflow neither reruns CI nor
+      relies on the current state of `main`. A commit whose push run failed, or
+      was cancelled by a later merge, is refused; the documented recovery is to
+      re-run that CI run or to prepare the release again
+- [ ] If validation fails, no approval is requested and nothing else runs.
+      Before approval no job holds the SSH key or any production secret,
+      connects to the VPS, runs a VPS command or requests a sweep
+
+### Owner approval
+
+- [ ] Only the deploy job references the `production` Environment, so every run
+      attempt needs exactly one approval before production changes. The owner is
+      the required reviewer; Prevent self-review is off, because the owner both
+      tags and approves; administrator bypass is off; and only `v*` tags may
+      deploy to it
+- [ ] A rejected run, or one not approved within GitHub's 30-day limit, changes
+      nothing, and a re-run needs a new approval
+
+### VPS access
+
+- [ ] The runner connects with a dedicated SSH key whose private part exists
+      only as a `production` Environment secret, against a pinned VPS host key.
+      An unknown or changed host key fails the job before any remote command
+- [ ] On the VPS the key is installed for `root` with `restrict` and a forced
+      command, so it gives no shell, terminal or forwarding and can only run the
+      wrapper. Root is what the release tooling requires; the key grants nothing
+      beyond the wrapper
+- [ ] The wrapper is root-owned, writable only by root and outside the checkout.
+      It accepts exactly a release tag and a full SHA matching strict patterns
+      and refuses anything else. It never changes the checkout while another
+      production operation holds the deployment lock. Before it runs any
+      repository code it fetches `main` and the tag over HTTPS and verifies that
+      the tag is annotated and points to the SHA, that the SHA is an ancestor of
+      `origin/main` and that the checkout is clean; only then does it detach the
+      checkout at the SHA and start the unattended release. A stolen key can
+      therefore release only an owner-created tag on a reviewed `main` commit
+      that passes every check below
+- [ ] The release on the VPS does not depend on the SSH session: a runner
+      disconnect or a cancelled workflow run does not interrupt it
+- [ ] The Actions log receives only a curated, secret-free status: no host audit
+      (listening sockets, firewall rules, other projects' containers, addresses,
+      resources) and no raw command output. Full diagnostics stay in root-only
+      `deploy-state`
+- [ ] No production application or database secret is stored in GitHub, and the
+      VPS holds no GitHub credential. `check_source` reads the same three public
+      API endpoints over HTTPS, with standard TLS verification and without
+      authentication, and fails closed on any error, unexpected status, rate
+      limit or malformed response. `gh` is no longer a production prerequisite
+
+### Unattended deployment
+
+- [ ] One new non-interactive action of the production CLI reuses `local_host`,
+      `read_config`, `check_source`, `Runner.model`, `preflight` and
+      `release.deploy`; there is no second deployment implementation. It reads
+      no input and asks none of `HOST VERIFIED`, `PROXY VERIFIED` or
+      `PUBLIC VERIFIED`
+- [ ] `make prod-deploy`, `make prod-rollback` and the `tag` command keep their
+      confirmations and, apart from the shared `check_source` change, their
+      behaviour. They remain the path for the first deployment; host, firewall,
+      Caddy, proxy-trust and other infrastructure changes; and break-glass
+      recovery, each with the operator checks of `docs/production.md`
+- [ ] It refuses when no verified `current.env` exists; a first deployment stays
+      manual
+- [ ] Ordering: C and T are the `RELEASE_SHA` and `RELEASE_TAG` of
+      `current.env`, X is the tagged commit and V its version. X must be an
+      ancestor of `origin/main` or equal to it, and may be behind its tip
+- [ ] X = C with V = T is the already-current release below. X = C with any
+      other T, including none, is refused: one SHA never gets a second release
+      tag
+- [ ] When X ≠ C, C must be an ancestor of X, or the release is refused; this
+      refuses a downgrade (X an ancestor of C) and divergent history. When T is
+      set, V must also be greater than T. Going back to an earlier release stays
+      `make prod-rollback` with its `COMPATIBLE` confirmation
+- [ ] Already current: the same tag and SHA as `current.env` deploys nothing. It
+      builds, stops, prepares, migrates and writes nothing, and `current.env`
+      and `previous.env` stay byte-identical. The run reports the release as
+      already current and continues to the sweep, so a re-run after a later step
+      failed never redeploys
+- [ ] A retry of the same tag and SHA after a failed attempt reuses the images
+      built for that SHA and writes `previous.env` only from the last verified
+      `current.env`
+
+### Verified release
+
+- [ ] Before any change the release passes the host, config, exact-SHA CI and
+      ruleset, Compose model and `preflight` checks (versions, disk, memory, DNS,
+      the Caddy container and the network boundary), the deployment lock and the
+      ordering rules above
+- [ ] The deployment keeps the existing sequence: images built and checked
+      before downtime, `previous.env` prepared, web and API stopped, PostgreSQL
+      left running, one migration, API then web started healthy, and
+      `internal_verify`
+- [ ] Public verification goes through the production origin with standard TLS
+      verification: `smoke` (health, the SPA, the production API URL in the
+      bundle, poll creation, a full ballot, the 2/1/0 Borda result and the
+      direct results route), then a read of the previous release's
+      `SMOKE_POLL_ID`, which must still return its title, options and at least
+      one ballot. Its exact ballot count is not checked, because that poll ID is
+      public. `internal_verify` then runs again
+- [ ] The release is verified exactly when `current.env` is promoted, in one
+      atomic write that already contains `RELEASE_TAG`; no later step attaches
+      the tag
+- [ ] An ordinary release does not run the first-deployment operator checks:
+      firewall, cloud-firewall and IPv6 review, the proxy and second-peer
+      probes, external port probes, the other Caddy sites, the browser check,
+      the recreation and recovery drill, or a reboot. Without a probe there is
+      no API restart before the smoke
+
+### Failure and rerun
+
+- [ ] Each failure leaves the stated state, and the run summary names the next
+      step:
+      validation failure, rejection or approval timeout: nothing changed;
+      SSH or host-key failure, or a refusal on the VPS before any change:
+      nothing changed;
+      build or image-check failure: the running release untouched;
+      migration failure: web and API stopped, PostgreSQL running and the
+      redacted log in `deploy-state`, with no retry, resolve or reset;
+      health or public verification failure: `current.env` still names the last
+      verified release;
+      runner disconnect or cancelled run: the VPS run finishes under its lock,
+      and a re-run reports it as already current, is refused while the lock is
+      held, or retries the same tag and SHA
+- [ ] Nothing is rolled back automatically, neither the database nor the
+      application. Recovery is owner-operated: `make prod-rollback` with its
+      `COMPATIBLE` confirmation, or a forward fix released as a new patch tag
+- [ ] A re-run never moves a tag and never redeploys a release that
+      `current.env` already records
+
+### Backlog sweep
+
+- [ ] Only after the deploy job succeeds, the already-current case included, a
+      separate job without an Environment and with `actions: write` dispatches
+      `backlog-sweep.yml` on `main` with the reason
+      `release vX.Y.Z at <full-sha>`. There is no other sweep mechanism
+- [ ] A failed sweep request leaves the release verified and fails only that
+      job. Re-running the failed jobs repeats only the request, without approval
+      or deployment, and the existing request script records a repeated reason
+      once
+
+### Concurrency
+
+- [ ] The deploy job runs in the concurrency group `production-release` with
+      `cancel-in-progress: false` and `queue: max`: no release run cancels
+      another, each waits for its own approval, and the deployment lock on the
+      VPS remains the final guard. An older tag approved after a newer one is
+      refused by the ordering rules
+
+### Owner production setup
+
+After the implementation PR merges, the owner:
+
+- [ ] creates the `production` Environment with the settings above and stores
+      the deploy key and the pinned host key in it
+- [ ] installs the wrapper and the restricted `authorized_keys` entry on the VPS
+- [ ] adds the `v*` tag ruleset that blocks updates and deletions
+- [ ] removes the GitHub CLI credential from the VPS and revokes it on GitHub,
+      once the merged implementation no longer needs it. Revoking the GitHub CLI
+      authorization signs the CLI out on the owner's other devices as well
+
+### Tests
+
+Repository and CI:
+
+- [ ] Python unit tests with a fake runner cover the unattended action: no input
+      is read; every ordering refusal; a tag that does not point to the SHA; the
+      already-current case, which leaves both manifests untouched; promotion
+      with the tag; failures that leave `current.env` unchanged; curated output
+      without host audit; and the unauthenticated `check_source` reads,
+      including their fail-closed errors
+- [ ] The wrapper's input validation is tested
+- [ ] `node:test` covers `Prepare release` (version validation, every refusal, a
+      second start, the changelog entry and its summary) and the validation
+      before approval (tag, release-prep merge commit, CI result, changelog)
+- [ ] `make verify` passes and CI is green
+
+Local and isolated:
+
+- [ ] `make prod-check` and `make prod-smoke` pass, and `prod-smoke` also runs
+      the automated public verification (`smoke` plus the previous-poll check)
+      against its own local stack
+
+Production evidence, required before `Done`:
+
+- [ ] The first release made this way, the one carrying ID-19, is prepared by
+      `Prepare release`, tagged by the owner on the release-prep merge commit,
+      validated, approved once, and deployed and verified without operator input
+- [ ] The record PR names the workflow runs, the tag, the full SHA, the approval
+      time, `current.env` with its `RELEASE_TAG`, `previous.env` as the `v0.1.0`
+      manifest, the new and the previous smoke poll, and the sweep request on
+      the tracker
+- [ ] The owner confirms that the deploy key cannot open a shell or run another
+      command, that the Environment settings and the tag ruleset are in place,
+      and that the VPS holds no GitHub credential and the old token is revoked
+
+### Documentation
+
+- [ ] `docs/production.md`: the tagged release, the owner production setup,
+      recovery from each failure, the manual path as fallback, and prerequisites
+      without `gh`
+- [ ] `docs/07-process.md`: CI/CD and Release Flow describe the release workflow
+- [ ] `docs/06-decisions.md`: the "Tag-triggered releases" ADR no longer says
+      implementation pending
+- [ ] `AGENTS.md` (production tooling) and `README.md` name the release workflow
+- [ ] ID-42 moves to `Done` in the record PR
+
+### Out of Scope (tracked separately)
+
+- Automated offsite backups → ID-32; production monitoring and alerts → ID-33;
+  shared rate-limit state and more API replicas → ID-34
+- A manual `prod-deploy` of the current SHA overwriting `previous.env` → #92
+- Cancelling intermediate `main` push runs in `ci.yml` — not planned; ID-42
+  documents the refusal and its recovery, and work follows if it proves
+  inconvenient
+- Zero-downtime and multi-replica deployment, an image registry, managed
+  PostgreSQL, automatic database or application rollback, a GitHub Release
+  page, Caddy changes or first provisioning through the workflow, and unrelated
+  VPS hardening — not planned
+
+### Readiness Decisions
+
+- The accepted direction of Issue #88: `main` stays production-ready and a
+  merge never deploys; a SemVer tag is the release intent and starts the
+  workflow on one exact commit; exactly one owner approval precedes any
+  production change, and deployment and verification after it are automated as
+  far as safely possible, reusing the existing production tooling; a tag push
+  alone is not a verified release and never requests a sweep; the sweep request
+  goes through `backlog-sweep.yml` with the release tag and full SHA, only after
+  a successful deployment and verification; the changelog is ready before the
+  tag; ID-19 is the first change released this way
+- Accepted by the owner on 2026-10-09:
+  - a GitHub-hosted runner over SSH with a dedicated key, restricted on the VPS
+    by a forced command to a stable root-owned wrapper outside the checkout,
+    with a pinned host key; production secrets stay on the VPS
+  - for an ordinary release, verified means deterministic automated checks. The
+    Environment approval is the single human action; the operator checks stay
+    with host, firewall, Caddy, proxy-trust and infrastructure changes and
+    break-glass recovery
+  - immutable release tags; a retry only with the same tag on the same SHA, and
+    a code fix as a new patch release
+  - a `Prepare release` workflow that opens an ordinary pull request with the
+    changelog entry and a summary of the merged changes; no `Unreleased`
+    section; feature pull requests do not edit the changelog; the version is
+    chosen when preparing the release
+  - the tag goes on the merge commit of the reviewed release-prep pull request,
+    never on a later commit
+  - no GitHub credential on the VPS: `check_source` reads public endpoints
+    without authentication, and the current CLI credential is revoked during the
+    production setup, after the implementation no longer needs it
+  - the production setup above, including the `v*` tag ruleset
+  - #92 tracks the manual-path `previous.env` defect; `ci.yml` keeps cancelling
+    intermediate `main` push runs for now
+- Settled during readiness, open to review in this PR:
+  - the SSH principal is `root`, because the release tooling requires root; a
+    separate account with one sudo rule would let the key do nothing less
+  - the Actions log gets only a curated status, because the repository is public
+  - the previous smoke poll is checked for readability, not for its exact
+    ballot count
+  - the tag is already in the manifest when it is promoted
+  - release runs queue and never cancel one another
+  - the release-prep summary starts from commit subjects
+  - no GitHub Release page, which no repository contract requires
+  - ID-42 moves to `Done` in a record PR after the first release, as #29 did
+- Implementation choices, settled in the implementation PR and its review: file
+  names; how the wrapper detaches the release from the SSH session and how the
+  run learns its result; how the wrapper and the CLI share the deployment lock;
+  the curated output format; whether the pinned host key is a secret or a
+  variable; the release-prep pull request's description; and whether the
+  release workflow waits for the dispatched sweep run
+- No architectural or product questions remain open for ID-42.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;

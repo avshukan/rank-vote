@@ -239,6 +239,99 @@ Rejected for the first release:
   zero-downtime deployment and automatic database rollback — each adds
   operational machinery that the first single-host deployment does not need
 
+### Tag-triggered releases
+
+Status:
+
+- accepted for backlog ID-42; implementation pending
+
+Chosen:
+
+- a release stays an explicit owner decision. The manual `Prepare release`
+  workflow takes a version and opens a pull request that adds its
+  `CHANGELOG.md` entry with a summary of the merged changes; the owner reviews
+  and merges it, then pushes an annotated `vX.Y.Z` tag on exactly that merge
+  commit. Merging to `main` never deploys
+- release tags are immutable, enforced by a `v*` tag ruleset. A failed release
+  may be retried only with the same tag on the same SHA; a code change needs a
+  new patch release
+- the tag starts a release workflow. On a GitHub-hosted runner it validates the
+  tag, its commit and the existing successful `main` push CI run of that exact
+  SHA, then waits for one approval in the `production` Environment before
+  anything touches production
+- after approval the runner connects over SSH with a dedicated key that the VPS
+  restricts to a forced command. A root-owned wrapper outside the checkout
+  validates the tag and SHA, then runs a new non-interactive action of the
+  existing production CLI, which reuses `release.deploy`
+- for an ordinary release, verified means the deterministic checks the tooling
+  already runs, plus a read of the previous release's smoke poll. The release is
+  verified when `current.env` is promoted with its tag. The operator checks of
+  the first deployment stay in the interactive `make prod-deploy`, for first
+  deployment, host, firewall, Caddy, proxy-trust and infrastructure changes and
+  break-glass recovery
+- the candidate must descend from the verified current release. The
+  already-current tag and SHA is a no-op, and going back is only possible with
+  `make prod-rollback`
+- after a verified deployment, a separate job requests a backlog sweep through
+  `backlog-sweep.yml` with the release tag and full SHA
+- the VPS holds no GitHub credential: `check_source` reads the same public API
+  endpoints without authentication
+
+Reason:
+
+- a tag names one exact commit and records the owner's intent, while `main`
+  keeps receiving production-ready merges that are not meant for users yet
+- tagging the reviewed release-prep merge commit keeps the changelog the owner
+  reviewed identical to the released code
+- the Environment approval is the single human decision before production
+  changes, and it also gates the SSH key: no job can read the key before
+  approval
+- a GitHub-hosted runner with a forced-command key adds the smallest trusted
+  surface: a stolen key can only release an owner-created tag on a reviewed,
+  CI-green `main` commit. A self-hosted runner on the shared VPS would accept
+  jobs from any workflow of a public repository that targets it, with
+  root-equivalent Docker access
+- a release cannot change the firewall, Caddy, published ports or the proxy
+  boundary, and `make prod-smoke` already proves the release code against the
+  reviewed Caddy route in CI. Repeating the operator checklist on every release
+  would add a human step without adding evidence
+- the GitHub CLI login found on the VPS carries the `repo` and `workflow`
+  scopes, enough to push to every repository of the owner and to approve a
+  pending production deployment, while the checks need only public data
+
+Consequences:
+
+- every release needs a `Prepare release` pull request. Changes merged after it
+  need a new preparation before they can be released, and feature pull requests
+  do not edit the changelog
+- a `main` commit whose push CI run was cancelled by a later merge cannot be
+  released until that run is re-run; the cancellation policy of `ci.yml` is
+  unchanged
+- the owner sets up the Environment, the deploy key, the wrapper, the pinned
+  host key and the tag ruleset once, and revokes the GitHub CLI credential on
+  the VPS once the implementation no longer needs it
+- GitHub Actions logs are public, so a release reports only a curated status;
+  diagnostics stay in root-only `deploy-state`
+- rollback stays owner-operated; neither the database nor the application is
+  rolled back automatically
+
+Rejected:
+
+- deploying on every merge to `main`
+- a self-hosted runner on the VPS, which widens the trusted surface on a shared
+  host, and a VPS agent polling GitHub, which needs a GitHub write credential on
+  the VPS
+- checking CI only in the workflow and trusting that on the VPS — a stolen
+  deploy key could then release a commit whose `main` CI failed
+- a fine-grained read-only token on the VPS — a credential to rotate, for data
+  that is public
+- re-running CI in the release workflow — it duplicates both jobs and is still
+  not the `main` push run that the release contract names
+- tagging a `main` commit later than the reviewed preparation, moving or
+  recreating a tag, and a permanent `Unreleased` changelog section
+- a GitHub Release page, an image registry and zero-downtime deployment — no
+  current need
+
 ---
 
 ## Containerization
