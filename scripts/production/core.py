@@ -15,9 +15,13 @@ API_URL = ORIGIN + "/api/v1"
 HOST_IP = "165.22.91.190"
 ROOT = Path("/opt/apps/rank-vote")
 CONFIG = Path("/etc/rank-vote/prod.env")
+LOCK = Path("/run/lock/rank-vote-prod.lock")
 VOLUME = "rank_vote_prod_postgres_data"
 PROJECT = "rank-vote-prod"
 SHA = re.compile(r"[0-9a-f]{40}")
+# A release tag is strict SemVer core, without leading zeros or suffixes.
+# [0-9], not \d: in Python \d also matches non-ASCII digits.
+RELEASE_TAG = re.compile(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
 IMAGE_ID = re.compile(r"sha256:[0-9a-f]{64}")
 # React Router includes a bare http://localhost URL-parser base in every build.
 # Reject development endpoints (ports or API paths), not that library constant.
@@ -30,6 +34,15 @@ CONFIG_KEYS = {
 
 class Refused(RuntimeError):
     """An operator-facing error whose message contains no secret values."""
+
+
+class CommandFailed(Refused):
+    """A failed subprocess. The message carries redacted tool output for the
+    operator; `summary` names only the command, for public release logs."""
+
+    def __init__(self, command, returncode, detail):
+        super().__init__(f"{command} failed (exit {returncode}):\n{detail}")
+        self.summary = f"{command} failed (exit {returncode})"
 
 
 def require(condition, message):
@@ -56,6 +69,40 @@ def parse_env(text):
 def validate_sha(sha):
     require(isinstance(sha, str) and SHA.fullmatch(sha), "RELEASE_SHA must be 40 lowercase hex characters")
     return sha
+
+
+def validate_release_tag(tag):
+    require(isinstance(tag, str) and RELEASE_TAG.fullmatch(tag), "Release tag must be vMAJOR.MINOR.PATCH")
+    return tag
+
+
+def version_key(tag):
+    # Manifests written before ID-42 allow leading zeros; compare numerically.
+    match = re.fullmatch(r"v([0-9]+)\.([0-9]+)\.([0-9]+)", tag)
+    require(match, "Invalid release tag")
+    return tuple(int(part) for part in match.groups())
+
+
+def release_plan(current, tag, sha, is_ancestor):
+    """What a tag-triggered release does: "current" (nothing to deploy) or "deploy".
+
+    C and T are the verified current release's SHA and tag, X and V the
+    candidate's. Going back is never a release; it stays `make prod-rollback`.
+    """
+    validate_release_tag(tag)
+    validate_sha(sha)
+    require(current is not None, "No verified current release exists; the first deployment stays manual (make prod-deploy)")
+    deployed, deployed_tag = current["RELEASE_SHA"], current["RELEASE_TAG"]
+    if sha == deployed:
+        require(tag == deployed_tag, f"{sha} is already current as {deployed_tag or 'an untagged release'}; "
+                "one SHA never gets a second release tag")
+        return "current"
+    require(tag != deployed_tag, f"{tag} is already current on another SHA; release tags never move")
+    require(is_ancestor(deployed, sha), "The current release is not an ancestor of this commit; refusing a downgrade "
+            "or divergent history (going back is make prod-rollback)")
+    if deployed_tag:
+        require(version_key(tag) > version_key(deployed_tag), f"{tag} is not greater than the current {deployed_tag}")
+    return "deploy"
 
 
 def validate_web_bundle(bundle, expected=API_URL):
@@ -251,3 +298,24 @@ def deployment_lock(path):
         yield
     finally:
         os.close(fd)  # Kernel releases the lock even after process failure.
+
+
+@contextlib.contextmanager
+def inherited_lock(fd, path=LOCK):
+    """The release wrapper locks before it changes the checkout and hands the
+    locked descriptor over, so the lock is never released in between. Locking
+    the same open file description again succeeds; any other holder refuses."""
+    try:
+        held, expected = os.fstat(fd), os.stat(path, follow_symlinks=False)
+    except OSError:
+        raise Refused("The inherited deployment lock is not open") from None
+    require((held.st_dev, held.st_ino) == (expected.st_dev, expected.st_ino),
+            "The inherited descriptor is not the deployment lock")
+    try:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise Refused("Another production operation holds the deployment lock") from None
+        yield
+    finally:
+        os.close(fd)

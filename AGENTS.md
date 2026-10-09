@@ -59,6 +59,12 @@ Host-changing `make prod-*` commands are owner-operated only after the
 implementation PR is reviewed/merged and both CI jobs pass on its exact `main`
 SHA.
 
+Releases are tag-triggered (`docs/production.md`, section 9): the
+`Prepare release` and `Release` workflows run the logic in `scripts/release.mjs`,
+and `deploy/rank-vote-release` is the VPS wrapper the owner installs. Running
+`Prepare release`, pushing a release tag and approving the `production`
+deployment are the owner's decisions; an agent never does any of them.
+
 `packages/shared` builds twice — CommonJS for the API to `require`, ESM for
 Vite and the browser to `import` — and its `exports` map routes each consumer
 to the right one. A CommonJS-only build is what used to leave `pnpm dev`

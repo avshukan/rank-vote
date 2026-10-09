@@ -7,6 +7,13 @@ require owner operation from a reviewed, merged `main` SHA with successful
 `checks` **and** `containers`; never deploy a PR branch. The owner completed
 the #28 offsite backup and recovery drill for `v0.1.0` on 2026-09-19.
 
+Ordinary releases after `v0.1.0` go through the tag-triggered workflow in
+[section 9](#9-tagged-releases-id-42) (ID-42): the owner prepares, tags and
+approves them, and the deployment and its verification run unattended. The
+interactive commands in sections 1–8 remain the path for the first deployment,
+host, firewall, Caddy, proxy-trust and other infrastructure changes, and
+break-glass recovery.
+
 ## Fixed contract and prerequisites
 
 | Item                          | Value                                                     |
@@ -22,8 +29,10 @@ the #28 offsite backup and recovery drill for `v0.1.0` on 2026-09-19.
 | Verified release state        | `deploy-state/current.env`, `deploy-state/previous.env`   |
 
 Ubuntu needs Python 3.9+, Git, Make, `tar`, Docker Engine 24+, Compose 2.20+,
-`gh` authenticated for read-only repository/Actions/rules access, `ip`, `ss`,
-`iptables` and `ip6tables`. Node/pnpm run inside build images; no host Node
+`ip`, `ss`, `iptables` and `ip6tables`. The VPS holds no GitHub credential:
+`check_source` reads the public repository's CI runs, their jobs and the `main`
+rules through the GitHub REST API without authentication, and the checkout
+fetches over HTTPS. Node/pnpm run inside build images; no host Node
 installation is needed. Sequential builds require at least 5 GiB free Docker
 disk and 1 GiB available RAM plus swap; inspect actual headroom for the shared
 VPS before proceeding. These are refusal thresholds, not resource reservations.
@@ -345,7 +354,11 @@ rolls data back. If compatibility is uncertain, continue downtime and use a
 reviewed forward fix or a separately chosen restore procedure. A first failed
 deployment cannot be rolled back to a nonexistent previous application.
 
-## 8. Tag and immediate recovery handoff — after verified deployment only
+## 8. Tag and immediate recovery handoff — manual path, after verified deployment only
+
+This is how `v0.1.0` was tagged, and it stays the path after a manual
+deployment. A tag-triggered release (section 9) creates its tag first and
+records it in `current.env` when it promotes the release.
 
 After owner acceptance of the smoke-verified `current.env`, create/push the
 annotated tag on **its recorded SHA**, then attach that tag to the same manifest:
@@ -360,8 +373,8 @@ This updates tag metadata without changing recorded image IDs/SHA. Then request
 a backlog sweep, naming the verified release by its tag and full deployed SHA
 (releases after v0.1.0, which predates the sweep workflow). Run it from the
 owner's workstation, where `gh` is authenticated as the owner with permission
-to run GitHub Actions workflows — not from the VPS, whose `gh` stays read-only
-and gets no new credential for this:
+to run GitHub Actions workflows — not from the VPS, which holds no GitHub
+credential:
 
 ```bash
 gh workflow run backlog-sweep.yml -f reason="release <tag> at <deployed-full-sha>"
@@ -375,6 +388,166 @@ recorded smoke poll. The volume is storage, **not backup**. #28 did not wait for
 the post-deployment record, which ID-40 made later: it dated the changelog and
 recorded the runtime evidence for `v0.1.0`.
 
+## 9. Tagged releases (ID-42)
+
+Merging to `main` never deploys. A release is the owner's decision, expressed
+in the reviewed changelog, the tag and the one `production` approval;
+everything after that approval is automated. The logic lives in
+`scripts/release.mjs` (workflows) and `scripts/production/unattended.py` (VPS).
+
+### Flow
+
+1. **Prepare.** Actions → **Prepare release** → **Run workflow** with the
+   version, `vMAJOR.MINOR.PATCH` following the SemVer policy in
+   `docs/07-process.md`. It opens one ordinary pull request from
+   `chore/release-<version>` that adds the dated `CHANGELOG.md` entry, with a
+   summary drafted from the subjects of the first-parent commits since the
+   highest release tag. It never creates a tag or touches production. A second
+   run for the same version refuses and links the open pull request.
+2. **Review and merge.** Approve the pull request's workflow runs (the workflow
+   token opened it), edit the entry, and merge it.
+3. **Tag exactly its merge commit**, once that commit's `main` push CI run has
+   passed `checks` and `containers`; the pull request description gives the
+   commands. Push one release tag at a time: GitHub creates no event when more
+   than three tags are pushed at once. Never tag a later commit; changes merged
+   after the preparation need a new **Prepare release**.
+4. **Validation**, in the **Release** workflow, without any secret or VPS
+   access: the version pattern; an annotated tag on the event's commit; that
+   this commit is the merge commit of the merged `chore/release-<version>` pull
+   request and reachable from `main`; that its latest `ci.yml` push run on
+   `main` succeeded, with `checks` and `containers` successful on that exact
+   SHA; that the tag is the highest release tag; that the top `CHANGELOG.md`
+   entry at that commit is the tag's, dated and non-empty; and that the
+   `production` Environment exists with the protection below. A workflow that
+   references a missing Environment makes GitHub create it without protection,
+   so a tag pushed before the owner's setup stops here. CI is never re-run
+   here. A failed validation requests no approval.
+5. **Approve** the waiting `deploy` job of the `production` Environment: the
+   only human step before production changes.
+6. **Deploy and verify** on the VPS, unattended (below).
+7. **Sweep.** After a verified release, a separate job dispatches
+   `backlog-sweep.yml` on `main` with the reason `release <tag> at <full-sha>`.
+
+### On the VPS
+
+The `deploy` job connects as `root@165.22.91.190` with the deploy key, against
+the pinned host key. The key's forced command is
+`/usr/local/sbin/rank-vote-release`, installed from `deploy/rank-vote-release`.
+The wrapper accepts only `<tag> <full-sha>`. Holding the deployment lock, it
+fetches `main` and the tag over HTTPS with no credential helper and no hooks,
+verifies that the tag is annotated and points to the SHA, that the SHA is on
+`main` and that the checkout is clean, and only then detaches the checkout at
+the SHA. It starts `python3 -m scripts.production.cli release` in its own
+session and hands it the locked descriptor, so a lost SSH connection or a
+cancelled workflow run does not interrupt the release; this relies on logind's
+Ubuntu default of not killing root's processes when a session ends. The
+release's status goes to `deploy-state/release-<tag>-<time>.status` and
+streams to the Actions log.
+
+The `release` action repeats `check_source`, the configuration, Compose model
+and tag checks, then compares the candidate with `current.env`:
+
+| Candidate                                                   | Result                                                                    |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Same tag and SHA as `current.env`                           | Already current: nothing is built, stopped, prepared, migrated or written |
+| Same SHA under another tag, or none                         | Refused: one SHA never gets a second release tag                          |
+| `current.env`'s SHA is not an ancestor of the candidate SHA | Refused: a downgrade or divergent history                                 |
+| Version not greater than `current.env`'s tag                | Refused                                                                   |
+| Otherwise                                                   | Deployed                                                                  |
+
+A deployment runs `preflight` and the same `release.deploy` sequence as
+`make prod-deploy`: images built and checked before downtime, `previous.env`
+prepared, web/API stopped, one migration, API then web healthy, and
+`internal_verify`. Public verification is `smoke` through the production origin
+with TLS verification, then a read of the previous release's `SMOKE_POLL_ID`,
+which must still show its title, options and at least one ballot. Its exact
+count is not checked, because that poll ID is public. After `internal_verify`
+again, `current.env` is promoted with `RELEASE_TAG` in one atomic write, the
+release's only success boundary.
+
+None of `HOST VERIFIED`, `PROXY VERIFIED` or `PUBLIC VERIFIED` is asked, and
+the first-deployment operator checks do not run: firewall, cloud-firewall and
+IPv6 review, proxy and second-peer probes, external port probes, the other
+Caddy sites, the browser check, the recreation drill and the reboot. An
+application release cannot change what they inspect, and `make prod-smoke`
+proves the release code against the reviewed Caddy route in CI. Host,
+firewall, Caddy, proxy-trust and infrastructure changes use the interactive
+`make prod-deploy` with sections 4–6.
+
+The Actions log is public, so the release prints only curated status lines.
+The host audit, raw tool output and a failure's redacted traceback go to the
+root-only `deploy-state/release-<tag>-<time>.log`.
+
+### Failures and reruns
+
+| Failure                                                        | State                                                                           | Next step                                                                                   |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Validation, rejected approval, or none within GitHub's 30 days | Nothing changed                                                                 | Fix and re-run the run, or prepare a new version                                            |
+| SSH or host key                                                | Nothing changed                                                                 | Check the Environment settings, then re-run                                                 |
+| A refusal by the wrapper or the VPS before any change          | Nothing changed                                                                 | As the status line says                                                                     |
+| The deployment lock is held                                    | Nothing changed by this run                                                     | Re-run once the other operation has finished                                                |
+| Build or image check                                           | The running release is untouched                                                | Fix, then re-run the same tag                                                               |
+| Migration                                                      | Web/API stopped, PostgreSQL running, redacted log in `deploy-state`             | Diagnose first; a forward fix as a new patch release, or `make prod-rollback` if compatible |
+| Health or public verification                                  | `current.env` names the last verified release; the candidate may run unverified | `make prod-rollback` or a forward fix; re-run the same tag only for a transient cause       |
+| Runner disconnect or cancelled run                             | The VPS release finishes under its lock                                         | Re-run later: already current, refused while locked, or retried                             |
+| Sweep request                                                  | The release is verified                                                         | Re-run the failed jobs (only the request), or `gh workflow run` with the same reason        |
+
+Nothing is rolled back automatically. A re-run of the deploy job needs a new
+approval and never moves a tag. Once a release is verified, re-running the run
+is a no-op that continues to the sweep, and `backlog-sweep.yml` records a
+repeated reason once. A release tag is never moved, deleted or recreated; a
+code fix is a new commit with a new patch release.
+
+### One-time owner setup
+
+Owner-operated after the ID-42 implementation merges. The first release made
+this way (the one carrying ID-19) supplies the evidence that moves ID-42 to
+`Done`; see its section in `docs/acceptance-criteria.md`.
+
+1. **Deploy key.** On the workstation, generate a dedicated key:
+   `ssh-keygen -t ed25519 -N '' -C rank-vote-release -f rank-vote-release`. The
+   private key goes only into the Environment secret; delete the local copy
+   afterwards.
+2. **Wrapper.** On the VPS, install the reviewed file from the merged commit
+   without changing the checkout, and reinstall it whenever
+   `deploy/rank-vote-release` changes:
+
+   ```bash
+   cd /opt/apps/rank-vote && git fetch origin main
+   git show <merged-full-sha>:deploy/rank-vote-release > /root/rank-vote-release.new
+   install -o root -g root -m 0755 /root/rank-vote-release.new /usr/local/sbin/rank-vote-release
+   rm /root/rank-vote-release.new
+   ```
+
+3. **Forced command.** Append the public key to `/root/.ssh/authorized_keys`:
+
+   ```text
+   restrict,command="/usr/local/sbin/rank-vote-release" ssh-ed25519 AAAA... rank-vote-release
+   ```
+
+   Then confirm that it gives no shell: `ssh -i rank-vote-release root@165.22.91.190`
+   and the same with `id` appended must both print `rank-vote-release: refused`
+   and exit 64.
+
+4. **Pinned host key.** Take the line from `ssh-keyscan -t ed25519 165.22.91.190`
+   and check its fingerprint against `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`
+   on the VPS; a scan alone trusts whatever answered.
+5. **Environment `production`** (Settings → Environments): the owner as required
+   reviewer; **Prevent self-review** off, because the owner both tags and
+   approves; **Allow administrators to bypass** off; deployment branches and
+   tags limited to the tag rule `v*`; secret `PRODUCTION_SSH_KEY` (the private
+   key) and variable `PRODUCTION_SSH_KNOWN_HOSTS` (the verified host-key line).
+6. **Tag ruleset** (Settings → Rules → Rulesets → New tag ruleset): target
+   `v*`, enforcement active, **Restrict updates** and **Restrict deletions**,
+   no bypass.
+7. **Remove the VPS GitHub credential** once the production checkout carries
+   this implementation, at the latest after the first tagged release:
+   `gh auth logout -h github.com` on the VPS, remove any `gh`-based
+   `credential.helper` from root's Git configuration, then revoke the
+   **GitHub CLI** authorization under GitHub → Settings → Applications. A
+   logout alone does not revoke the token, and revoking signs the CLI out on
+   every device, so log in again on the workstation.
+
 ## Repository evidence and recorded runtime evidence
 
 Repository tests cover config/model rejection, exact source/CI checks, missing
@@ -384,6 +557,12 @@ volume, locking, manifest transitions, migration failure and rollback refusals.
 offline migrations, production-URL images, Caddy routes/header probes, a full
 vote and recreation/recovery. It never depends on production resources.
 `make container-smoke` continues to verify the separate local development stack.
+For tagged releases, `scripts/release.test.mjs` covers Prepare release, the
+validation before approval, the deploy job's SSH contract and the sweep request.
+The Python tests cover the unauthenticated GitHub reads, the ordering rules, the
+lock handover, the unattended release with its curated output and failure
+states, and the wrapper. `make prod-smoke` also runs the automated public
+verification against its local stack.
 
 The repository tests alone do not establish actual VPS identity/resources,
 firewall/DNS/IPv6, installed Caddy layout and existing sites, production

@@ -42,7 +42,10 @@ Verified release `v0.1.0` was deployed to `https://rankvote.avshukan.com` on
 Production uses a separate
 `docker-compose.prod.yml`, `make prod-deploy RELEASE_SHA=<full-sha>` and
 `make prod-rollback`. Follow the [operator runbook](docs/production.md) only
-from a reviewed, merged SHA with successful `checks` and `containers`. Local
+from a reviewed, merged SHA with successful `checks` and `containers`. Later
+releases are tag-triggered: the owner runs the `Prepare release` workflow,
+tags the merged release-prep commit and approves the `production` deployment,
+which then runs and verifies unattended (runbook section 9). Local
 validation uses `make prod-check` and the disposable Docker integration target
 `make prod-smoke`; these commands do not replace the local stack or perform the
 production backup work completed in #28.

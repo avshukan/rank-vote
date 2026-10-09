@@ -10,9 +10,10 @@ import tempfile
 from urllib.parse import quote
 
 from .caddy import apply_route
-from .core import (CONFIG, HOST_IP, ORIGIN, PROJECT, ROOT, VOLUME, Refused, ReleaseState,
-                   atomic_write, deployment_lock, private_path, read_config, require, validate_config,
-                   validate_sha)
+from . import unattended
+from .core import (CONFIG, HOST_IP, LOCK, ORIGIN, PROJECT, ROOT, VOLUME, Refused, ReleaseState,
+                   atomic_write, deployment_lock, inherited_lock, private_path, read_config, require,
+                   validate_config, validate_sha)
 from .probe import request, smoke, verify_poll
 from .release import deploy, rollback
 from .runtime import Runner, check_source, local_host, preflight
@@ -63,10 +64,13 @@ def public_verification(runner, sha, recreate_check=True):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["check", "config", "preflight", "provision", "deploy", "rollback", "caddy", "tag"])
+    parser.add_argument("action", choices=["check", "config", "preflight", "provision", "deploy", "rollback", "caddy",
+                                           "tag", "release"])
     parser.add_argument("--sha", default=os.environ.get("RELEASE_SHA", ""))
     parser.add_argument("--before-provision", action="store_true")
     parser.add_argument("--tag")
+    # Only the release wrapper passes this: the deployment lock it already holds.
+    parser.add_argument("--lock-fd", type=int)
     args = parser.parse_args()
     if args.action == "check":
         dry_run(Path(__file__).resolve().parents[2])
@@ -80,7 +84,11 @@ def main():
             check_source(runner, validate_sha(args.sha or runner.text(["git", "rev-parse", "HEAD"])))
             apply_route(runner)
         return
-    with deployment_lock("/run/lock/rank-vote-prod.lock"):
+    if args.action == "release":
+        # Tag-triggered and non-interactive (ID-42); see unattended.py.
+        with inherited_lock(args.lock_fd) if args.lock_fd is not None else deployment_lock(LOCK):
+            sys.exit(unattended.release(runner, args.tag or "", args.sha, ROOT / "deploy-state"))
+    with deployment_lock(LOCK):
         if args.action == "config":
             check_source(runner, validate_sha(args.sha or runner.text(["git", "rev-parse", "HEAD"])))
             preflight(runner, provisioned=False)
