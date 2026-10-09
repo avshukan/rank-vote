@@ -1,0 +1,90 @@
+# Release: a pushed `v*` tag is the owner's release intent (ID-42). The first
+# job validates the tag and its exact commit without any secret; only then does
+# the deploy job wait for the one `production` approval, connect to the VPS with
+# the restricted deploy key and run the unattended release there. A verified
+# release then requests a backlog sweep. Merges to `main` never deploy, and a
+# tag push alone neither deploys nor requests a sweep. Deterministic, no LLM:
+# the logic and its tests live in scripts/release.mjs and scripts/production/.
+# See docs/production.md (Tagged releases).
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions: {}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read # the exact commit's ci.yml push run and its jobs
+      contents: read # the tag, the commit, the comparison with main and CHANGELOG.md
+      pull-requests: read # the merged release-prep pull request
+    outputs:
+      tag: ${{ steps.validate.outputs.tag }}
+      sha: ${{ steps.validate.outputs.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: validate
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { validate } = await import(`${process.env.GITHUB_WORKSPACE}/scripts/release.mjs`);
+            await validate({ github, context, core });
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    # The only job that references the Environment: its approval is the one
+    # human step, and its secret exists for no other job.
+    environment: production
+    # Releases queue and never cancel one another; the deployment lock on the
+    # VPS stays the final guard.
+    concurrency:
+      group: production-release
+      cancel-in-progress: false
+      queue: max
+    permissions:
+      contents: read # check out the script
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          RELEASE_SHA: ${{ needs.validate.outputs.sha }}
+          PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+          PRODUCTION_SSH_KNOWN_HOSTS: ${{ vars.PRODUCTION_SSH_KNOWN_HOSTS }}
+        with:
+          script: |
+            const { releaseOnVps } = await import(`${process.env.GITHUB_WORKSPACE}/scripts/release.mjs`);
+            await releaseOnVps({ core });
+
+  sweep:
+    # Only after a verified release, the already-current case included. A
+    # failure here leaves the release verified; re-running the failed jobs
+    # repeats only this request, without approval or deployment.
+    needs: [validate, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write # dispatch backlog-sweep.yml
+      contents: read # check out the script
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          RELEASE_SHA: ${{ needs.validate.outputs.sha }}
+        with:
+          script: |
+            const { requestSweep } = await import(`${process.env.GITHUB_WORKSPACE}/scripts/release.mjs`);
+            await requestSweep({ github, context, core });

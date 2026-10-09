@@ -1,5 +1,6 @@
 """Subprocess boundary, read-only host checks, and exact source verification."""
 
+from http.client import HTTPException
 import json
 import os
 from pathlib import Path
@@ -7,9 +8,43 @@ import re
 import shutil
 import socket
 import subprocess
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
-from .core import (CONFIG, HOST_IP, ORIGIN, PROJECT, ROOT, VOLUME, Refused,
+from .core import (CONFIG, HOST_IP, ORIGIN, PROJECT, ROOT, VOLUME, CommandFailed, Refused,
                    redact, require, validate_ci, validate_model, validate_sha)
+
+GITHUB_API = "https://api.github.com/repos/avshukan/rank-vote/"
+
+
+def github_json(path, opener=urlopen):
+    """An unauthenticated read of the public repository's REST API.
+
+    The VPS holds no GitHub credential. Every failure refuses: network or TLS
+    errors, any status but 200, a redirect, the rate limit and malformed JSON.
+    """
+    url = GITHUB_API + path
+    endpoint = path.split("?")[0]
+    request = Request(url, headers={"Accept": "application/vnd.github+json",
+                                    "X-GitHub-Api-Version": "2022-11-28",
+                                    "User-Agent": "rank-vote-production"})
+    try:
+        # Default CA/hostname validation; never disable TLS checks.
+        with opener(request, timeout=20) as response:
+            require(response.status == 200 and response.geturl() == url,
+                    f"GitHub API {endpoint} answered unexpectedly; refusing")
+            body = response.read()
+    except HTTPError as error:
+        limited = error.code == 429 or (error.code == 403 and
+                                        (error.headers or {}).get("x-ratelimit-remaining") == "0")
+        raise Refused(f"GitHub API rate limit reached for this host ({endpoint}); retry after it resets"
+                      if limited else f"GitHub API {endpoint} returned HTTP {error.code}") from None
+    except (HTTPException, OSError, ValueError):  # URLError and TLS errors are OSError
+        raise Refused(f"GitHub API {endpoint} could not be read (network or TLS)") from None
+    try:
+        return json.loads(body)
+    except ValueError:
+        raise Refused(f"GitHub API {endpoint} returned malformed JSON") from None
 
 
 class Runner:
@@ -20,7 +55,7 @@ class Runner:
         # Do not inherit COMPOSE_*, build args, or production secrets into builds.
         self.environment = {key: value for key, value in os.environ.items() if key in
                             {"PATH", "HOME", "DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_CONFIG",
-                             "SSH_AUTH_SOCK", "GH_TOKEN", "GITHUB_TOKEN", "LANG", "TMPDIR"}}
+                             "SSH_AUTH_SOCK", "LANG", "TMPDIR"}}
 
     def run(self, args, extra_env=None, input_text=None, allow_failure=False, sensitive=False):
         result = subprocess.run(args, cwd=self.root, input=input_text, text=True,
@@ -31,8 +66,11 @@ class Runner:
             # before exposing diagnostics; argv never carries credentials.
             detail = ("Output withheld: command processed an independently managed secret-bearing configuration"
                       if sensitive else redact(result.stdout + result.stderr, self.config)[-12000:])
-            raise Refused(f"{args[0]} failed (exit {result.returncode}):\n{detail}")
+            raise CommandFailed(args[0], result.returncode, detail)
         return result
+
+    def github(self, path):
+        return github_json(path)
 
     def text(self, args, **kwargs):
         return self.run(args, **kwargs).stdout.strip()
@@ -64,16 +102,18 @@ def check_source(runner, sha):
     require(not runner.text(["git", "status", "--porcelain", "--untracked-files=all"]),
             "Production checkout must be clean (including untracked files)")
     runner.run(["git", "merge-base", "--is-ancestor", sha, "origin/main"])
-    prefix = "repos/avshukan/rank-vote/actions"
-    runs = runner.json(["gh", "api", f"{prefix}/workflows/ci.yml/runs?head_sha={sha}&branch=main&event=push&per_page=100"])
-    require(runs["workflow_runs"], "No main CI push run for RELEASE_SHA")
-    # Latest attempt/run must succeed, not an older green run followed by red.
-    run = max(runs["workflow_runs"], key=lambda item: item["id"])
-    jobs = runner.json(["gh", "api", f"{prefix}/runs/{run['id']}/jobs?per_page=100"])
-    validate_ci(run, jobs["jobs"], sha)
-    rules = runner.json(["gh", "api", "repos/avshukan/rank-vote/rules/branches/main"])
-    required = {check["context"] for rule in rules if rule["type"] == "required_status_checks"
-                for check in rule["parameters"]["required_status_checks"]}
+    try:
+        runs = runner.github(f"actions/workflows/ci.yml/runs?head_sha={sha}&branch=main&event=push&per_page=100")
+        require(runs["workflow_runs"], "No main CI push run for RELEASE_SHA")
+        # Latest attempt/run must succeed, not an older green run followed by red.
+        run = max(runs["workflow_runs"], key=lambda item: item["id"])
+        jobs = runner.github(f"actions/runs/{int(run['id'])}/jobs?per_page=100")
+        validate_ci(run, jobs["jobs"], sha)
+        rules = runner.github("rules/branches/main")
+        required = {check["context"] for rule in rules if rule["type"] == "required_status_checks"
+                    for check in rule["parameters"]["required_status_checks"]}
+    except (KeyError, TypeError, AttributeError, ValueError):
+        raise Refused("GitHub API response for the CI or ruleset check has an unexpected shape") from None
     require({"checks", "containers"} <= required, "Owner must require both checks and containers on main")
 
 

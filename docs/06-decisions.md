@@ -243,7 +243,8 @@ Rejected for the first release:
 
 Status:
 
-- accepted for backlog ID-42; implementation pending
+- accepted; implemented by backlog ID-42. The first release through the
+  workflow, which supplies its production evidence, is pending
 
 Chosen:
 

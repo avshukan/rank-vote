@@ -148,15 +148,26 @@ Examples:
   reopen the closed tracker and record the periodic reason. Once one has, revert
   to weekly (`17 6 * * 1`) and 60 days, and delete this note. The decision and
   its criteria stay weekly and 60 days
-- **CD does not exist yet.** Images are verified but are not pushed, deployed or
-  released on merge. The owner-operated first release and the #28 manual offsite
-  backup/restore drill have completed, and #32 remains the next backup stage
+- **Tagged releases (ID-42).** A merge never deploys. Prepare release
+  (`.github/workflows/prepare-release.yml`, run by the owner with a version)
+  opens one release-prep pull request that adds the `CHANGELOG.md` entry; it
+  never tags or deploys. After the owner merges it, the owner pushes an
+  annotated `vX.Y.Z` tag on exactly its merge commit. That starts Release
+  (`.github/workflows/release.yml`): a job without secrets validates the tag,
+  the merge commit and its successful `main` push CI run; the deploy job then
+  waits for the owner's approval in the `production` Environment and runs the
+  unattended release on the VPS through a restricted SSH key; and only after
+  the release is verified, a separate job requests a backlog sweep through the
+  same `workflow_dispatch` entry point with the release tag and full SHA as the
+  reason. A tag push itself never requests a sweep. Neither workflow is a
+  required check; `docs/production.md` (section 9) has the procedure and the
+  owner's one-time setup
 - each merge should be production-ready
-- releases are tagged manually; `v0.1.0` was the first
-- a future release workflow requests a backlog sweep through the same
-  `workflow_dispatch` entry point, with the release tag and full SHA as the
-  reason, and only after a successful deployment and production verification.
-  A tag push itself never requests a sweep
+- releases are tagged by the owner; `v0.1.0` was the first, tagged after a
+  manual deployment
+
+The owner-operated first release and the #28 manual offsite backup/restore
+drill have completed, and #32 remains the next backup stage.
 
 For the first production deployment (#29), the infrastructure/tooling PR was
 reviewed and merged before the shared VPS was changed, and deployment used an
@@ -168,6 +179,17 @@ completed after the verified deployment without waiting for that record.
 ---
 
 ## Release Flow
+
+1. Run **Prepare release** with the next version; it opens the release-prep pull
+   request with the drafted `CHANGELOG.md` entry
+2. Review and edit the entry, then merge the pull request; feature pull requests
+   never edit the changelog
+3. Push the annotated tag on exactly that merge commit, after its `main` push CI
+   run passed; changes merged later need a new preparation
+4. Approve the `production` deployment of the **Release** run; deployment,
+   verification and the sweep request follow without operator input
+5. A failed release is re-run with the same tag only for the same SHA; a code fix
+   is a new patch release. Tags are never moved
 
 ### Versioning
 

@@ -95,34 +95,46 @@ def internal_verify(runner, sha, images, migration=True):
     network_boundary(runner, caddy_container(runner))
 
 
-def deploy(runner, state, sha, verify_public):
+def no_progress(stage):
+    """The manual path reports progress through its own prints."""
+
+
+def deploy(runner, state, sha, verify_public, release_tag="", progress=no_progress):
+    # A tag-triggered release names its tag up front, so promotion records it in
+    # the same atomic write; the manual path attaches a tag later with `tag`.
+    progress("images")
     images = prepare_images(runner, sha)
     verify_image_ids(runner, sha, images)
     state.prepare()
     print("Images passed; stopping web/API before migration")
+    progress("stopping")
     runner.compose(sha, ["stop", "web", "api"])
     # --no-recreate leaves an existing PostgreSQL container (and its credentials)
     # alone. On first deploy, the explicitly provisioned external volume is used.
     runner.compose(sha, ["up", "--detach", "--no-deps", "--no-recreate", "--wait",
                          "--wait-timeout", "180", "postgres"])
     print("Running migrate once; failure leaves web/API stopped")
+    progress("migrating")
     result = runner.compose(sha, ["up", "--no-deps", "--no-build", "--pull", "never", "--force-recreate",
                                  "--abort-on-container-exit", "--exit-code-from", "migrate", "migrate"],
                             allow_failure=True)
     log = state.directory / ("migration-" + sha + "-" + timestamp().replace(":", "") + ".log")
     atomic_write(log, redact(result.stdout + result.stderr, runner.config))
     require(result.returncode == 0, f"Migration failed. Application remains stopped; PostgreSQL remains running. Diagnostics: {log}")
+    progress("starting")
     start_application(runner, sha)
     internal_verify(runner, sha, images)
+    progress("verifying")
     poll_id = verify_public(sha)
     internal_verify(runner, sha, images)
     candidate = {"RELEASE_SHA": sha, "PRODUCTION_URL": ORIGIN, "DEPLOYED_AT": timestamp(),
-                 "RELEASE_TAG": "", "SMOKE_POLL_ID": poll_id}
+                 "RELEASE_TAG": release_tag, "SMOKE_POLL_ID": poll_id}
     for service, (tag, identity) in images.items():
         candidate[f"{service.upper()}_IMAGE"] = tag
         candidate[f"{service.upper()}_IMAGE_ID"] = identity
     state.promote(candidate)
     print(f"Release {sha} passed smoke and is current; smoke poll {poll_id}")
+    return candidate
 
 
 def rollback(runner, state, confirm, verify_public):

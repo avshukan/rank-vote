@@ -2072,39 +2072,39 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
 
 ### Release preparation
 
-- [ ] `.github/workflows/prepare-release.yml` runs only on `workflow_dispatch`
+- [x] `.github/workflows/prepare-release.yml` runs only on `workflow_dispatch`
       with one required `version` input. Its logic lives in a `scripts/` module
       with `node:test` tests that `pnpm test` runs; the YAML only invokes it
-- [ ] `version` must match `^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$`. It is
+- [x] `version` must match `^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$`. It is
       read from the event payload and never interpolated into a shell command or
       script source
-- [ ] It refuses and changes nothing when the tag already exists, `CHANGELOG.md`
+- [x] It refuses and changes nothing when the tag already exists, `CHANGELOG.md`
       on `main` already has a heading for the version, the version is not
       greater than the highest existing `v*` tag, or the release-prep branch or
       a pull request for the version already exists. The report links an
       existing pull request or names the recovery step, so starting the same
       preparation twice never opens a second pull request
-- [ ] The previous release is the highest existing `v*` tag. Above the top entry
+- [x] The previous release is the highest existing `v*` tag. Above the top entry
       of `CHANGELOG.md` it adds `## vX.Y.Z — YYYY-MM-DD`, dated with the run's
       UTC date, and a summary drafted from the subjects of the first-parent
       commits in `<previous tag>..main`. Nothing else changes, and no
       `Unreleased` section is created; feature pull requests do not edit the
       changelog
-- [ ] It opens one ordinary pull request from `chore/release-vX.Y.Z` with that
+- [x] It opens one ordinary pull request from `chore/release-vX.Y.Z` with that
       one commit. The description asks the owner to review and edit the entry
       and gives the tag commands for after the merge. If opening the pull
       request fails, it deletes the branch it created
-- [ ] `permissions: {}` at the top, and the job has only `contents: write` and
+- [x] `permissions: {}` at the top, and the job has only `contents: write` and
       `pull-requests: write`; actions are pinned by SHA and checkout does not
       persist credentials. It uses no Environment or secret and never creates a
       tag, dispatches a workflow or touches production
-- [ ] Runs are serialized in one concurrency group that queues runs instead of
+- [x] Runs are serialized in one concurrency group that queues runs instead of
       cancelling them. It is not a required check; CI on its pull requests
       starts once the owner approves the workflow runs, as for backlog promotion
 
 ### Release tag contract
 
-- [ ] A release tag is an annotated tag matching the version pattern, created by
+- [x] A release tag is an annotated tag matching the version pattern, created by
       the owner on the merge commit of the reviewed release-prep pull request
       for that version, never on a later `main` commit. Changes merged after the
       preparation need a new preparation before they can be released
@@ -2112,11 +2112,11 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
       deletions, and the same tag always identifies the same SHA. A release that
       fails in its code is never retagged; the fix ships as a new commit with a
       new patch release
-- [ ] A tag push alone never changes production and never requests a sweep
+- [x] A tag push alone never changes production and never requests a sweep
 
 ### Validation before approval
 
-- [ ] The release workflow runs only on pushes of `v*` tags. Its first job runs
+- [x] The release workflow runs only on pushes of `v*` tags. Its first job runs
       on a GitHub-hosted runner with `contents: read`, `actions: read` and
       `pull-requests: read`, without an Environment or secret, and checks: the
       version pattern; an annotated tag whose commit is `GITHUB_SHA`; that this
@@ -2127,11 +2127,11 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
       `validate_ci`); that the version is the highest `v*` tag; and that the top
       release heading of `CHANGELOG.md` at that commit is the tag, with a valid
       date and a non-empty entry
-- [ ] The CI proof is that existing push run: the workflow neither reruns CI nor
+- [x] The CI proof is that existing push run: the workflow neither reruns CI nor
       relies on the current state of `main`. A commit whose push run failed, or
       was cancelled by a later merge, is refused; the documented recovery is to
       re-run that CI run or to prepare the release again
-- [ ] If validation fails, no approval is requested and nothing else runs.
+- [x] If validation fails, no approval is requested and nothing else runs.
       Before approval no job holds the SSH key or any production secret,
       connects to the VPS, runs a VPS command or requests a sweep
 
@@ -2164,9 +2164,9 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
       checkout at the SHA and start the unattended release. A stolen key can
       therefore release only an owner-created tag on a reviewed `main` commit
       that passes every check below
-- [ ] The release on the VPS does not depend on the SSH session: a runner
+- [x] The release on the VPS does not depend on the SSH session: a runner
       disconnect or a cancelled workflow run does not interrupt it
-- [ ] The Actions log receives only a curated, secret-free status: no host audit
+- [x] The Actions log receives only a curated, secret-free status: no host audit
       (listening sockets, firewall rules, other projects' containers, addresses,
       resources) and no raw command output. Full diagnostics stay in root-only
       `deploy-state`
@@ -2178,58 +2178,58 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
 
 ### Unattended deployment
 
-- [ ] One new non-interactive action of the production CLI reuses `local_host`,
+- [x] One new non-interactive action of the production CLI reuses `local_host`,
       `read_config`, `check_source`, `Runner.model`, `preflight` and
       `release.deploy`; there is no second deployment implementation. It reads
       no input and asks none of `HOST VERIFIED`, `PROXY VERIFIED` or
       `PUBLIC VERIFIED`
-- [ ] `make prod-deploy`, `make prod-rollback` and the `tag` command keep their
+- [x] `make prod-deploy`, `make prod-rollback` and the `tag` command keep their
       confirmations and, apart from the shared `check_source` change, their
       behaviour. They remain the path for the first deployment; host, firewall,
       Caddy, proxy-trust and other infrastructure changes; and break-glass
       recovery, each with the operator checks of `docs/production.md`
-- [ ] It refuses when no verified `current.env` exists; a first deployment stays
+- [x] It refuses when no verified `current.env` exists; a first deployment stays
       manual
-- [ ] Ordering: C and T are the `RELEASE_SHA` and `RELEASE_TAG` of
+- [x] Ordering: C and T are the `RELEASE_SHA` and `RELEASE_TAG` of
       `current.env`, X is the tagged commit and V its version. X must be an
       ancestor of `origin/main` or equal to it, and may be behind its tip
-- [ ] X = C with V = T is the already-current release below. X = C with any
+- [x] X = C with V = T is the already-current release below. X = C with any
       other T, including none, is refused: one SHA never gets a second release
       tag
-- [ ] When X ≠ C, C must be an ancestor of X, or the release is refused; this
+- [x] When X ≠ C, C must be an ancestor of X, or the release is refused; this
       refuses a downgrade (X an ancestor of C) and divergent history. When T is
       set, V must also be greater than T. Going back to an earlier release stays
       `make prod-rollback` with its `COMPATIBLE` confirmation
-- [ ] Already current: the same tag and SHA as `current.env` deploys nothing. It
+- [x] Already current: the same tag and SHA as `current.env` deploys nothing. It
       builds, stops, prepares, migrates and writes nothing, and `current.env`
       and `previous.env` stay byte-identical. The run reports the release as
       already current and continues to the sweep, so a re-run after a later step
       failed never redeploys
-- [ ] A retry of the same tag and SHA after a failed attempt reuses the images
+- [x] A retry of the same tag and SHA after a failed attempt reuses the images
       built for that SHA and writes `previous.env` only from the last verified
       `current.env`
 
 ### Verified release
 
-- [ ] Before any change the release passes the host, config, exact-SHA CI and
+- [x] Before any change the release passes the host, config, exact-SHA CI and
       ruleset, Compose model and `preflight` checks (versions, disk, memory, DNS,
       the Caddy container and the network boundary), the deployment lock and the
       ordering rules above
-- [ ] The deployment keeps the existing sequence: images built and checked
+- [x] The deployment keeps the existing sequence: images built and checked
       before downtime, `previous.env` prepared, web and API stopped, PostgreSQL
       left running, one migration, API then web started healthy, and
       `internal_verify`
-- [ ] Public verification goes through the production origin with standard TLS
+- [x] Public verification goes through the production origin with standard TLS
       verification: `smoke` (health, the SPA, the production API URL in the
       bundle, poll creation, a full ballot, the 2/1/0 Borda result and the
       direct results route), then a read of the previous release's
       `SMOKE_POLL_ID`, which must still return its title, options and at least
       one ballot. Its exact ballot count is not checked, because that poll ID is
       public. `internal_verify` then runs again
-- [ ] The release is verified exactly when `current.env` is promoted, in one
+- [x] The release is verified exactly when `current.env` is promoted, in one
       atomic write that already contains `RELEASE_TAG`; no later step attaches
       the tag
-- [ ] An ordinary release does not run the first-deployment operator checks:
+- [x] An ordinary release does not run the first-deployment operator checks:
       firewall, cloud-firewall and IPv6 review, the proxy and second-peer
       probes, external port probes, the other Caddy sites, the browser check,
       the recreation and recovery drill, or a reboot. Without a probe there is
@@ -2237,7 +2237,7 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
 
 ### Failure and rerun
 
-- [ ] Each failure leaves the stated state, and the run summary names the next
+- [x] Each failure leaves the stated state, and the run summary names the next
       step:
       validation failure, rejection or approval timeout: nothing changed;
       SSH or host-key failure, or a refusal on the VPS before any change:
@@ -2250,26 +2250,26 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
       runner disconnect or cancelled run: the VPS run finishes under its lock,
       and a re-run reports it as already current, is refused while the lock is
       held, or retries the same tag and SHA
-- [ ] Nothing is rolled back automatically, neither the database nor the
+- [x] Nothing is rolled back automatically, neither the database nor the
       application. Recovery is owner-operated: `make prod-rollback` with its
       `COMPATIBLE` confirmation, or a forward fix released as a new patch tag
-- [ ] A re-run never moves a tag and never redeploys a release that
+- [x] A re-run never moves a tag and never redeploys a release that
       `current.env` already records
 
 ### Backlog sweep
 
-- [ ] Only after the deploy job succeeds, the already-current case included, a
+- [x] Only after the deploy job succeeds, the already-current case included, a
       separate job without an Environment and with `actions: write` dispatches
       `backlog-sweep.yml` on `main` with the reason
       `release vX.Y.Z at <full-sha>`. There is no other sweep mechanism
-- [ ] A failed sweep request leaves the release verified and fails only that
+- [x] A failed sweep request leaves the release verified and fails only that
       job. Re-running the failed jobs repeats only the request, without approval
       or deployment, and the existing request script records a repeated reason
       once
 
 ### Concurrency
 
-- [ ] The deploy job runs in the concurrency group `production-release` with
+- [x] The deploy job runs in the concurrency group `production-release` with
       `cancel-in-progress: false` and `queue: max`: no release run cancels
       another, each waits for its own approval, and the deployment lock on the
       VPS remains the final guard. An older tag approved after a newer one is
@@ -2291,14 +2291,14 @@ After the implementation PR merges, the owner:
 
 Repository and CI:
 
-- [ ] Python unit tests with a fake runner cover the unattended action: no input
+- [x] Python unit tests with a fake runner cover the unattended action: no input
       is read; every ordering refusal; a tag that does not point to the SHA; the
       already-current case, which leaves both manifests untouched; promotion
       with the tag; failures that leave `current.env` unchanged; curated output
       without host audit; and the unauthenticated `check_source` reads,
       including their fail-closed errors
-- [ ] The wrapper's input validation is tested
-- [ ] `node:test` covers `Prepare release` (version validation, every refusal, a
+- [x] The wrapper's input validation is tested
+- [x] `node:test` covers `Prepare release` (version validation, every refusal, a
       second start, the changelog entry and its summary) and the validation
       before approval (tag, release-prep merge commit, CI result, changelog)
 - [ ] `make verify` passes and CI is green
@@ -2324,13 +2324,13 @@ Production evidence, required before `Done`:
 
 ### Documentation
 
-- [ ] `docs/production.md`: the tagged release, the owner production setup,
+- [x] `docs/production.md`: the tagged release, the owner production setup,
       recovery from each failure, the manual path as fallback, and prerequisites
       without `gh`
-- [ ] `docs/07-process.md`: CI/CD and Release Flow describe the release workflow
-- [ ] `docs/06-decisions.md`: the "Tag-triggered releases" ADR no longer says
+- [x] `docs/07-process.md`: CI/CD and Release Flow describe the release workflow
+- [x] `docs/06-decisions.md`: the "Tag-triggered releases" ADR no longer says
       implementation pending
-- [ ] `AGENTS.md` (production tooling) and `README.md` name the release workflow
+- [x] `AGENTS.md` (production tooling) and `README.md` name the release workflow
 - [ ] ID-42 moves to `Done` in the record PR
 
 ### Out of Scope (tracked separately)
