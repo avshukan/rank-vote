@@ -253,6 +253,11 @@ Chosen:
   `CHANGELOG.md` entry with a summary of the merged changes; the owner reviews
   and merges it, then pushes an annotated `vX.Y.Z` tag on exactly that merge
   commit. Merging to `main` never deploys
+- a preparation is bound to the exact `main` commit it drafted from: the entry
+  records it, and validation requires the release-prep merge commit to sit
+  directly on it with only the changelog changed. Anything merged in between
+  needs Prepare release again; the release still deploys exactly the tagged
+  commit
 - release tags are immutable, enforced by a `v*` tag ruleset. A failed release
   may be retried only with the same tag on the same SHA; a code change needs a
   new patch release
@@ -276,7 +281,9 @@ Chosen:
 - after a verified deployment, a separate job requests a backlog sweep through
   `backlog-sweep.yml` with the release tag and full SHA
 - the VPS holds no GitHub credential: `check_source` reads the same public API
-  endpoints without authentication
+  endpoints without authentication. As a transition, the first tagged release
+  may still run while the old GitHub CLI login is on the VPS; it is removed
+  and revoked immediately after that release
 
 Reason:
 
@@ -309,8 +316,8 @@ Consequences:
   released until that run is re-run; the cancellation policy of `ci.yml` is
   unchanged
 - the owner sets up the Environment, the deploy key, the wrapper, the pinned
-  host key and the tag ruleset once, and revokes the GitHub CLI credential on
-  the VPS once the implementation no longer needs it
+  host key and the tag ruleset once, and removes and revokes the GitHub CLI
+  credential on the VPS immediately after the first tagged release
 - GitHub Actions logs are public, so a release reports only a curated status;
   diagnostics stay in root-only `deploy-state`
 - rollback stays owner-operated; neither the database nor the application is

@@ -214,7 +214,8 @@ changes. A tag-triggered release (ID-42) verifies deterministically instead:
 preflight, image checks, internal verification, the public smoke flow and a
 read of the previous release's smoke poll. Its tests use no VPS, network or
 credential. `scripts/release.test.mjs` drives Prepare release, the validation
-before approval, the deploy job's SSH contract and the sweep request against an
+before approval (including a release-prep pull request merged after `main`
+moved), the deploy job's SSH contract and the sweep request against an
 in-memory GitHub API. It also checks that only the approved deploy job holds
 the `production` Environment and its secret. The Python tests cover the
 unauthenticated GitHub reads with their fail-closed errors, the release

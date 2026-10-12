@@ -2018,7 +2018,8 @@ existing production tooling, verifies it and requests a backlog sweep. Merging
 to `main` never deploys. The implementation PR merges first and changes no
 production state. The owner then performs the production setup below, and
 ID-42 moves to `Done` in a small record PR once the first release made this way
-(the one carrying ID-19) has supplied the production evidence.
+(the one carrying ID-19) has supplied the production evidence, including the
+removal of the VPS GitHub credential that follows that release.
 
 ### Facts verified during readiness
 
@@ -2087,13 +2088,16 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
 - [x] The previous release is the highest existing `v*` tag. Above the top entry
       of `CHANGELOG.md` it adds `## vX.Y.Z — YYYY-MM-DD`, dated with the run's
       UTC date, and a summary drafted from the subjects of the first-parent
-      commits in `<previous tag>..main`. Nothing else changes, and no
-      `Unreleased` section is created; feature pull requests do not edit the
-      changelog
+      commits in `<previous tag>..main`. The entry records the exact `main`
+      commit it was drafted from (`<!-- release-prep base: <sha> -->`, invisible
+      when rendered). Nothing else changes, and no `Unreleased` section is
+      created; feature pull requests do not edit the changelog
 - [x] It opens one ordinary pull request from `chore/release-vX.Y.Z` with that
-      one commit. The description asks the owner to review and edit the entry
-      and gives the tag commands for after the merge. If opening the pull
-      request fails, it deletes the branch it created
+      one commit. The description asks the owner to review and edit the entry,
+      names the prepared `main` commit, says to merge only while `main` is still
+      at it, and gives tag commands that refuse to tag a merge commit whose
+      parent is not that commit. If opening the pull request fails, it deletes
+      the branch it created
 - [x] `permissions: {}` at the top, and the job has only `contents: write` and
       `pull-requests: write`; actions are pinned by SHA and checkout does not
       persist credentials. It uses no Environment or secret and never creates a
@@ -2106,8 +2110,10 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
 
 - [x] A release tag is an annotated tag matching the version pattern, created by
       the owner on the merge commit of the reviewed release-prep pull request
-      for that version, never on a later `main` commit. Changes merged after the
-      preparation need a new preparation before they can be released
+      for that version, never on a later `main` commit. That pull request merges
+      directly onto the `main` commit it was prepared from and changes only
+      `CHANGELOG.md`; changes merged after the preparation, before or after its
+      merge, need a new preparation before they can be released
 - [ ] Release tags are immutable: a `v*` tag ruleset blocks updates and
       deletions, and the same tag always identifies the same SHA. A release that
       fails in its code is never retagged; the fix ships as a new commit with a
@@ -2124,9 +2130,18 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
       request into `main` and is reachable from `origin/main`; that the latest
       `ci.yml` `push` run on `main` for that exact SHA concluded `success`, with
       `checks` and `containers` successful on that SHA (the rules of
-      `validate_ci`); that the version is the highest `v*` tag; and that the top
+      `validate_ci`); that the version is the highest `v*` tag; that the top
       release heading of `CHANGELOG.md` at that commit is the tag, with a valid
-      date and a non-empty entry
+      date and a non-empty entry; and that this entry records exactly one
+      prepared `main` commit, which is the merge commit's first parent, with
+      only `CHANGELOG.md` changed between the two
+- [x] Stale preparation: when another pull request merged after Prepare release
+      ran and the release-prep pull request then merged on top of it, the merge
+      commit's first parent is not the recorded commit, so validation fails
+      before approval and the recovery is to run Prepare release again. A
+      regression test reproduces that race, and the check uses only the tagged
+      commit's tree and Git history, not the pull request description or other
+      mutable state
 - [x] The CI proof is that existing push run: the workflow neither reruns CI nor
       relies on the current state of `main`. A commit whose push run failed, or
       was cancelled by a later merge, is refused; the documented recovery is to
@@ -2170,11 +2185,17 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
       (listening sockets, firewall rules, other projects' containers, addresses,
       resources) and no raw command output. Full diagnostics stay in root-only
       `deploy-state`
-- [ ] No production application or database secret is stored in GitHub, and the
-      VPS holds no GitHub credential. `check_source` reads the same three public
-      API endpoints over HTTPS, with standard TLS verification and without
-      authentication, and fails closed on any error, unexpected status, rate
-      limit or malformed response. `gh` is no longer a production prerequisite
+- [x] No production application or database secret is stored in GitHub, and
+      the release path needs no GitHub credential on the VPS. `check_source`
+      reads the same three public API endpoints over HTTPS, with standard TLS
+      verification and without authentication, and fails closed on any error,
+      unexpected status, rate limit or malformed response; the wrapper fetches
+      with no credential helper. `gh` is no longer a production prerequisite
+- [ ] Final state: the VPS holds no GitHub credential. As a transition, the first
+      tagged release may run while the old GitHub CLI credential is still on the
+      VPS; the owner removes and revokes it immediately after that release
+      succeeds, and every later tagged release runs with no GitHub credential on
+      the VPS
 
 ### Unattended deployment
 
@@ -2283,9 +2304,11 @@ After the implementation PR merges, the owner:
       the deploy key and the pinned host key in it
 - [ ] installs the wrapper and the restricted `authorized_keys` entry on the VPS
 - [ ] adds the `v*` tag ruleset that blocks updates and deletions
-- [ ] removes the GitHub CLI credential from the VPS and revokes it on GitHub,
-      once the merged implementation no longer needs it. Revoking the GitHub CLI
-      authorization signs the CLI out on the owner's other devices as well
+- [ ] immediately after the first successful tagged release, removes the
+      GitHub CLI credential from the VPS (the CLI login and any `gh` credential
+      helper) and revokes the GitHub CLI authorization on GitHub, which signs the
+      CLI out on the owner's other devices as well. The first tagged release may
+      run before this step; no later one does
 
 ### Tests
 
@@ -2299,9 +2322,13 @@ Repository and CI:
       including their fail-closed errors
 - [x] The wrapper's input validation is tested
 - [x] `node:test` covers `Prepare release` (version validation, every refusal, a
-      second start, the changelog entry and its summary) and the validation
-      before approval (tag, release-prep merge commit, CI result, changelog)
-- [x] `make verify` passes and CI is green
+      second start, the changelog entry, its summary and its recorded base) and
+      the validation before approval (tag, release-prep merge commit and its
+      base, CI result, changelog)
+- [ ] `make verify` passes locally, run by the owner: its API e2e step resets
+      the local test database, which Prisma refuses to let an agent do without
+      the owner's consent
+- [x] CI is green on the implementation PR
 
 Local and isolated:
 
@@ -2313,14 +2340,21 @@ Production evidence, required before `Done`:
 
 - [ ] The first release made this way, the one carrying ID-19, is prepared by
       `Prepare release`, tagged by the owner on the release-prep merge commit,
-      validated, approved once, and deployed and verified without operator input
+      validated, approved once, and deployed and verified without operator input.
+      The record states whether the old GitHub CLI credential was still on the
+      VPS during that release, as the transition allows
 - [ ] The record PR names the workflow runs, the tag, the full SHA, the approval
       time, `current.env` with its `RELEASE_TAG`, `previous.env` as the `v0.1.0`
       manifest, the new and the previous smoke poll, and the sweep request on
       the tracker
 - [ ] The owner confirms that the deploy key cannot open a shell or run another
-      command, that the Environment settings and the tag ruleset are in place,
-      and that the VPS holds no GitHub credential and the old token is revoked
+      command, and that the Environment settings and the tag ruleset are in place
+- [ ] After the first release, the owner's checks on the VPS show no GitHub
+      credential: `gh auth status` reports no login, root's Git configuration
+      has no `gh` credential helper, and `GH_TOKEN` and `GITHUB_TOKEN` are unset.
+      The GitHub CLI authorization is revoked, so the next tagged release runs
+      without any GitHub credential. ID-42 does not move to `Done` before this
+      evidence
 
 ### Documentation
 
@@ -2375,10 +2409,22 @@ Production evidence, required before `Done`:
     never on a later commit
   - no GitHub credential on the VPS: `check_source` reads public endpoints
     without authentication, and the current CLI credential is revoked during the
-    production setup, after the implementation no longer needs it
+    production setup, after the implementation no longer needs it (timing
+    changed on 2026-10-12, below)
   - the production setup above, including the `v*` tag ruleset
   - #92 tracks the manual-path `previous.env` defect; `ci.yml` keeps cancelling
     intermediate `main` push runs for now
+- Changed by the owner on 2026-10-12, in the review of the implementation PR
+  (#94):
+  - a preparation is bound to the exact `main` commit it drafted from: the
+    entry records it, the release-prep pull request must merge directly onto
+    it, and anything merged in between needs Prepare release again. A release
+    still deploys exactly the tagged commit
+  - credential timing: the first tagged release may run while the old GitHub
+    CLI credential is still on the VPS; the owner removes and revokes it
+    immediately afterwards, and every later release runs without it. The final
+    state, no GitHub credential on the VPS, is unchanged
+  - local `make verify` is run by the owner; CI being green is separate evidence
 - Settled during readiness, open to review in this PR:
   - the SSH principal is `root`, because the release tooling requires root; a
     separate account with one sudo rule would let the key do nothing less

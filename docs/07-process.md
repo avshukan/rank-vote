@@ -184,8 +184,11 @@ completed after the verified deployment without waiting for that record.
    request with the drafted `CHANGELOG.md` entry
 2. Review and edit the entry, then merge the pull request; feature pull requests
    never edit the changelog
-3. Push the annotated tag on exactly that merge commit, after its `main` push CI
-   run passed; changes merged later need a new preparation
+3. Merge it only while `main` is still at the commit it was prepared from;
+   the entry records that commit, and validation refuses a release-prep merge
+   commit that is not directly on it. Then push the annotated tag on exactly
+   that merge commit, after its `main` push CI run passed; changes merged later
+   need a new preparation
 4. Approve the `production` deployment of the **Release** run; deployment,
    verification and the sweep request follow without operator input
 5. A failed release is re-run with the same tag only for the same SHA; a code fix

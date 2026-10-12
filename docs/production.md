@@ -29,10 +29,11 @@ break-glass recovery.
 | Verified release state        | `deploy-state/current.env`, `deploy-state/previous.env`   |
 
 Ubuntu needs Python 3.9+, Git, Make, `tar`, Docker Engine 24+, Compose 2.20+,
-`ip`, `ss`, `iptables` and `ip6tables`. The VPS holds no GitHub credential:
-`check_source` reads the public repository's CI runs, their jobs and the `main`
-rules through the GitHub REST API without authentication, and the checkout
-fetches over HTTPS. Node/pnpm run inside build images; no host Node
+`ip`, `ss`, `iptables` and `ip6tables`. The production tooling needs no GitHub
+credential: `check_source` reads the public repository's CI runs, their jobs
+and the `main` rules through the GitHub REST API without authentication, and
+the checkout fetches over HTTPS. The old GitHub CLI login on the VPS is removed
+right after the first tagged release (section 9, step 7 of the setup). Node/pnpm run inside build images; no host Node
 installation is needed. Sequential builds require at least 5 GiB free Docker
 disk and 1 GiB available RAM plus swap; inspect actual headroom for the shared
 VPS before proceeding. These are refusal thresholds, not resource reservations.
@@ -373,8 +374,8 @@ This updates tag metadata without changing recorded image IDs/SHA. Then request
 a backlog sweep, naming the verified release by its tag and full deployed SHA
 (releases after v0.1.0, which predates the sweep workflow). Run it from the
 owner's workstation, where `gh` is authenticated as the owner with permission
-to run GitHub Actions workflows — not from the VPS, which holds no GitHub
-credential:
+to run GitHub Actions workflows — not from the VPS, where production needs no
+GitHub credential and none remains after the transition in section 9:
 
 ```bash
 gh workflow run backlog-sweep.yml -f reason="release <tag> at <deployed-full-sha>"
@@ -402,23 +403,31 @@ everything after that approval is automated. The logic lives in
    `docs/07-process.md`. It opens one ordinary pull request from
    `chore/release-<version>` that adds the dated `CHANGELOG.md` entry, with a
    summary drafted from the subjects of the first-parent commits since the
-   highest release tag. It never creates a tag or touches production. A second
-   run for the same version refuses and links the open pull request.
+   highest release tag. The entry records the exact `main` commit it was
+   drafted from in an HTML comment. It never creates a tag or touches
+   production. A second run for the same version refuses and links the open
+   pull request.
 2. **Review and merge.** Approve the pull request's workflow runs (the workflow
-   token opened it), edit the entry, and merge it.
+   token opened it), edit the entry, and merge it **while `main` is still at
+   the prepared commit**, changing nothing but `CHANGELOG.md`. If anything else
+   merged first, close the pull request and run **Prepare release** again: the
+   merge commit would otherwise carry changes the entry does not describe.
 3. **Tag exactly its merge commit**, once that commit's `main` push CI run has
-   passed `checks` and `containers`; the pull request description gives the
-   commands. Push one release tag at a time: GitHub creates no event when more
-   than three tags are pushed at once. Never tag a later commit; changes merged
-   after the preparation need a new **Prepare release**.
+   passed `checks` and `containers`. The pull request description gives the
+   commands; their `test` refuses to tag a merge commit whose parent is not the
+   prepared commit. Push one release tag at a time: GitHub creates no event
+   when more than three tags are pushed at once. Never tag a later commit;
+   changes merged after the preparation need a new **Prepare release**.
 4. **Validation**, in the **Release** workflow, without any secret or VPS
    access: the version pattern; an annotated tag on the event's commit; that
    this commit is the merge commit of the merged `chore/release-<version>` pull
    request and reachable from `main`; that its latest `ci.yml` push run on
    `main` succeeded, with `checks` and `containers` successful on that exact
    SHA; that the tag is the highest release tag; that the top `CHANGELOG.md`
-   entry at that commit is the tag's, dated and non-empty; and that the
-   `production` Environment exists with the protection below. A workflow that
+   entry at that commit is the tag's, dated and non-empty; that the entry's
+   recorded `main` commit is the merge commit's first parent, with only
+   `CHANGELOG.md` changed between them; and that the `production` Environment
+   exists with the protection below. A workflow that
    references a missing Environment makes GitHub create it without protection,
    so a tag pushed before the owner's setup stops here. CI is never re-run
    here. A failed validation requests no approval.
@@ -483,6 +492,7 @@ root-only `deploy-state/release-<tag>-<time>.log`.
 | Failure                                                        | State                                                                           | Next step                                                                                   |
 | -------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | Validation, rejected approval, or none within GitHub's 30 days | Nothing changed                                                                 | Fix and re-run the run, or prepare a new version                                            |
+| The release-prep pull request merged after `main` moved        | Nothing changed                                                                 | Run Prepare release again for a greater version; its entry also covers what was missed      |
 | SSH or host key                                                | Nothing changed                                                                 | Check the Environment settings, then re-run                                                 |
 | A refusal by the wrapper or the VPS before any change          | Nothing changed                                                                 | As the status line says                                                                     |
 | The deployment lock is held                                    | Nothing changed by this run                                                     | Re-run once the other operation has finished                                                |
@@ -540,13 +550,20 @@ this way (the one carrying ID-19) supplies the evidence that moves ID-42 to
 6. **Tag ruleset** (Settings → Rules → Rulesets → New tag ruleset): target
    `v*`, enforcement active, **Restrict updates** and **Restrict deletions**,
    no bypass.
-7. **Remove the VPS GitHub credential** once the production checkout carries
-   this implementation, at the latest after the first tagged release:
+7. **Remove the VPS GitHub credential immediately after the first successful
+   tagged release.** This is a transition: the first tagged release may still
+   run while the old GitHub CLI login is on the VPS, although the release path
+   never uses it, and its evidence records that it was present. Then run
    `gh auth logout -h github.com` on the VPS, remove any `gh`-based
-   `credential.helper` from root's Git configuration, then revoke the
+   `credential.helper` from root's Git configuration, and revoke the
    **GitHub CLI** authorization under GitHub → Settings → Applications. A
    logout alone does not revoke the token, and revoking signs the CLI out on
-   every device, so log in again on the workstation.
+   every device, so log in again on the workstation. Confirm on the VPS that
+   `gh auth status` reports no login, that
+   `git config --global --get-all credential.helper` names no `gh`, and that
+   `GH_TOKEN` and `GITHUB_TOKEN` are unset. Every later tagged release runs
+   with no GitHub credential on the VPS; ID-42 moves to `Done` only with this
+   evidence.
 
 ## Repository evidence and recorded runtime evidence
 

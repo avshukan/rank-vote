@@ -43,9 +43,16 @@ const RUN_URL = 'https://github.com/avshukan/rank-vote/actions/runs/99';
 const httpError = (status, message = `HTTP ${status}`) =>
   Object.assign(new Error(message), { status });
 
-const RELEASED_CHANGELOG = addRelease(CHANGELOG, 'v0.2.0', '2026-10-12', [
-  'feat: explain score calculation (ID-19) (#86)',
-]);
+// Prepared while `main` was at HEAD; the release-prep pull request merged onto
+// HEAD as RELEASE, changing only the changelog.
+const RELEASED_CHANGELOG = addRelease(
+  CHANGELOG,
+  'v0.2.0',
+  '2026-10-12',
+  ['feat: explain score calculation (ID-19) (#86)'],
+  HEAD,
+);
+const LATER = '6'.repeat(40);
 
 function commit(sha, parents, subject) {
   return {
@@ -126,6 +133,8 @@ function fakeGitHub(options = {}) {
       commit(HEAD, [MIDDLE, SIDE], 'docs: update ID-38 backlog note (#91)'),
     ],
     releaseStatus: 'identical',
+    mergeParents: [HEAD],
+    prepFiles: ['CHANGELOG.md'],
     runs: [ciRun({ id: 11, conclusion: 'failure' }), ciRun()],
     jobs: ciJobs(),
     environment: productionEnvironment(),
@@ -172,8 +181,26 @@ function fakeGitHub(options = {}) {
       const text = state.changelogs[params.ref];
       return { data: { content: Buffer.from(text).toString('base64'), sha: 'blob-sha' } };
     }
+    if (name === route('GET', '/git/commits/{commit_sha}')) {
+      assert.equal(params.commit_sha, state.tagTarget.sha);
+      return { data: { parents: state.mergeParents.map((sha) => ({ sha })) } };
+    }
     if (name === route('GET', '/compare/{basehead}')) {
       if (params.basehead.endsWith('...main')) return { data: { status: state.releaseStatus } };
+      if (params.basehead.endsWith(`...${state.tagTarget.sha}`)) {
+        // The release-prep change, from its recorded base to the merge commit.
+        const [base] = params.basehead.split('...');
+        const fromParent = base === state.mergeParents[0];
+        return {
+          data: {
+            status: 'ahead',
+            files: (fromParent
+              ? state.prepFiles
+              : [...state.prepFiles, 'apps/web/src/App.tsx']
+            ).map((filename) => ({ filename })),
+          },
+        };
+      }
       const per = params.per_page;
       const start = (params.page - 1) * per;
       return {
@@ -309,10 +336,19 @@ test('the changelog entry goes on top, dated, with one bullet per merged change'
     version: 'v0.1.0',
     date: '2026-09-19',
   });
-  const text = addRelease(CHANGELOG, 'v0.2.0', '2026-10-12', ['first (#1)', 'second (#2)']);
+  const text = addRelease(CHANGELOG, 'v0.2.0', '2026-10-12', ['first (#1)', 'second (#2)'], HEAD);
   const entry = topRelease(text);
   assert.equal(entry.heading, '## v0.2.0 — 2026-10-12');
   assert.equal(entry.body, '- first (#1)\n- second (#2)');
+  assert.equal(entry.base, HEAD);
+  assert.match(text, new RegExp(`\\n<!-- release-prep base: ${HEAD} -->\\n`));
+  assert.equal(topRelease(CHANGELOG).base, null);
+  for (const broken of [
+    text.replace(`<!-- release-prep base: ${HEAD} -->`, '<!-- release-prep base: main -->'),
+    text.replace('- first (#1)', `<!-- release-prep base: ${MIDDLE} -->\n- first (#1)`),
+  ]) {
+    assert.equal(topRelease(broken).base, null);
+  }
   assert.ok(text.startsWith('# Changelog\n\n## v0.2.0 — 2026-10-12\n'));
   assert.ok(text.endsWith(CHANGELOG.slice(CHANGELOG.indexOf('## v0.1.0'))));
   assert.doesNotMatch(text, /Unreleased/);
@@ -388,6 +424,13 @@ test('preparing a release opens one ordinary pull request and creates no tag', a
   assert.match(pull.body, /Review and edit the entry here before merging/);
   assert.match(pull.body, /tag \*\*exactly that merge commit\*\*, never a later one/);
   assert.match(pull.body, /git tag -a v0\.2\.0 "\$sha"/);
+  assert.equal(topRelease(text).base, HEAD);
+  assert.match(pull.body, new RegExp(`prepared from \`main\` at \`${HEAD}\``));
+  assert.match(pull.body, /Merge it only while `main` is still at that commit/);
+  assert.match(
+    pull.body,
+    new RegExp(`test "\\$\\(git rev-parse "\\$sha\\^"\\)" = ${HEAD} && git tag -a`),
+  );
   assert.match(pull.body, /`v0\.1\.0\.\.main`/);
   assert.match(core.summaryText, /Opened \[#96\]/);
   assert.match(core.summaryText, /No tag was created/);
@@ -572,6 +615,61 @@ test('the production Environment must exist with its protection before approval'
   }
 });
 
+// Regression: Prepare release ran while `main` was at HEAD; another pull
+// request merged first (main → LATER); the release-prep pull request then
+// merged onto LATER. Its merge commit carries LATER's changes, which the
+// changelog entry was never prepared for.
+test('a release-prep pull request merged after main moved is refused before approval', async () => {
+  const prepared = fakeGitHub();
+  await runPrepare(prepared);
+  const put = prepared.call('PUT /repos/{owner}/{repo}/contents/CHANGELOG.md').params;
+  const changelog = Buffer.from(put.content, 'base64').toString('utf8');
+  assert.equal(topRelease(changelog).base, HEAD);
+  const released = {
+    pulls: [prepPull()],
+    tags: ['v0.1.0', 'v0.2.0'],
+    changelogs: { [RELEASE]: changelog },
+  };
+
+  const onTime = await runValidate(fakeGitHub(released));
+  assert.equal(onTime.core.failed, null);
+  assert.deepEqual(onTime.core.outputs, { tag: 'v0.2.0', sha: RELEASE });
+
+  const stale = fakeGitHub({ ...released, mergeParents: [LATER] });
+  const { core } = await runValidate(stale);
+  assert.match(
+    core.failed,
+    new RegExp(`prepared from \`main\` at \`${HEAD}\`, but .* merged onto \`${LATER}\``),
+  );
+  assert.match(core.summaryText, /\*\*Recovery:\*\* Run Prepare release again/);
+  assert.match(core.summaryText, /no approval was requested/);
+  assert.deepEqual(core.outputs, {});
+  assert.deepEqual(stale.writes(), []);
+});
+
+test('a release-prep pull request must merge directly onto its recorded base and change only the changelog', async () => {
+  const valid = { pulls: [prepPull()], tags: ['v0.1.0', 'v0.2.0'] };
+  const unrecorded = RELEASED_CHANGELOG.replace(`<!-- release-prep base: ${HEAD} -->\n\n`, '');
+  assert.equal(topRelease(unrecorded).base, null);
+  const cases = [
+    [{ changelogs: { [RELEASE]: unrecorded } }, /does not record exactly one `main` commit/],
+    [{ mergeParents: [LATER] }, /`main` had moved/],
+    [{ mergeParents: [LATER, HEAD] }, /`main` had moved/],
+    [
+      { prepFiles: ['CHANGELOG.md', 'scripts/production/cli.py'] },
+      /changed more than `CHANGELOG\.md`: `scripts\/production\/cli\.py`/,
+    ],
+    [{ prepFiles: [] }, /changed more than `CHANGELOG\.md`/],
+  ];
+  for (const [options, message] of cases) {
+    const github = fakeGitHub({ ...valid, ...options });
+    const { core } = await runValidate(github);
+    assert.match(core.failed ?? '', message, String(message));
+    assert.match(core.summaryText, /Run Prepare release again/);
+    assert.deepEqual(core.outputs, {});
+  }
+});
+
 test('GITHUB_SHA may name the tag object of the same tag', async () => {
   const github = fakeGitHub({ pulls: [prepPull()], tags: ['v0.1.0', 'v0.2.0'] });
   const { core } = await runValidate(github, { sha: TAG_OBJECT });
@@ -603,12 +701,12 @@ test('every validation failure stops before approval with no output', async () =
       /top entry of `CHANGELOG\.md` .* for `v0\.2\.0` \(`## v0\.1\.0 — 2026-09-19`\)/,
     ],
     [
-      { changelogs: { [RELEASE]: addRelease(CHANGELOG, 'v0.2.0', '2026-02-30', ['x']) } },
+      { changelogs: { [RELEASE]: addRelease(CHANGELOG, 'v0.2.0', '2026-02-30', ['x'], HEAD) } },
       {},
       /not a dated, non-empty entry/,
     ],
     [
-      { changelogs: { [RELEASE]: addRelease(CHANGELOG, 'v0.2.0', '2026-10-12', []) } },
+      { changelogs: { [RELEASE]: addRelease(CHANGELOG, 'v0.2.0', '2026-10-12', [], HEAD) } },
       {},
       /not a dated, non-empty entry/,
     ],

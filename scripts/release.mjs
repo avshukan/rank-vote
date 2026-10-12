@@ -70,6 +70,11 @@ export function highestVersion(versions) {
 // CHANGELOG.md
 
 const ENTRY_HEADING = /^## (\S+) — (\S+)$/;
+// Prepare release records the exact `main` commit it drafted from inside the
+// entry. The tagged commit's tree is immutable, so validation can check that
+// the release-prep pull request merged directly onto that commit.
+const PREP_BASE = /^<!-- release-prep base: ([0-9a-f]{40}) -->$/;
+export const prepBaseLine = (sha) => `<!-- release-prep base: ${sha} -->`;
 
 export function isValidDate(text) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(text ?? '')) return false;
@@ -77,19 +82,23 @@ export function isValidDate(text) {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === text;
 }
 
-// The first `## ` heading and its entry, up to the next one.
+// The first `## ` heading and its entry, up to the next one. `base` is the
+// recorded release-prep base, or null unless exactly one well-formed record exists.
 export function topRelease(text) {
   const lines = text.split('\n');
   const start = lines.findIndex((line) => line.startsWith('## '));
   if (start === -1) return null;
   const next = lines.findIndex((line, index) => index > start && line.startsWith('## '));
+  const entry = lines.slice(start + 1, next === -1 ? undefined : next);
+  const records = entry.filter((line) => line.startsWith('<!-- release-prep'));
   const match = ENTRY_HEADING.exec(lines[start]);
   return {
     heading: lines[start],
     version: match?.[1] ?? null,
     date: match?.[2] ?? null,
-    body: lines
-      .slice(start + 1, next === -1 ? undefined : next)
+    base: records.length === 1 ? (PREP_BASE.exec(records[0])?.[1] ?? null) : null,
+    body: entry
+      .filter((line) => !line.startsWith('<!-- release-prep'))
       .join('\n')
       .trim(),
   };
@@ -102,8 +111,14 @@ export function hasRelease(text, version) {
 }
 
 // The new entry goes above the previous top entry, under the title.
-export function addRelease(text, version, date, subjects) {
-  const entry = [`## ${version} — ${date}`, '', ...subjects.map((subject) => `- ${subject}`)];
+export function addRelease(text, version, date, subjects, base) {
+  const entry = [
+    `## ${version} — ${date}`,
+    '',
+    prepBaseLine(base),
+    '',
+    ...subjects.map((subject) => `- ${subject}`),
+  ];
   const lines = text.split('\n');
   const first = lines.findIndex((line) => line.startsWith('## '));
   if (first === -1) return `${text.trimEnd()}\n\n${entry.join('\n')}\n`;
@@ -287,14 +302,20 @@ export function pullRequestBody({ version, previous, date, baseSha, headSha, run
       `(\`${baseSha.slice(0, 7)}..${headSha.slice(0, 7)}\`). **Review and edit the entry here ` +
       'before merging:** the release ships exactly the changes this pull request was prepared for.',
     '',
+    `It was prepared from \`main\` at \`${headSha}\`; the entry records that commit. ` +
+      '**Merge it only while `main` is still at that commit**, and change nothing but ' +
+      `\`${CHANGELOG_PATH}\` here. If anything else merges first, close this pull request and ` +
+      'run Prepare release again: the release would otherwise ship changes this entry does not ' +
+      'describe, and the Release workflow refuses it.',
+    '',
     `After this pull request merges and the \`main\` push CI run of its merge commit passes ` +
-      '`checks` and `containers`, tag **exactly that merge commit**, never a later one:',
+      '`checks` and `containers`, tag **exactly that merge commit**, never a later one. The ' +
+      '`test` refuses to tag when the merge commit does not sit directly on the prepared commit:',
     '',
     '```sh',
     'git fetch origin',
     `sha=$(gh pr view ${branch} --json mergeCommit --jq .mergeCommit.oid)`,
-    `git tag -a ${version} "$sha" -m "Release ${version}"`,
-    `git push origin ${version}`,
+    `test "$(git rev-parse "$sha^")" = ${headSha} && git tag -a ${version} "$sha" -m "Release ${version}" && git push origin ${version}`,
     '```',
     '',
     'Push one release tag at a time. The tag starts the **Release** workflow, which validates ' +
@@ -410,8 +431,8 @@ async function planPreparation({ github, owner, repo, input, now, runUrl }) {
     throw stop(
       `\`${version}\` was already prepared by [#${merged.number}](${merged.html_url}), which is ` +
         'merged.',
-      'Tag the merge commit of that pull request as its description shows, or prepare a greater ' +
-        'version.',
+      'Tag the merge commit of that pull request as its description shows. If `main` moved ' +
+        'before it merged, run Prepare release again for a greater version.',
     );
   }
   if (await branchExists(github, owner, repo, branch)) {
@@ -452,7 +473,7 @@ async function planPreparation({ github, owner, repo, input, now, runUrl }) {
     blobSha: changelog.blobSha,
     subjects,
     title,
-    text: addRelease(changelog.text, version, date, subjects),
+    text: addRelease(changelog.text, version, date, subjects, headSha),
     body: pullRequestBody({ version, previous, date, baseSha: range.baseSha, headSha, runUrl }),
   };
 }
@@ -483,6 +504,56 @@ export async function prepare({ github, context, core, now = new Date() }) {
 
 // ---------------------------------------------------------------------------
 // Release: validation before the `production` approval
+
+// The release-prep pull request must have merged directly onto the `main`
+// commit Prepare release drafted from, changing nothing but the changelog.
+// Otherwise the merge commit carries changes its entry was not prepared for.
+async function checkPreparedBase({ github, owner, repo, tag, sha, base }) {
+  const again =
+    'Run Prepare release again. Release tags are immutable, so prepare a greater version; ' +
+    'its entry must also describe the changes this preparation missed.';
+  if (!base) {
+    throw stop(
+      `The \`${tag}\` entry of \`${CHANGELOG_PATH}\` does not record exactly one \`main\` ` +
+        'commit that Prepare release started from.',
+      again,
+    );
+  }
+  const { data: merged } = await github.request(
+    'GET /repos/{owner}/{repo}/git/commits/{commit_sha}',
+    { owner, repo, commit_sha: sha },
+  );
+  const parent = merged.parents[0]?.sha;
+  if (parent !== base) {
+    throw stop(
+      `\`${tag}\` was prepared from \`main\` at \`${base}\`, but its release-prep pull request ` +
+        `merged onto \`${parent}\`: \`main\` had moved, so the merge commit contains changes ` +
+        'its changelog entry was not prepared for.',
+      again,
+    );
+  }
+  const { data: change } = await github.request('GET /repos/{owner}/{repo}/compare/{basehead}', {
+    owner,
+    repo,
+    basehead: `${base}...${sha}`,
+    per_page: 1,
+  });
+  const files = (change.files ?? []).map(({ filename }) => filename);
+  const others = files.filter((name) => name !== CHANGELOG_PATH);
+  if (change.status !== 'ahead' || !files.length || others.length) {
+    throw stop(
+      `The \`${tag}\` release-prep pull request changed more than \`${CHANGELOG_PATH}\`` +
+        (others.length
+          ? `: ${others
+              .slice(0, 5)
+              .map((name) => inlineCode(name))
+              .join(', ')}`
+          : '') +
+        '. A release-prep pull request may only edit its changelog entry.',
+      again,
+    );
+  }
+}
 
 async function checkRelease({ github, context, owner, repo }) {
   const ref = context.ref ?? '';
@@ -532,6 +603,16 @@ async function checkRelease({ github, context, owner, repo }) {
         newVersion,
     );
   }
+  const entry = topRelease((await readChangelog(github, owner, repo, sha)).text);
+  if (!entry || entry.version !== tag || !isValidDate(entry.date) || !entry.body) {
+    throw stop(
+      `The top entry of \`${CHANGELOG_PATH}\` at this commit is not a dated, non-empty entry ` +
+        `for \`${tag}\` (${inlineCode(entry?.heading ?? 'no entry')}).`,
+      newVersion,
+    );
+  }
+  await checkPreparedBase({ github, owner, repo, tag, sha, base: entry.base });
+
   const { data: comparison } = await github.request(
     'GET /repos/{owner}/{repo}/compare/{basehead}',
     {
@@ -615,14 +696,6 @@ async function checkRelease({ github, context, owner, repo }) {
         'setup) describes, then re-run this workflow run.',
     );
   }
-  const entry = topRelease((await readChangelog(github, owner, repo, sha)).text);
-  if (!entry || entry.version !== tag || !isValidDate(entry.date) || !entry.body) {
-    throw stop(
-      `The top entry of \`${CHANGELOG_PATH}\` at this commit is not a dated, non-empty entry ` +
-        `for \`${tag}\` (${inlineCode(entry?.heading ?? 'no entry')}).`,
-      newVersion,
-    );
-  }
   return { tag, sha, run };
 }
 
@@ -643,7 +716,8 @@ export async function validate({ github, context, core }) {
   core.setOutput('sha', sha);
   await report(core, `Release ${tag}: validated`, [
     `\`${tag}\` is an annotated tag on \`${sha}\`, the merge commit of its release-prep pull ` +
-      `request, reachable from \`main\` and the highest release tag. Its \`main\` push CI run ` +
+      'request, made directly on the `main` commit it was prepared from and changing only the ' +
+      `changelog; it is reachable from \`main\` and the highest release tag. Its \`main\` push CI run ` +
       `[${run.id}](${run.html_url}) passed \`checks\` and \`containers\`; its changelog entry is ` +
       'in place; and the `production` Environment requires approval by the owner. The deploy job ' +
       'now waits for it.',
