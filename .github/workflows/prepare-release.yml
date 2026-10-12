@@ -1,0 +1,41 @@
+# Prepare release: the first step of a tagged release (ID-42). It opens one
+# ordinary pull request that adds the CHANGELOG.md entry for the requested
+# version, with a summary drafted from the merged changes for the owner to
+# review and edit. Deterministic, no LLM: the logic and its tests live in
+# scripts/release.mjs. It never creates a tag, dispatches a workflow or touches
+# production. See docs/production.md (Tagged releases).
+name: Prepare release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version, vMAJOR.MINOR.PATCH (for example v0.2.0)
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # One preparation at a time, so two runs never open two pull requests for
+    # one version; `queue: max` keeps every waiting run instead of cancelling.
+    concurrency:
+      group: prepare-release
+      queue: max
+    permissions:
+      contents: write # create the release-prep branch and its one commit
+      pull-requests: write # find earlier release-prep pull requests; open the new one
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The `version` input is read from the event payload inside the script and
+      # never interpolated here.
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { prepare } = await import(`${process.env.GITHUB_WORKSPACE}/scripts/release.mjs`);
+            await prepare({ github, context, core });

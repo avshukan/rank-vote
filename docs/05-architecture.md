@@ -236,7 +236,9 @@ standard-library CLI under `scripts/production/`; the operator sequence is in
 `docs/production.md`. API has a 30-second stop grace period. The CLI validates
 and builds a clean archived SHA before downtime, runs migrations once, then
 records a release after public smoke. The first release, `v0.1.0`, was
-deployed to `https://rankvote.avshukan.com` on 2026-09-19.
+deployed to `https://rankvote.avshukan.com` on 2026-09-19. Later releases are
+tag-triggered (ID-42): after the owner's approval in the `production`
+Environment, the same sequence runs unattended through a restricted SSH key.
 
 ## Future Extensions
 

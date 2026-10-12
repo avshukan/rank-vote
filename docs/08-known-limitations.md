@@ -114,8 +114,9 @@ application. The single-VPS production contract is specified under #29 in
 `docs/acceptance-criteria.md`; `docs/production.md` documents its operator
 sequence. Remaining operational limitations are:
 
-- `web` / `api` images and container smoke tests exist, but there is no CD
-  pipeline — CI builds and tests, then stops; #29 deploys them
+- a merge never deploys: releases are tag-triggered and wait for the owner's
+  approval (ID-42), and each deployment has brief downtime while web and API
+  restart; there is no zero-downtime deployment
 - the #28 manual dump, offsite transfer and clean restore drill succeeded, but
   scheduled independent backups remain backlog #32
 - no production monitoring, alerting, or error tracking; tracked as #33

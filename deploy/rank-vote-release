@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""Forced-command entry point of the tag-triggered release (ID-42).
+
+The owner installs this file root-owned at /usr/local/sbin/rank-vote-release,
+outside the checkout, and restricts the release deploy key to it in
+/root/.ssh/authorized_keys (see docs/production.md, Tagged releases):
+
+    restrict,command="/usr/local/sbin/rank-vote-release" ssh-ed25519 AAAA... rank-vote-release
+
+It runs before anything in the checkout is trusted, so it uses only the
+standard library and never imports repository code. It accepts exactly
+`<vMAJOR.MINOR.PATCH> <full commit SHA>` in SSH_ORIGINAL_COMMAND. Holding the
+deployment lock, it fetches main and the tag over HTTPS without credentials,
+verifies the annotated tag, the commit's place on main and a clean checkout,
+detaches the checkout at the SHA, and starts the repository CLI's unattended
+release in its own session, handing over the locked descriptor. A lost SSH
+connection does not interrupt that release. Only the CLI's curated status
+reaches the caller.
+"""
+
+import fcntl
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+import time
+from datetime import datetime, timezone
+
+ROOT = Path("/opt/apps/rank-vote")
+LOCK = Path("/run/lock/rank-vote-prod.lock")
+ORIGIN = "https://github.com/avshukan/rank-vote.git"
+# [0-9], not \d: in Python \d also matches non-ASCII digits.
+TAG = re.compile(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
+SHA = re.compile(r"[0-9a-f]{40}")
+ENVIRONMENT = {"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+               "HOME": "/root", "LANG": "C.UTF-8", "GIT_TERMINAL_PROMPT": "0"}
+# No hooks, no credential helper, HTTPS only: the public repository needs no credential.
+GIT = ["git", "-c", "core.hooksPath=/dev/null", "-c", "credential.helper=",
+       "-c", "protocol.allow=never", "-c", "protocol.https.allow=always"]
+USAGE = 64  # EX_USAGE: the request itself was refused
+BUSY = 75  # EX_TEMPFAIL: another production operation holds the lock
+
+
+class Refusal(Exception):
+    pass
+
+
+def require(condition, message):
+    if not condition:
+        raise Refusal(message)
+
+
+def parse(command):
+    parts = (command or "").split(" ")
+    require(len(parts) == 2 and TAG.fullmatch(parts[0]) and SHA.fullmatch(parts[1]),
+            "expected exactly '<vMAJOR.MINOR.PATCH> <full commit SHA>'")
+    return parts[0], parts[1]
+
+
+def git(root, *args):
+    return subprocess.run([*GIT, *args], cwd=str(root), env=ENVIRONMENT, stdin=subprocess.DEVNULL,
+                          capture_output=True, text=True)
+
+
+def verify_checkout(root, tag, sha, run=git):
+    def output(*args):
+        result = run(root, *args)
+        require(result.returncode == 0, f"git {args[0]} failed (exit {result.returncode})")
+        return result.stdout.strip()
+
+    require(output("remote", "get-url", "origin") == ORIGIN, "origin must be " + ORIGIN)
+    output("fetch", "--no-tags", "--quiet", "origin", "+refs/heads/main:refs/remotes/origin/main",
+           f"+refs/tags/{tag}:refs/tags/{tag}")
+    require(output("cat-file", "-t", "refs/tags/" + tag) == "tag", tag + " is not an annotated tag")
+    require(output("rev-parse", f"refs/tags/{tag}^{{commit}}") == sha, f"{tag} does not point to {sha}")
+    ancestor = run(root, "merge-base", "--is-ancestor", sha, "refs/remotes/origin/main").returncode
+    require(ancestor in (0, 1), "could not check that the commit is on main")
+    require(ancestor == 0, sha + " is not on main")
+    require(not output("status", "--porcelain", "--untracked-files=all"), "the production checkout is not clean")
+    output("switch", "--detach", "--quiet", sha)
+
+
+def start_release(root, tag, sha, lock_fd, status_path):
+    status = os.open(str(status_path), os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    try:
+        # Its own session and a file for output: neither a lost connection nor
+        # this wrapper's exit can stop it. It inherits the locked descriptor.
+        return subprocess.Popen(["python3", "-m", "scripts.production.cli", "release", "--tag", tag,
+                                 "--sha", sha, "--lock-fd", str(lock_fd)],
+                                cwd=str(root), env=ENVIRONMENT, stdin=subprocess.DEVNULL, stdout=status,
+                                stderr=subprocess.STDOUT, pass_fds=(lock_fd,), start_new_session=True)
+    finally:
+        os.close(status)
+
+
+def follow(status_path, process, out, poll_seconds):
+    with open(status_path, encoding="utf-8", errors="replace") as status:
+        while True:
+            finished = process.poll() is not None
+            text = status.read()
+            if text:
+                try:
+                    out.write(text)
+                    out.flush()
+                except OSError:  # The caller is gone; the release carries on.
+                    return 1
+            elif finished:
+                return process.returncode
+            else:
+                time.sleep(poll_seconds)
+
+
+def main(environ=os.environ, root=ROOT, lock=LOCK, out=sys.stdout, run=git, start=start_release,
+         euid=os.geteuid, poll_seconds=1.0):
+    def say(text):
+        out.write("rank-vote-release: " + text + "\n")
+        out.flush()
+
+    try:
+        tag, sha = parse(environ.get("SSH_ORIGINAL_COMMAND"))
+    except Refusal as error:
+        say(f"refused: {error}; nothing was changed")
+        return USAGE
+    say(f"accepted {tag} {sha}")
+    state = Path(root) / "deploy-state"
+    if euid() != 0 or not state.is_dir():
+        say("refused: this is not a provisioned production host running as root "
+            "(the first deployment stays manual); nothing was changed")
+        return 1
+    fd = os.open(str(lock), os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    try:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            say("refused: another production operation holds the deployment lock, possibly this release after a "
+                "lost connection; nothing was changed by this request")
+            return BUSY
+        try:
+            verify_checkout(root, tag, sha, run)
+        except Refusal as error:
+            say(f"refused: {error}; the running release is untouched")
+            return 1
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
+        status_path = state / f"release-{tag}-{stamp}.status"
+        try:
+            process = start(root, tag, sha, fd, status_path)
+        except OSError:
+            say("refused: the release could not be started; the running release is untouched")
+            return 1
+    finally:
+        os.close(fd)  # The started release holds its own copy of the locked descriptor.
+    say("release started; it continues on the VPS if this connection is lost")
+    return follow(status_path, process, out, poll_seconds)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

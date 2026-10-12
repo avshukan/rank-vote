@@ -143,7 +143,7 @@ adapts to the column rather than moving the column.
 | 37  | Add short poll links       | Quality  | Low    | —       | Replace/alias UUID with short ID; redirect needed   |
 | 38  | Breakdown hover preview    | Value    | Low    | —       | Desktop hover/focus preview of score breakdown      |
 | 41  | Fix backlog lint fixture   | Ops      | Medium | —       | Fixture backlog; drop hard-coded live-file IDs      |
-| 42  | Automate tagged releases   | Ops      | High   | Ready   | Tag-triggered workflow; owner approval; auto deploy |
+| 42  | Automate tagged releases   | Ops      | High   | Ready   | Built; Done after owner setup and first release     |
 
 ---
 

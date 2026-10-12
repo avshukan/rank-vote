@@ -2018,7 +2018,8 @@ existing production tooling, verifies it and requests a backlog sweep. Merging
 to `main` never deploys. The implementation PR merges first and changes no
 production state. The owner then performs the production setup below, and
 ID-42 moves to `Done` in a small record PR once the first release made this way
-(the one carrying ID-19) has supplied the production evidence.
+(the one carrying ID-19) has supplied the production evidence, including the
+removal of the VPS GitHub credential that follows that release.
 
 ### Facts verified during readiness
 
@@ -2072,51 +2073,56 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
 
 ### Release preparation
 
-- [ ] `.github/workflows/prepare-release.yml` runs only on `workflow_dispatch`
+- [x] `.github/workflows/prepare-release.yml` runs only on `workflow_dispatch`
       with one required `version` input. Its logic lives in a `scripts/` module
       with `node:test` tests that `pnpm test` runs; the YAML only invokes it
-- [ ] `version` must match `^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$`. It is
+- [x] `version` must match `^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$`. It is
       read from the event payload and never interpolated into a shell command or
       script source
-- [ ] It refuses and changes nothing when the tag already exists, `CHANGELOG.md`
+- [x] It refuses and changes nothing when the tag already exists, `CHANGELOG.md`
       on `main` already has a heading for the version, the version is not
       greater than the highest existing `v*` tag, or the release-prep branch or
       a pull request for the version already exists. The report links an
       existing pull request or names the recovery step, so starting the same
       preparation twice never opens a second pull request
-- [ ] The previous release is the highest existing `v*` tag. Above the top entry
+- [x] The previous release is the highest existing `v*` tag. Above the top entry
       of `CHANGELOG.md` it adds `## vX.Y.Z — YYYY-MM-DD`, dated with the run's
       UTC date, and a summary drafted from the subjects of the first-parent
-      commits in `<previous tag>..main`. Nothing else changes, and no
-      `Unreleased` section is created; feature pull requests do not edit the
-      changelog
-- [ ] It opens one ordinary pull request from `chore/release-vX.Y.Z` with that
-      one commit. The description asks the owner to review and edit the entry
-      and gives the tag commands for after the merge. If opening the pull
-      request fails, it deletes the branch it created
-- [ ] `permissions: {}` at the top, and the job has only `contents: write` and
+      commits in `<previous tag>..main`. The entry records the exact `main`
+      commit it was drafted from (`<!-- release-prep base: <sha> -->`, invisible
+      when rendered). Nothing else changes, and no `Unreleased` section is
+      created; feature pull requests do not edit the changelog
+- [x] It opens one ordinary pull request from `chore/release-vX.Y.Z` with that
+      one commit. The description asks the owner to review and edit the entry,
+      names the prepared `main` commit, says to merge only while `main` is still
+      at it, and gives tag commands that refuse to tag a merge commit whose
+      parent is not that commit. If opening the pull request fails, it deletes
+      the branch it created
+- [x] `permissions: {}` at the top, and the job has only `contents: write` and
       `pull-requests: write`; actions are pinned by SHA and checkout does not
       persist credentials. It uses no Environment or secret and never creates a
       tag, dispatches a workflow or touches production
-- [ ] Runs are serialized in one concurrency group that queues runs instead of
+- [x] Runs are serialized in one concurrency group that queues runs instead of
       cancelling them. It is not a required check; CI on its pull requests
       starts once the owner approves the workflow runs, as for backlog promotion
 
 ### Release tag contract
 
-- [ ] A release tag is an annotated tag matching the version pattern, created by
+- [x] A release tag is an annotated tag matching the version pattern, created by
       the owner on the merge commit of the reviewed release-prep pull request
-      for that version, never on a later `main` commit. Changes merged after the
-      preparation need a new preparation before they can be released
+      for that version, never on a later `main` commit. That pull request merges
+      directly onto the `main` commit it was prepared from and changes only
+      `CHANGELOG.md`; changes merged after the preparation, before or after its
+      merge, need a new preparation before they can be released
 - [ ] Release tags are immutable: a `v*` tag ruleset blocks updates and
       deletions, and the same tag always identifies the same SHA. A release that
       fails in its code is never retagged; the fix ships as a new commit with a
       new patch release
-- [ ] A tag push alone never changes production and never requests a sweep
+- [x] A tag push alone never changes production and never requests a sweep
 
 ### Validation before approval
 
-- [ ] The release workflow runs only on pushes of `v*` tags. Its first job runs
+- [x] The release workflow runs only on pushes of `v*` tags. Its first job runs
       on a GitHub-hosted runner with `contents: read`, `actions: read` and
       `pull-requests: read`, without an Environment or secret, and checks: the
       version pattern; an annotated tag whose commit is `GITHUB_SHA`; that this
@@ -2124,14 +2130,23 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
       request into `main` and is reachable from `origin/main`; that the latest
       `ci.yml` `push` run on `main` for that exact SHA concluded `success`, with
       `checks` and `containers` successful on that SHA (the rules of
-      `validate_ci`); that the version is the highest `v*` tag; and that the top
+      `validate_ci`); that the version is the highest `v*` tag; that the top
       release heading of `CHANGELOG.md` at that commit is the tag, with a valid
-      date and a non-empty entry
-- [ ] The CI proof is that existing push run: the workflow neither reruns CI nor
+      date and a non-empty entry; and that this entry records exactly one
+      prepared `main` commit, which is the merge commit's first parent, with
+      only `CHANGELOG.md` changed between the two
+- [x] Stale preparation: when another pull request merged after Prepare release
+      ran and the release-prep pull request then merged on top of it, the merge
+      commit's first parent is not the recorded commit, so validation fails
+      before approval and the recovery is to run Prepare release again. A
+      regression test reproduces that race, and the check uses only the tagged
+      commit's tree and Git history, not the pull request description or other
+      mutable state
+- [x] The CI proof is that existing push run: the workflow neither reruns CI nor
       relies on the current state of `main`. A commit whose push run failed, or
       was cancelled by a later merge, is refused; the documented recovery is to
       re-run that CI run or to prepare the release again
-- [ ] If validation fails, no approval is requested and nothing else runs.
+- [x] If validation fails, no approval is requested and nothing else runs.
       Before approval no job holds the SSH key or any production secret,
       connects to the VPS, runs a VPS command or requests a sweep
 
@@ -2164,72 +2179,78 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
       checkout at the SHA and start the unattended release. A stolen key can
       therefore release only an owner-created tag on a reviewed `main` commit
       that passes every check below
-- [ ] The release on the VPS does not depend on the SSH session: a runner
+- [x] The release on the VPS does not depend on the SSH session: a runner
       disconnect or a cancelled workflow run does not interrupt it
-- [ ] The Actions log receives only a curated, secret-free status: no host audit
+- [x] The Actions log receives only a curated, secret-free status: no host audit
       (listening sockets, firewall rules, other projects' containers, addresses,
       resources) and no raw command output. Full diagnostics stay in root-only
       `deploy-state`
-- [ ] No production application or database secret is stored in GitHub, and the
-      VPS holds no GitHub credential. `check_source` reads the same three public
-      API endpoints over HTTPS, with standard TLS verification and without
-      authentication, and fails closed on any error, unexpected status, rate
-      limit or malformed response. `gh` is no longer a production prerequisite
+- [x] No production application or database secret is stored in GitHub, and
+      the release path needs no GitHub credential on the VPS. `check_source`
+      reads the same three public API endpoints over HTTPS, with standard TLS
+      verification and without authentication, and fails closed on any error,
+      unexpected status, rate limit or malformed response; the wrapper fetches
+      with no credential helper. `gh` is no longer a production prerequisite
+- [ ] Final state: the VPS holds no GitHub credential. As a transition, the first
+      tagged release may run while the old GitHub CLI credential is still on the
+      VPS; the owner removes and revokes it immediately after that release
+      succeeds, and every later tagged release runs with no GitHub credential on
+      the VPS
 
 ### Unattended deployment
 
-- [ ] One new non-interactive action of the production CLI reuses `local_host`,
+- [x] One new non-interactive action of the production CLI reuses `local_host`,
       `read_config`, `check_source`, `Runner.model`, `preflight` and
       `release.deploy`; there is no second deployment implementation. It reads
       no input and asks none of `HOST VERIFIED`, `PROXY VERIFIED` or
       `PUBLIC VERIFIED`
-- [ ] `make prod-deploy`, `make prod-rollback` and the `tag` command keep their
+- [x] `make prod-deploy`, `make prod-rollback` and the `tag` command keep their
       confirmations and, apart from the shared `check_source` change, their
       behaviour. They remain the path for the first deployment; host, firewall,
       Caddy, proxy-trust and other infrastructure changes; and break-glass
       recovery, each with the operator checks of `docs/production.md`
-- [ ] It refuses when no verified `current.env` exists; a first deployment stays
+- [x] It refuses when no verified `current.env` exists; a first deployment stays
       manual
-- [ ] Ordering: C and T are the `RELEASE_SHA` and `RELEASE_TAG` of
+- [x] Ordering: C and T are the `RELEASE_SHA` and `RELEASE_TAG` of
       `current.env`, X is the tagged commit and V its version. X must be an
       ancestor of `origin/main` or equal to it, and may be behind its tip
-- [ ] X = C with V = T is the already-current release below. X = C with any
+- [x] X = C with V = T is the already-current release below. X = C with any
       other T, including none, is refused: one SHA never gets a second release
       tag
-- [ ] When X ≠ C, C must be an ancestor of X, or the release is refused; this
+- [x] When X ≠ C, C must be an ancestor of X, or the release is refused; this
       refuses a downgrade (X an ancestor of C) and divergent history. When T is
       set, V must also be greater than T. Going back to an earlier release stays
       `make prod-rollback` with its `COMPATIBLE` confirmation
-- [ ] Already current: the same tag and SHA as `current.env` deploys nothing. It
+- [x] Already current: the same tag and SHA as `current.env` deploys nothing. It
       builds, stops, prepares, migrates and writes nothing, and `current.env`
       and `previous.env` stay byte-identical. The run reports the release as
       already current and continues to the sweep, so a re-run after a later step
       failed never redeploys
-- [ ] A retry of the same tag and SHA after a failed attempt reuses the images
+- [x] A retry of the same tag and SHA after a failed attempt reuses the images
       built for that SHA and writes `previous.env` only from the last verified
       `current.env`
 
 ### Verified release
 
-- [ ] Before any change the release passes the host, config, exact-SHA CI and
+- [x] Before any change the release passes the host, config, exact-SHA CI and
       ruleset, Compose model and `preflight` checks (versions, disk, memory, DNS,
       the Caddy container and the network boundary), the deployment lock and the
       ordering rules above
-- [ ] The deployment keeps the existing sequence: images built and checked
+- [x] The deployment keeps the existing sequence: images built and checked
       before downtime, `previous.env` prepared, web and API stopped, PostgreSQL
       left running, one migration, API then web started healthy, and
       `internal_verify`
-- [ ] Public verification goes through the production origin with standard TLS
+- [x] Public verification goes through the production origin with standard TLS
       verification: `smoke` (health, the SPA, the production API URL in the
       bundle, poll creation, a full ballot, the 2/1/0 Borda result and the
       direct results route), then a read of the previous release's
       `SMOKE_POLL_ID`, which must still return its title, options and at least
       one ballot. Its exact ballot count is not checked, because that poll ID is
       public. `internal_verify` then runs again
-- [ ] The release is verified exactly when `current.env` is promoted, in one
+- [x] The release is verified exactly when `current.env` is promoted, in one
       atomic write that already contains `RELEASE_TAG`; no later step attaches
       the tag
-- [ ] An ordinary release does not run the first-deployment operator checks:
+- [x] An ordinary release does not run the first-deployment operator checks:
       firewall, cloud-firewall and IPv6 review, the proxy and second-peer
       probes, external port probes, the other Caddy sites, the browser check,
       the recreation and recovery drill, or a reboot. Without a probe there is
@@ -2237,7 +2258,7 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
 
 ### Failure and rerun
 
-- [ ] Each failure leaves the stated state, and the run summary names the next
+- [x] Each failure leaves the stated state, and the run summary names the next
       step:
       validation failure, rejection or approval timeout: nothing changed;
       SSH or host-key failure, or a refusal on the VPS before any change:
@@ -2250,26 +2271,26 @@ ID-42 moves to `Done` in a small record PR once the first release made this way
       runner disconnect or cancelled run: the VPS run finishes under its lock,
       and a re-run reports it as already current, is refused while the lock is
       held, or retries the same tag and SHA
-- [ ] Nothing is rolled back automatically, neither the database nor the
+- [x] Nothing is rolled back automatically, neither the database nor the
       application. Recovery is owner-operated: `make prod-rollback` with its
       `COMPATIBLE` confirmation, or a forward fix released as a new patch tag
-- [ ] A re-run never moves a tag and never redeploys a release that
+- [x] A re-run never moves a tag and never redeploys a release that
       `current.env` already records
 
 ### Backlog sweep
 
-- [ ] Only after the deploy job succeeds, the already-current case included, a
+- [x] Only after the deploy job succeeds, the already-current case included, a
       separate job without an Environment and with `actions: write` dispatches
       `backlog-sweep.yml` on `main` with the reason
       `release vX.Y.Z at <full-sha>`. There is no other sweep mechanism
-- [ ] A failed sweep request leaves the release verified and fails only that
+- [x] A failed sweep request leaves the release verified and fails only that
       job. Re-running the failed jobs repeats only the request, without approval
       or deployment, and the existing request script records a repeated reason
       once
 
 ### Concurrency
 
-- [ ] The deploy job runs in the concurrency group `production-release` with
+- [x] The deploy job runs in the concurrency group `production-release` with
       `cancel-in-progress: false` and `queue: max`: no release run cancels
       another, each waits for its own approval, and the deployment lock on the
       VPS remains the final guard. An older tag approved after a newer one is
@@ -2283,29 +2304,37 @@ After the implementation PR merges, the owner:
       the deploy key and the pinned host key in it
 - [ ] installs the wrapper and the restricted `authorized_keys` entry on the VPS
 - [ ] adds the `v*` tag ruleset that blocks updates and deletions
-- [ ] removes the GitHub CLI credential from the VPS and revokes it on GitHub,
-      once the merged implementation no longer needs it. Revoking the GitHub CLI
-      authorization signs the CLI out on the owner's other devices as well
+- [ ] immediately after the first successful tagged release, removes the
+      GitHub CLI credential from the VPS (the CLI login and any `gh` credential
+      helper) and revokes the GitHub CLI authorization on GitHub, which signs the
+      CLI out on the owner's other devices as well. The first tagged release may
+      run before this step; no later one does
 
 ### Tests
 
 Repository and CI:
 
-- [ ] Python unit tests with a fake runner cover the unattended action: no input
+- [x] Python unit tests with a fake runner cover the unattended action: no input
       is read; every ordering refusal; a tag that does not point to the SHA; the
       already-current case, which leaves both manifests untouched; promotion
       with the tag; failures that leave `current.env` unchanged; curated output
       without host audit; and the unauthenticated `check_source` reads,
       including their fail-closed errors
-- [ ] The wrapper's input validation is tested
-- [ ] `node:test` covers `Prepare release` (version validation, every refusal, a
-      second start, the changelog entry and its summary) and the validation
-      before approval (tag, release-prep merge commit, CI result, changelog)
-- [ ] `make verify` passes and CI is green
+- [x] The wrapper's input validation is tested
+- [x] `node:test` covers `Prepare release` (version validation, every refusal, a
+      second start, the changelog entry, its summary and its recorded base) and
+      the validation before approval (tag, release-prep merge commit and its
+      base, CI result, changelog)
+- [x] `make verify` passes locally, run by the owner: its API e2e step resets
+      the local test database, which Prisma refuses to let an agent do without
+      the owner's consent. The owner ran it on
+      `b06a9d31e48389cc4a8d9b721ec2b81d11adedf0`: every step passed, the API e2e
+      tests included (4 suites, 35 tests)
+- [x] CI is green on the implementation PR
 
 Local and isolated:
 
-- [ ] `make prod-check` and `make prod-smoke` pass, and `prod-smoke` also runs
+- [x] `make prod-check` and `make prod-smoke` pass, and `prod-smoke` also runs
       the automated public verification (`smoke` plus the previous-poll check)
       against its own local stack
 
@@ -2313,24 +2342,31 @@ Production evidence, required before `Done`:
 
 - [ ] The first release made this way, the one carrying ID-19, is prepared by
       `Prepare release`, tagged by the owner on the release-prep merge commit,
-      validated, approved once, and deployed and verified without operator input
+      validated, approved once, and deployed and verified without operator input.
+      The record states whether the old GitHub CLI credential was still on the
+      VPS during that release, as the transition allows
 - [ ] The record PR names the workflow runs, the tag, the full SHA, the approval
       time, `current.env` with its `RELEASE_TAG`, `previous.env` as the `v0.1.0`
       manifest, the new and the previous smoke poll, and the sweep request on
       the tracker
 - [ ] The owner confirms that the deploy key cannot open a shell or run another
-      command, that the Environment settings and the tag ruleset are in place,
-      and that the VPS holds no GitHub credential and the old token is revoked
+      command, and that the Environment settings and the tag ruleset are in place
+- [ ] After the first release, the owner's checks on the VPS show no GitHub
+      credential: `gh auth status` reports no login, root's Git configuration
+      has no `gh` credential helper, and `GH_TOKEN` and `GITHUB_TOKEN` are unset.
+      The GitHub CLI authorization is revoked, so the next tagged release runs
+      without any GitHub credential. ID-42 does not move to `Done` before this
+      evidence
 
 ### Documentation
 
-- [ ] `docs/production.md`: the tagged release, the owner production setup,
+- [x] `docs/production.md`: the tagged release, the owner production setup,
       recovery from each failure, the manual path as fallback, and prerequisites
       without `gh`
-- [ ] `docs/07-process.md`: CI/CD and Release Flow describe the release workflow
-- [ ] `docs/06-decisions.md`: the "Tag-triggered releases" ADR no longer says
+- [x] `docs/07-process.md`: CI/CD and Release Flow describe the release workflow
+- [x] `docs/06-decisions.md`: the "Tag-triggered releases" ADR no longer says
       implementation pending
-- [ ] `AGENTS.md` (production tooling) and `README.md` name the release workflow
+- [x] `AGENTS.md` (production tooling) and `README.md` name the release workflow
 - [ ] ID-42 moves to `Done` in the record PR
 
 ### Out of Scope (tracked separately)
@@ -2375,10 +2411,22 @@ Production evidence, required before `Done`:
     never on a later commit
   - no GitHub credential on the VPS: `check_source` reads public endpoints
     without authentication, and the current CLI credential is revoked during the
-    production setup, after the implementation no longer needs it
+    production setup, after the implementation no longer needs it (timing
+    changed on 2026-10-12, below)
   - the production setup above, including the `v*` tag ruleset
   - #92 tracks the manual-path `previous.env` defect; `ci.yml` keeps cancelling
     intermediate `main` push runs for now
+- Changed by the owner on 2026-10-12, in the review of the implementation PR
+  (#94):
+  - a preparation is bound to the exact `main` commit it drafted from: the
+    entry records it, the release-prep pull request must merge directly onto
+    it, and anything merged in between needs Prepare release again. A release
+    still deploys exactly the tagged commit
+  - credential timing: the first tagged release may run while the old GitHub
+    CLI credential is still on the VPS; the owner removes and revokes it
+    immediately afterwards, and every later release runs without it. The final
+    state, no GitHub credential on the VPS, is unchanged
+  - local `make verify` is run by the owner; CI being green is separate evidence
 - Settled during readiness, open to review in this PR:
   - the SSH principal is `root`, because the release tooling requires root; a
     separate account with one sudo rule would let the key do nothing less

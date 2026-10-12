@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from .cli import fresh_config
 from .core import API_URL, ROOT, Refused, atomic_write, redact, require
-from .probe import proxy_probe, request, smoke, verify_poll
+from .probe import automated_public_verification, proxy_probe, request, smoke, verify_poll
 from .runtime import Runner
 
 
@@ -120,6 +120,9 @@ def main():
             require(time.monotonic() - started < 30 and info["State"]["ExitCode"] in (0, 143), "Production graceful stop failed")
             compose("up", "--detach", "--no-deps", "--wait", "--wait-timeout", "120", "api")
             verify_poll(poll_id, origin)
+            print("production smoke: tag-triggered release verification, earlier poll as the previous release",
+                  flush=True)
+            automated_public_verification(poll_id, origin)
             print("production smoke: passed; isolated data will be removed", flush=True)
         except BaseException:
             # Diagnostics are captured/redacted by Runner; never dump config/env.

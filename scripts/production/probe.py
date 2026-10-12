@@ -45,6 +45,31 @@ def verify_poll(poll_id, origin=ORIGIN):
     return poll_id
 
 
+def verify_previous_poll(poll_id, origin=ORIGIN):
+    """The previous release's smoke poll must survive a release. Its ID is
+    public and anyone can add ballots, so require the smoke shape and at least
+    one ballot rather than the exact count `verify_poll` expects."""
+    require(isinstance(poll_id, str) and re.fullmatch(r"[0-9a-f-]{36}", poll_id), "Invalid previous smoke poll ID")
+    poll = json_request("/polls/" + poll_id, origin=origin)
+    results = json_request("/polls/" + poll_id + "/results", origin=origin)
+    try:
+        shaped = (poll["title"].startswith("Production smoke ") and
+                  [option["text"] for option in poll["options"]] == ["Alpha", "Beta", "Gamma"])
+        ballots = results["totalBallots"]
+    except (KeyError, TypeError, AttributeError):
+        shaped, ballots = False, 0
+    require(shaped, "The previous release's smoke poll is no longer readable as created")
+    require(isinstance(ballots, int) and ballots >= 1, "The previous release's smoke poll lost its ballot")
+    return poll_id
+
+
+def automated_public_verification(previous_poll_id, origin=ORIGIN, expected_api_url=API_URL):
+    """Public verification of a tag-triggered release (ID-42): no operator step."""
+    poll_id = smoke(origin, expected_api_url)
+    verify_previous_poll(previous_poll_id, origin)
+    return poll_id
+
+
 def smoke(origin=ORIGIN, expected_api_url=API_URL):
     require(json_request("/health", origin=origin) == {"status": "ok"}, "Unexpected health response")
     status, html, _ = request(origin + "/")
