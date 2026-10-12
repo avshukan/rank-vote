@@ -2325,9 +2325,11 @@ Repository and CI:
       second start, the changelog entry, its summary and its recorded base) and
       the validation before approval (tag, release-prep merge commit and its
       base, CI result, changelog)
-- [ ] `make verify` passes locally, run by the owner: its API e2e step resets
+- [x] `make verify` passes locally, run by the owner: its API e2e step resets
       the local test database, which Prisma refuses to let an agent do without
-      the owner's consent
+      the owner's consent. The owner ran it on
+      `b06a9d31e48389cc4a8d9b721ec2b81d11adedf0`: every step passed, the API e2e
+      tests included (4 suites, 35 tests)
 - [x] CI is green on the implementation PR
 
 Local and isolated:
