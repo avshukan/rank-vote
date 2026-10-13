@@ -30,10 +30,7 @@ import {
 } from './release.mjs';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const CHANGELOG_FIXTURE_PATH = join(
-  repositoryRoot,
-  'scripts/fixtures/release-changelog.v0.1.0.md',
-);
+const CHANGELOG_FIXTURE_PATH = join(repositoryRoot, 'scripts/fixtures/release-changelog.v0.1.0.md');
 const CHANGELOG = readFileSync(CHANGELOG_FIXTURE_PATH, 'utf8');
 const NOW = new Date('2026-10-12T09:30:00Z');
 const PREVIOUS = '1'.repeat(40);
