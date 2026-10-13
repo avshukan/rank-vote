@@ -30,7 +30,8 @@ import {
 } from './release.mjs';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const CHANGELOG = readFileSync(join(repositoryRoot, 'CHANGELOG.md'), 'utf8');
+const CHANGELOG_FIXTURE_PATH = join(repositoryRoot, 'scripts/fixtures/release-changelog.v0.1.0.md');
+const CHANGELOG = readFileSync(CHANGELOG_FIXTURE_PATH, 'utf8');
 const NOW = new Date('2026-10-12T09:30:00Z');
 const PREVIOUS = '1'.repeat(40);
 const MIDDLE = '2'.repeat(40);
@@ -332,6 +333,7 @@ test('versions are strict vMAJOR.MINOR.PATCH and compare numerically', () => {
 });
 
 test('the changelog entry goes on top, dated, with one bullet per merged change', () => {
+  assert.match(CHANGELOG_FIXTURE_PATH, /scripts\/fixtures\/release-changelog\.v0\.1\.0\.md$/);
   assert.deepEqual((({ version, date }) => ({ version, date }))(topRelease(CHANGELOG)), {
     version: 'v0.1.0',
     date: '2026-09-19',
@@ -358,6 +360,11 @@ test('the changelog entry goes on top, dated, with one bullet per merged change'
   for (const date of ['2026-02-30', '2026-13-01', '12.10.2026', '', undefined]) {
     assert.ok(!isValidDate(date), String(date));
   }
+});
+
+test('the baseline fixture stays v0.1.0 even when a working-tree changelog already has v0.2.0', () => {
+  assert.equal(topRelease(RELEASED_CHANGELOG).version, 'v0.2.0');
+  assert.equal(topRelease(CHANGELOG).version, 'v0.1.0');
 });
 
 test('the draft follows first parents only, oldest first', () => {
