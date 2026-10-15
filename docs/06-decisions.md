@@ -244,7 +244,8 @@ Rejected for the first release:
 Status:
 
 - accepted; implemented by backlog ID-42. The first release through the
-  workflow, which supplies its production evidence, is pending
+  workflow, `v0.2.0`, completed successfully and supplied the production
+  evidence recorded for ID-42
 
 Chosen:
 
@@ -282,8 +283,9 @@ Chosen:
   `backlog-sweep.yml` with the release tag and full SHA
 - the VPS holds no GitHub credential: `check_source` reads the same public API
   endpoints without authentication. As a transition, the first tagged release
-  may still run while the old GitHub CLI login is on the VPS; it is removed
-  and revoked immediately after that release
+  may still run while the old GitHub CLI login is on the VPS; the VPS-local
+  login is removed immediately after that release. Global GitHub CLI OAuth
+  revocation is separate security cleanup tracked by ID-44
 
 Reason:
 
@@ -306,6 +308,10 @@ Reason:
 - the GitHub CLI login found on the VPS carries the `repo` and `workflow`
   scopes, enough to push to every repository of the owner and to approve a
   pending production deployment, while the checks need only public data
+- after the first tagged release, removing that login from the VPS closes the
+  production-host exposure. Revoking the shared GitHub CLI OAuth authorization
+  would also sign development environments out, so the owner split that global
+  cleanup into ID-44 on 2026-10-15 instead of blocking ID-42
 
 Consequences:
 
@@ -316,8 +322,9 @@ Consequences:
   released until that run is re-run; the cancellation policy of `ci.yml` is
   unchanged
 - the owner sets up the Environment, the deploy key, the wrapper, the pinned
-  host key and the tag ruleset once, and removes and revokes the GitHub CLI
-  credential on the VPS immediately after the first tagged release
+  host key and the tag ruleset once, and removes the VPS-local GitHub CLI login
+  immediately after the first tagged release. Revoking the global GitHub CLI
+  OAuth authorization is deferred to ID-44
 - GitHub Actions logs are public, so a release reports only a curated status;
   diagnostics stay in root-only `deploy-state`
 - rollback stays owner-operated; neither the database nor the application is
