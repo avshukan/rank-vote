@@ -177,7 +177,7 @@ updates. Frontend only: no API, shared-package or storage changes.
 - Accepted by the owner: ID-20 is temporary and should be removed by default
   once ID-16 lands, unless ID-16 explicitly keeps it as fallback
 - Implementation choices, settled in the implementation PR and its review:
-  button copy/placement, whether refresh is disabled while a request is in
+  button placement, whether refresh is disabled while a request is in
   flight, and how much shared fetch/retry logic is reused without doing ID-26
 - No architectural or product questions remain open for ID-20.
 
