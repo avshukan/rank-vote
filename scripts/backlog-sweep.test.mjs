@@ -445,7 +445,7 @@ test('a due periodic check reopens the tracker with a reason that names the clos
 });
 
 test('a periodic request that fails after reopening names its reason and the manual recovery', async () => {
-  const reason = 'periodic check: the last sweep closed on 2026-08-02, 30+ days ago';
+  const reason =\n    'periodic check: the last sweep closed on 2026-08-02, 30+ days ago';
   const comment = 'POST /repos/{owner}/{repo}/issues/{issue_number}/comments';
   const failures = { [comment]: httpError(502, 'Bad Gateway') };
   const github = fakeGitHub({
@@ -500,7 +500,7 @@ for (const [name, issues, outcome, summary] of [
   ['an open tracker', [tracker()], 'pending', /a sweep is already requested, so nothing was added/],
   [
     'a tracker closed less than 30 days ago',
-    [tracker({ state: 'closed', closed_at: daysAgo(PERIODIC_DAYS - 1) })],
+    [\n      tracker({\n        state: 'closed',\n        closed_at: daysAgo(PERIODIC_DAYS - 1),\n      }),\n    ],
     'not-due',
     /was closed on 2026-09-06; the periodic check is due on 2026-10-06/,
   ],
