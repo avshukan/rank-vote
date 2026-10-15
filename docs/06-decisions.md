@@ -864,7 +864,7 @@ Chosen:
   that the latest reasons were covered
 - triggers: fewer than 2 `Ready` items left when a `Ready` item is picked for
   work (a procedural rule for agents and people); a release, only after a
-  successful deployment and production verification; and about 60 days since
+  successful deployment and production verification; and about 30 days since
   the last closing
 - no longer wanted items move to a `Cancelled` section shaped like `Done`, so
   they keep their ID and the reason
