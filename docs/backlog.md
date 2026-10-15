@@ -146,6 +146,7 @@ adapts to the column rather than moving the column.
 | 42  | Automate tagged releases   | Ops      | High   | Ready   | Built; Done after owner setup and first release     |
 | 43  | Guard prod-deploy same SHA | Ops      | High   | —       | Refuse or warn if deploy SHA = current; add test    |
 | 44  | Revoke legacy GH CLI OAuth | Ops      | Low    | —       | Security cleanup; revoke old GH CLI OAuth auth      |
+| 45  | Design screens in Figma    | Quality  | Low    | —       | Design key screens with AI in Figma; apply to app   |
 
 ---
 
