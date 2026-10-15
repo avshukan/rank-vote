@@ -63,7 +63,7 @@ runtime evidence is under #29 in `docs/acceptance-criteria.md`. See
 5. Merge changes to `main` via PR; the PR updates `docs/backlog.md` for the items it completes
 6. Keep `Todo` current with backlog sweeps. A sweep is requested on the
    `backlog-sweep` tracker Issue — by the `Ready` pool rule, after a verified
-   production release, and by a weekly check about 60 days after the last
+   production release, and by a weekly check about 30 days after the last
    sweep. It runs with the `backlog-sweep` skill, which only recommends; the
    owner decides, the approved changes land as a reviewed docs PR, and the
    owner closes the tracker
@@ -135,19 +135,13 @@ Examples:
 - Backlog sweep request (`.github/workflows/backlog-sweep.yml`, a plain,
   deterministic workflow) is the one entry point for requesting a sweep:
   `workflow_dispatch` with a required `reason`, plus a weekly, best-effort check
-  that requests one about 60 days after the tracker was last closed. It reopens
+  that requests one about 30 days after the tracker was last closed. It reopens
   or comments on the one Issue labelled `backlog-sweep`. The first explicit
   request creates the label and the Issue; until then the weekly check does
   nothing. It never runs the sweep or closes the tracker. It uses the built-in `GITHUB_TOKEN` and is not a required check.
   GitHub disables scheduled workflows in a public repository after 60 days
   without repository activity, and they stay off until someone re-enables them
   from the Actions tab; no external scheduler backs this up
-- **Temporary scheduled end-to-end test of the backlog sweep request:** the
-  periodic check currently runs daily (`17 6 * * *`) with a 2-day interval
-  (`PERIODIC_DAYS` in `scripts/backlog-sweep.mjs`), to see a scheduled run
-  reopen the closed tracker and record the periodic reason. Once one has, revert
-  to weekly (`17 6 * * 1`) and 60 days, and delete this note. The decision and
-  its criteria stay weekly and 60 days
 - **Tagged releases (ID-42).** A merge never deploys. Prepare release
   (`.github/workflows/prepare-release.yml`, run by the owner with a version)
   opens one release-prep pull request that adds the `CHANGELOG.md` entry; it
