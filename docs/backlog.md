@@ -64,7 +64,7 @@
   one Issue labelled `backlog-sweep`: open while a sweep is requested, closed by
   the owner once none is pending. Requests come when picking work leaves fewer
   than 2 `Ready` items, after a verified production release, and from a weekly
-  check about 60 days after the last sweep. The `backlog-sweep` skill only
+  check about 30 days after the last sweep. The `backlog-sweep` skill only
   recommends; the owner decides, and the approved changes land as a reviewed
   docs pull request.
 - An item that is no longer wanted moves from `Todo` to the end of `Cancelled`
