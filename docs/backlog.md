@@ -144,7 +144,7 @@ adapts to the column rather than moving the column.
 | 38  | Breakdown hover preview    | Value    | Low    | —       | Desktop hover/focus preview of score breakdown      |
 | 41  | Fix backlog lint fixture   | Ops      | Medium | —       | Fixture backlog; drop hard-coded live-file IDs      |
 | 43  | Guard prod-deploy same SHA | Ops      | High   | —       | Refuse or warn if deploy SHA = current; add test    |
-| 44  | Revoke legacy GH CLI OAuth | Ops      | Low    | —       | Security cleanup; revoke old GH CLI OAuth auth      |
+| 44  | Revoke legacy GH CLI OAuth | Ops      | Medium | —       | Security cleanup; revoke old GH CLI OAuth auth      |
 | 45  | Design screens in Figma    | Quality  | Low    | —       | Design key screens with AI in Figma; apply to app   |
 
 ---
