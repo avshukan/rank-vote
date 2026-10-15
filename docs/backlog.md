@@ -143,7 +143,6 @@ adapts to the column rather than moving the column.
 | 37  | Add short poll links       | Quality  | Low    | —       | Replace/alias UUID with short ID; redirect needed   |
 | 38  | Breakdown hover preview    | Value    | Low    | —       | Desktop hover/focus preview of score breakdown      |
 | 41  | Fix backlog lint fixture   | Ops      | Medium | —       | Fixture backlog; drop hard-coded live-file IDs      |
-| 42  | Automate tagged releases   | Ops      | High   | Ready   | Built; Done after owner setup and first release     |
 | 43  | Guard prod-deploy same SHA | Ops      | High   | —       | Refuse or warn if deploy SHA = current; add test    |
 | 44  | Revoke legacy GH CLI OAuth | Ops      | Low    | —       | Security cleanup; revoke old GH CLI OAuth auth      |
 | 45  | Design screens in Figma    | Quality  | Low    | —       | Design key screens with AI in Figma; apply to app   |
@@ -172,6 +171,7 @@ adapts to the column rather than moving the column.
 |  39 | Add backlog sweep process  | Ops      | Medium | Sweep skill; request workflow + tracker Issue; `Cancelled`    |
 |  40 | Record v0.1.0 evidence     | Ops      | Medium | #29 Completion evidence; changelog dated; stale docs fixed    |
 |  19 | Explain score calculation  | Value    | Medium | Per-place Borda `breakdown`; score links to a Details view    |
+|  42 | Automate tagged releases   | Ops      | High   | v0.2.0 verified; VPS GitHub login removed; revoke → ID-44     |
 
 ---
 

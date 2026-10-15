@@ -511,8 +511,8 @@ code fix is a new commit with a new patch release.
 ### One-time owner setup
 
 Owner-operated after the ID-42 implementation merges. The first release made
-this way (the one carrying ID-19) supplies the evidence that moves ID-42 to
-`Done`; see its section in `docs/acceptance-criteria.md`.
+this way (the one carrying ID-19) supplied the evidence recorded under ID-42 in
+`docs/acceptance-criteria.md`.
 
 1. **Deploy key.** On the workstation, generate a dedicated key:
    `ssh-keygen -t ed25519 -N '' -C rank-vote-release -f rank-vote-release`. The
@@ -554,16 +554,15 @@ this way (the one carrying ID-19) supplies the evidence that moves ID-42 to
    tagged release.** This is a transition: the first tagged release may still
    run while the old GitHub CLI login is on the VPS, although the release path
    never uses it, and its evidence records that it was present. Then run
-   `gh auth logout -h github.com` on the VPS, remove any `gh`-based
-   `credential.helper` from root's Git configuration, and revoke the
-   **GitHub CLI** authorization under GitHub → Settings → Applications. A
-   logout alone does not revoke the token, and revoking signs the CLI out on
-   every device, so log in again on the workstation. Confirm on the VPS that
+   `gh auth logout -h github.com` on the VPS and remove any `gh`-based
+   `credential.helper` from root's Git configuration. Confirm on the VPS that
    `gh auth status` reports no login, that
    `git config --global --get-all credential.helper` names no `gh`, and that
    `GH_TOKEN` and `GITHUB_TOKEN` are unset. Every later tagged release runs
-   with no GitHub credential on the VPS; ID-42 moves to `Done` only with this
-   evidence.
+   with no GitHub credential on the VPS. Revoking the global **GitHub CLI**
+   OAuth authorization under GitHub → Settings → Applications is separate
+   security cleanup (ID-44), because it also signs the owner's development
+   environments out; it does not block ID-42 or a tagged release.
 
 ## Repository evidence and recorded runtime evidence
 
