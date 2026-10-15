@@ -1826,6 +1826,12 @@ and tooling only: no app, API, shared-package or storage change.
     reminder on an open tracker
   - the owner-operated `initial backlog sweep` run after merge
   - the title "Add backlog sweep process", and ID-39 stays one item
+- Changed by the owner on 2026-10-15, after the first release:
+  - ID-42 requires the production VPS itself to hold no GitHub credential. That
+    state is proven by the post-release checks above
+  - revoking the global GitHub CLI OAuth authorization is useful security
+    cleanup but would also sign the owner's development environments out. It is
+    therefore deferred to ID-44 and no longer blocks ID-42 completion
 - Settled during readiness, open to review in this PR:
   - The periodic check needs an existing tracker. Before the first request no
     sweep has completed, so there is nothing to measure from, and creation
@@ -2114,7 +2120,7 @@ removal of the VPS GitHub credential that follows that release.
       directly onto the `main` commit it was prepared from and changes only
       `CHANGELOG.md`; changes merged after the preparation, before or after its
       merge, need a new preparation before they can be released
-- [ ] Release tags are immutable: a `v*` tag ruleset blocks updates and
+- [x] Release tags are immutable: a `v*` tag ruleset blocks updates and
       deletions, and the same tag always identifies the same SHA. A release that
       fails in its code is never retagged; the fix ships as a new commit with a
       new patch release
@@ -2152,24 +2158,24 @@ removal of the VPS GitHub credential that follows that release.
 
 ### Owner approval
 
-- [ ] Only the deploy job references the `production` Environment, so every run
+- [x] Only the deploy job references the `production` Environment, so every run
       attempt needs exactly one approval before production changes. The owner is
       the required reviewer; Prevent self-review is off, because the owner both
       tags and approves; administrator bypass is off; and only `v*` tags may
       deploy to it
-- [ ] A rejected run, or one not approved within GitHub's 30-day limit, changes
+- [x] A rejected run, or one not approved within GitHub's 30-day limit, changes
       nothing, and a re-run needs a new approval
 
 ### VPS access
 
-- [ ] The runner connects with a dedicated SSH key whose private part exists
+- [x] The runner connects with a dedicated SSH key whose private part exists
       only as a `production` Environment secret, against a pinned VPS host key.
       An unknown or changed host key fails the job before any remote command
-- [ ] On the VPS the key is installed for `root` with `restrict` and a forced
+- [x] On the VPS the key is installed for `root` with `restrict` and a forced
       command, so it gives no shell, terminal or forwarding and can only run the
       wrapper. Root is what the release tooling requires; the key grants nothing
       beyond the wrapper
-- [ ] The wrapper is root-owned, writable only by root and outside the checkout.
+- [x] The wrapper is root-owned, writable only by root and outside the checkout.
       It accepts exactly a release tag and a full SHA matching strict patterns
       and refuses anything else. It never changes the checkout while another
       production operation holds the deployment lock. Before it runs any
@@ -2191,11 +2197,12 @@ removal of the VPS GitHub credential that follows that release.
       verification and without authentication, and fails closed on any error,
       unexpected status, rate limit or malformed response; the wrapper fetches
       with no credential helper. `gh` is no longer a production prerequisite
-- [ ] Final state: the VPS holds no GitHub credential. As a transition, the first
-      tagged release may run while the old GitHub CLI credential is still on the
-      VPS; the owner removes and revokes it immediately after that release
-      succeeds, and every later tagged release runs with no GitHub credential on
-      the VPS
+- [x] Final state for ID-42: the VPS holds no GitHub credential. The first
+      tagged release ran while the old GitHub CLI login was still on the VPS;
+      the owner removed that local login immediately after the release. Global
+      revocation of the GitHub CLI OAuth authorization is intentionally deferred
+      to ID-44 and does not block ID-42; every later tagged release runs with no
+      GitHub credential on the VPS
 
 ### Unattended deployment
 
@@ -2300,15 +2307,15 @@ removal of the VPS GitHub credential that follows that release.
 
 After the implementation PR merges, the owner:
 
-- [ ] creates the `production` Environment with the settings above and stores
+- [x] creates the `production` Environment with the settings above and stores
       the deploy key and the pinned host key in it
-- [ ] installs the wrapper and the restricted `authorized_keys` entry on the VPS
-- [ ] adds the `v*` tag ruleset that blocks updates and deletions
-- [ ] immediately after the first successful tagged release, removes the
+- [x] installs the wrapper and the restricted `authorized_keys` entry on the VPS
+- [x] adds the `v*` tag ruleset that blocks updates and deletions
+- [x] immediately after the first successful tagged release, removes the
       GitHub CLI credential from the VPS (the CLI login and any `gh` credential
-      helper) and revokes the GitHub CLI authorization on GitHub, which signs the
-      CLI out on the owner's other devices as well. The first tagged release may
-      run before this step; no later one does
+      helper). The first tagged release may run before this step; no later one
+      does. Global revocation of the GitHub CLI OAuth authorization is separate
+      security cleanup tracked by ID-44
 
 ### Tests
 
@@ -2340,23 +2347,69 @@ Local and isolated:
 
 Production evidence, required before `Done`:
 
-- [ ] The first release made this way, the one carrying ID-19, is prepared by
+- [x] The first release made this way, the one carrying ID-19, is prepared by
       `Prepare release`, tagged by the owner on the release-prep merge commit,
       validated, approved once, and deployed and verified without operator input.
       The record states whether the old GitHub CLI credential was still on the
       VPS during that release, as the transition allows
-- [ ] The record PR names the workflow runs, the tag, the full SHA, the approval
-      time, `current.env` with its `RELEASE_TAG`, `previous.env` as the `v0.1.0`
-      manifest, the new and the previous smoke poll, and the sweep request on
-      the tracker
-- [ ] The owner confirms that the deploy key cannot open a shell or run another
+- [x] The record PR names the workflow runs, the tag, the full SHA, the approval
+      record and first observable post-approval job time, `current.env` with its
+      `RELEASE_TAG`, `previous.env` as the `v0.1.0` manifest, the new and the
+      previous smoke poll, and the sweep request on the tracker
+- [x] The owner confirms that the deploy key cannot open a shell or run another
       command, and that the Environment settings and the tag ruleset are in place
-- [ ] After the first release, the owner's checks on the VPS show no GitHub
+- [x] After the first release, the owner's checks on the VPS show no GitHub
       credential: `gh auth status` reports no login, root's Git configuration
       has no `gh` credential helper, and `GH_TOKEN` and `GITHUB_TOKEN` are unset.
-      The GitHub CLI authorization is revoked, so the next tagged release runs
-      without any GitHub credential. ID-42 does not move to `Done` before this
-      evidence
+      Global GitHub CLI OAuth revocation is deferred to ID-44; it is not needed by
+      the release path and does not block ID-42
+
+### Completion evidence
+
+- Prepare release run
+  [38458789158](https://github.com/avshukan/rank-vote/actions/runs/38458789158)
+  opened PR #97 from
+  `ababaf0f00523216553abd0a8183ce7b9ba11964`. The owner reviewed and merged
+  that PR at `2026-10-13T20:11:32Z`; its merge commit is
+  `115d868ada72dce918af3b0d5319fc90949a88c5`. The exact-SHA `main` CI run
+  [38460855615](https://github.com/avshukan/rank-vote/actions/runs/38460855615)
+  passed before release.
+- The owner created annotated tag `v0.2.0` at `2026-10-13T20:18:47Z`; it
+  points to that exact merge commit. Release run
+  [38461825840](https://github.com/avshukan/rank-vote/actions/runs/38461825840)
+  validated the tag and commit, then completed `validate`, `deploy` and
+  `sweep` successfully. GitHub's approvals API records exactly one approval
+  by `avshukan` for Environment `production`; that API does not expose an
+  approval timestamp, so the first observable post-approval time in the record
+  is the deploy job starting at `2026-10-13T20:21:53Z`.
+- The unattended VPS run reported the release verified at
+  `2026-10-13T20:24:28Z`: `current.env` records
+  `RELEASE_TAG=v0.2.0`,
+  `RELEASE_SHA=115d868ada72dce918af3b0d5319fc90949a88c5` and smoke poll
+  `f9ccde31-2964-4bf0-8882-d24eb8e79a48`. `previous.env` preserves the
+  previously verified `v0.1.0` manifest at
+  `7021f3137b597119e39ca13e6a86275da58b28e1`, deployed at
+  `2026-09-19T09:21:41Z`, with smoke poll
+  `4647e500-8940-41a2-9b25-6261d82e9ace`.
+- The release's sweep job dispatched `backlog-sweep.yml`; run
+  [38462577562](https://github.com/avshukan/rank-vote/actions/runs/38462577562)
+  recorded `release v0.2.0 at 115d868ada72dce918af3b0d5319fc90949a88c5`
+  on tracker #77.
+- Owner setup was in place for the release: Environment `production` requires
+  reviewer `avshukan`, allows self-review, disallows administrator bypass and
+  limits deployment to `v*`; the active `protect-release-tags` ruleset
+  matches `refs/tags/v*`, blocks update/deletion/non-fast-forward operations
+  and has no bypass actor. The VPS wrapper is `root:root` mode `0755`; the
+  SSH key is installed with `restrict` and forced command
+  `/usr/local/sbin/rank-vote-release`. Direct shell and `id` probes were
+  refused with exit 64.
+- The old GitHub CLI login was still present during the first tagged release,
+  as the transition allowed. The owner then removed it from the VPS with
+  `gh auth logout`; the follow-up checks showed no GitHub login, no `gh`
+  credential helper and unset `GH_TOKEN` / `GITHUB_TOKEN`. On
+  2026-10-15 the owner explicitly moved global GitHub CLI OAuth revocation out
+  of ID-42 because it would sign development machines out too; ID-44 tracks that
+  cleanup.
 
 ### Documentation
 
@@ -2367,13 +2420,14 @@ Production evidence, required before `Done`:
 - [x] `docs/06-decisions.md`: the "Tag-triggered releases" ADR no longer says
       implementation pending
 - [x] `AGENTS.md` (production tooling) and `README.md` name the release workflow
-- [ ] ID-42 moves to `Done` in the record PR
+- [x] ID-42 moves to `Done` in the record PR
 
 ### Out of Scope (tracked separately)
 
 - Automated offsite backups → ID-32; production monitoring and alerts → ID-33;
   shared rate-limit state and more API replicas → ID-34
-- A manual `prod-deploy` of the current SHA overwriting `previous.env` → #92
+- A manual `prod-deploy` of the current SHA overwriting `previous.env` → ID-43
+- Global revocation of the legacy GitHub CLI OAuth authorization → ID-44
 - Cancelling intermediate `main` push runs in `ci.yml` — not planned; ID-42
   documents the refusal and its recovery, and work follows if it proves
   inconvenient
@@ -2410,11 +2464,12 @@ Production evidence, required before `Done`:
   - the tag goes on the merge commit of the reviewed release-prep pull request,
     never on a later commit
   - no GitHub credential on the VPS: `check_source` reads public endpoints
-    without authentication, and the current CLI credential is revoked during the
-    production setup, after the implementation no longer needs it (timing
-    changed on 2026-10-12, below)
+    without authentication, and the VPS-local GitHub CLI login is removed during
+    the production setup after the implementation no longer needs it. Global
+    OAuth revocation is tracked separately by ID-44 (scope changed on
+    2026-10-15, below)
   - the production setup above, including the `v*` tag ruleset
-  - #92 tracks the manual-path `previous.env` defect; `ci.yml` keeps cancelling
+  - ID-43 tracks the manual-path `previous.env` defect; `ci.yml` keeps cancelling
     intermediate `main` push runs for now
 - Changed by the owner on 2026-10-12, in the review of the implementation PR
   (#94):
@@ -2423,9 +2478,10 @@ Production evidence, required before `Done`:
     it, and anything merged in between needs Prepare release again. A release
     still deploys exactly the tagged commit
   - credential timing: the first tagged release may run while the old GitHub
-    CLI credential is still on the VPS; the owner removes and revokes it
-    immediately afterwards, and every later release runs without it. The final
-    state, no GitHub credential on the VPS, is unchanged
+    CLI credential is still on the VPS; the owner removes the VPS-local login
+    immediately afterwards, and every later release runs without a GitHub
+    credential on the VPS. Global OAuth revocation was still part of ID-42 at
+    this point and was split out on 2026-10-15
   - local `make verify` is run by the owner; CI being green is separate evidence
 - Settled during readiness, open to review in this PR:
   - the SSH principal is `root`, because the release tooling requires root; a
