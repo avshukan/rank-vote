@@ -1699,7 +1699,7 @@ and tooling only: no app, API, shared-package or storage change.
       requests a sweep through the same entry point, and only after a
       successful deployment and verification
 - [x] **Periodic, best effort.** A weekly scheduled check requests a sweep when
-      the tracker is closed and was last closed at least 60 days ago, with a
+      the tracker is closed and was last closed at least 30 days ago, with a
       reason that names that date. It adds no comment while the tracker is
       open, and with no tracker it does nothing and says so in the run summary
 - [x] The docs state GitHub's limitation: in a public repository, scheduled
