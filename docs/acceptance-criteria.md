@@ -1826,12 +1826,6 @@ and tooling only: no app, API, shared-package or storage change.
     reminder on an open tracker
   - the owner-operated `initial backlog sweep` run after merge
   - the title "Add backlog sweep process", and ID-39 stays one item
-- Changed by the owner on 2026-10-15, after the first release:
-  - ID-42 requires the production VPS itself to hold no GitHub credential. That
-    state is proven by the post-release checks above
-  - revoking the global GitHub CLI OAuth authorization is useful security
-    cleanup but would also sign the owner's development environments out. It is
-    therefore deferred to ID-44 and no longer blocks ID-42 completion
 - Settled during readiness, open to review in this PR:
   - The periodic check needs an existing tracker. Before the first request no
     sweep has completed, so there is nothing to measure from, and creation
@@ -2483,6 +2477,12 @@ Production evidence, required before `Done`:
     credential on the VPS. Global OAuth revocation was still part of ID-42 at
     this point and was split out on 2026-10-15
   - local `make verify` is run by the owner; CI being green is separate evidence
+- Changed by the owner on 2026-10-15, after the first release:
+  - ID-42 requires the production VPS itself to hold no GitHub credential. That
+    state is proven by the post-release checks above
+  - revoking the global GitHub CLI OAuth authorization is useful security
+    cleanup but would also sign the owner's development environments out. It is
+    therefore deferred to ID-44 and no longer blocks ID-42 completion
 - Settled during readiness, open to review in this PR:
   - the SSH principal is `root`, because the release tooling requires root; a
     separate account with one sudo rule would let the key do nothing less
