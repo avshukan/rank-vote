@@ -13,9 +13,7 @@ import { inlineCode } from './backlog-promotion.mjs';
 export const TRACKER_LABEL = 'backlog-sweep';
 export const SKILL_PATH = '.claude/skills/backlog-sweep/SKILL.md';
 export const WORKFLOW_FILE = 'backlog-sweep.yml';
-// TEMPORARY scheduled end-to-end test: revert to 60 once the scheduled run has
-// reopened the tracker (see docs/07-process.md, CI/CD).
-export const PERIODIC_DAYS = 2;
+export const PERIODIC_DAYS = 30;
 
 const TRACKER_TITLE = 'Backlog sweep tracker';
 const LABEL_COLOR = '5319e7';
