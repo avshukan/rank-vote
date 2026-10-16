@@ -151,15 +151,23 @@ reset on restart.
 GET /polls/:id/results
 ```
 
+Query parameters:
+
+- `method` (optional): `BORDA` or `IRV`
+- if omitted, `method` defaults to `BORDA`
+
+Response `400 Bad Request` when `method` is provided but not one of the
+supported values (`BORDA`, `IRV`).
+
 The response is discriminated by `method`, the counting method that produced
 it. Each method has its own response variant, and a client reads `method`
-before any method-specific field. Borda is the only method implemented, so
-`"BORDA"` is the only variant. A future method adds its variant in its own
-backlog item (IRV ID-8, Condorcet ID-9).
+before any method-specific field.
 
 Response `404 Not Found` if poll does not exist, whatever the method.
 
 #### Borda — `method: "BORDA"`
+
+Returned when `method` is omitted or set to `BORDA`.
 
 Response `200 OK`:
 
@@ -211,6 +219,77 @@ and holds no counting formula; the web shows them on each option's Details view.
   `totalBallots`: a strict full ranking places every option exactly once
 - with no ballots, every row has `ballots: 0` and `subtotal: 0`
 
+#### Instant-runoff voting — `method: "IRV"`
+
+Returned when `method=IRV`.
+
+Response `200 OK`:
+
+```json
+{
+  "pollId": "string",
+  "title": "string",
+  "method": "IRV",
+  "winners": [{ "optionId": "string", "text": "string" }],
+  "rounds": [
+    {
+      "round": 1,
+      "activeBallots": 0,
+      "majorityThreshold": 1,
+      "tallies": [{ "optionId": "string", "text": "string", "votes": 0 }],
+      "eliminatedOptionIds": ["string"],
+      "tieBreak": {
+        "rule": "RANK_PROFILE",
+        "tiedOptionIds": ["string"],
+        "comparisons": [
+          {
+            "rank": 2,
+            "counts": [{ "optionId": "string", "votes": 0 }]
+          }
+        ],
+        "allActiveCandidatesStillTied": false
+      }
+    }
+  ],
+  "totalBallots": 0
+}
+```
+
+Notes:
+
+- `rounds` is ordered by `round` ascending and is the source for the IRV
+  explanation UI
+- each `round` lists active candidates in `tallies`, sorted by `votes` DESC then
+  `option.order` ASC
+- `activeBallots` is the count of ballots that still contain at least one active
+  candidate in that round
+- `majorityThreshold` is `floor(activeBallots / 2) + 1`
+- `eliminatedOptionIds` holds the candidate(s) removed at the end of the round;
+  it may contain multiple IDs when an unresolved lowest tie covers only a subset
+  of active candidates
+- `tieBreak` is omitted when the lowest tally is unique
+- `totalBallots` is the total submitted ballots for the poll (same meaning as in
+  Borda)
+- zero ballots is a separate case: `winners: []`, `rounds: []`, `totalBallots: 0`
+
+IRV elimination tie-break (`tieBreak.rule = "RANK_PROFILE"`):
+
+- before tie-break comparison, only active candidates are considered:
+  previously eliminated candidates are removed from each ballot and ranks are
+  compressed
+- start from candidates tied for the minimum first-choice tally in that round
+- compare only those tied candidates by second-place counts; keep only
+  candidate(s) with the minimum count
+- if still tied, compare third-place counts, then fourth-place counts, and so on
+- at the first rank that distinguishes them, eliminate the remaining weakest
+  candidate(s)
+- if candidates remain tied through every available rank:
+  - when they are only a subset of active candidates, eliminate all of them
+    simultaneously
+  - when they are all active candidates, stop elimination for that round and
+    declare all active candidates winners; in this case
+    `eliminatedOptionIds: []`, `tieBreak.allActiveCandidatesStillTied: true`
+
 ---
 
 ## Operational Endpoint
@@ -245,7 +324,7 @@ scaffold and does not add a shared product DTO.
 
 - All IDs are UUIDs
 - Timestamps are ISO 8601 (UTC)
-- Counting method is Borda in MVP
+- Counting methods: BORDA is the current baseline; IRV is specified for ID-8
 - No authentication required
 - Product endpoints and the operational liveness endpoint are public
 

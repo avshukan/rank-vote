@@ -2557,6 +2557,161 @@ Production evidence, required before `Done`:
 
 ---
 
+## ID-8 Add IRV counting
+
+Add Instant-runoff voting (IRV) as a second counting method, while keeping
+Borda behavior intact. This item extends the existing results contract and
+results UI to support selecting one method at a time. Method comparison remains
+separate work in ID-10.
+
+### API and shared contract
+
+- [ ] `GET /polls/:id/results` accepts optional query parameter
+      `method=BORDA|IRV`
+- [ ] If `method` is omitted, the API returns Borda (`method: "BORDA"`)
+- [ ] If `method` is present but unsupported, the API returns `400 Bad Request`
+- [ ] `404 Not Found` for unknown poll remains unchanged for any method
+- [ ] `PollResultsResponseDto` is a discriminated union with two variants:
+      Borda (`method: "BORDA"`) and IRV (`method: "IRV"`)
+- [ ] Borda variant stays behavior-compatible with ID-4 and ID-19
+- [ ] IRV variant includes:
+      `{ pollId, title, method: "IRV", winners, rounds, totalBallots }`
+- [ ] Every IRV `rounds[]` entry includes:
+      `{ round, activeBallots, majorityThreshold, tallies, eliminatedOptionIds }`
+      and optional `tieBreak`
+- [ ] Every IRV `tallies[]` entry includes `{ optionId, text, votes }`
+- [ ] IRV `tieBreak` uses the rank-profile contract:
+      `{ rule: "RANK_PROFILE", tiedOptionIds, comparisons, allActiveCandidatesStillTied }`
+- [ ] No new endpoint is added; ID-8 extends only
+      `GET /polls/:id/results`
+- [ ] `Poll.countingMethods` is not persisted or updated in ID-8; Prisma schema,
+      poll create/get contracts and storage remain unchanged
+
+### IRV elimination and tie-break behavior
+
+- [ ] IRV rounds consider only active candidates: already eliminated candidates
+      are removed from ballots and ranks are compressed before counting each
+      round
+- [ ] In each round, candidates tied for minimum first-choice votes enter the
+      tie-break set
+- [ ] Rank-profile tie-break compares only the tie-break set by second-place
+      counts, then third-place counts, then later ranks
+- [ ] At the first rank that distinguishes candidates, eliminate the weakest
+      remaining candidate(s)
+- [ ] If ties remain through every rank and the remaining tied set is only a
+      subset of active candidates, eliminate all of them simultaneously
+- [ ] If ties remain through every rank and the remaining tied set is all active
+      candidates, stop elimination and declare all active candidates winners
+- [ ] Zero ballots is a separate state: `winners: []` (not an all-option tie)
+
+### Results page scope (no ID-10 absorption)
+
+- [ ] `/poll/:id/results` exposes a minimal method selector for `BORDA` and
+      `IRV`, showing one method at a time
+- [ ] Method selection is reflected in the query parameter sent to
+      `GET /polls/:id/results`; omitted method keeps BORDA default behavior
+- [ ] Borda keeps the existing score table and score-breakdown flow from ID-19
+- [ ] IRV shows a round-based explanation using `rounds` from the API response
+- [ ] No side-by-side method comparison, no “different winner” surface and no
+      multi-method analytics (these remain ID-10)
+
+### Required automated domain fixtures (must be tests)
+
+- [ ] **Fixture 1 — lower ranks resolve elimination** is a required domain test.
+      It must assert the intermediate tie-break counts and elimination outcome.
+
+```text
+Options A, B, C, D; ballots:
+
+ACDB
+ACDB
+ADCB
+ADCB
+BACD
+BADC
+CADB
+CBAD
+DBCA
+DBCA
+```
+
+```text
+Round 1 first choices:
+A=4 B=2 C=2 D=2
+```
+
+```text
+Second-place counts for B/C/D:
+B=3 C=2 D=2
+```
+
+```text
+Third-place counts for C/D:
+C=5 D=4
+```
+
+```text
+Therefore D is eliminated and A/B/C remain active.
+```
+
+- [ ] **Fixture 2 — complete symmetric tie** is a required domain test.
+      It must assert that all active candidates are declared winners (no
+      arbitrary elimination).
+
+```text
+Options A, B, C; ballots:
+
+ABC
+BCA
+CAB
+```
+
+```text
+Rank profiles are identical:
+A=[1,1,1]
+B=[1,1,1]
+C=[1,1,1]
+```
+
+```text
+All active candidates remain tied through every rank, so none is arbitrarily eliminated and:
+winners = [A, B, C]
+```
+
+### Verification
+
+- [ ] **Domain tests (`irv.spec.ts`):** include both required fixtures above as
+      executable tests with assertions for intermediate rank-profile counts,
+      elimination decisions and winners
+- [ ] **API e2e (`polls.e2e-spec.ts`):** - omitted `method` returns Borda variant - `method=IRV` returns IRV variant with `rounds` - unsupported `method` returns `400`
+- [ ] **Shared/web tests (Vitest):** method selector wiring, one-method-at-a-time
+      rendering and method-specific view behavior (Borda vs IRV)
+- [ ] **Manual:** with `make web` + `make api`, switch methods on the results
+      page and verify Borda breakdown flow still works while IRV shows rounds
+
+### Out of Scope (tracked separately)
+
+- Condorcet method implementation and explanation → ID-9
+- Side-by-side or “different winner” method comparison → ID-10
+- Persisted per-poll counting-method configuration (`Poll.countingMethods`)
+- Non-strict ballots (ties/partial/pairwise) → ID-14/ID-15 and future pairwise work
+
+### Readiness Decisions
+
+- Accepted by the owner: results-method selection is query-param based
+  (`method=BORDA|IRV`), omitted method defaults to BORDA, unsupported methods
+  return `400`, and the UI provides a minimal BORDA/IRV selector without doing
+  ID-10
+- Accepted by the owner: IRV uses rank-profile tie-break among candidates tied
+  for the fewest first-choice votes, exactly as specified above, including the
+  two required fixtures
+- Accepted by the owner: IRV has its own round-based explanation contract;
+  Borda keeps its existing score-breakdown contract
+- Accepted by the owner: ID-8 does not persist or update `Poll.countingMethods`
+- No architectural or product questions remain open for ID-8.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
