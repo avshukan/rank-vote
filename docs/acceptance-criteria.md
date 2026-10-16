@@ -130,6 +130,59 @@ Frontend only — no API or shared-package change.
 
 ---
 
+## ID-20 Refresh results button
+
+Manual result refresh for the existing Borda pages until ID-16 ships real-time
+updates. Frontend only: no API, shared-package or storage changes.
+
+### Scope
+
+- [ ] Add a visible "Refresh results" button on `/poll/:id/results` and
+      `/poll/:id/results/options/:optionId` in loaded states, including the
+      zero-ballot state
+- [ ] Clicking the button re-fetches `GET /polls/:id/results` for that poll and
+      re-renders from the fresh response
+- [ ] The button keeps each page on its current route (`/results` or
+      `/results/options/:optionId`)
+- [ ] API and shared DTO contracts stay unchanged
+
+### States and edge cases
+
+- [ ] `404` remains the shared not-found state with no Retry and no refresh
+      button
+- [ ] Network/5xx load failures remain retryable through the existing Retry
+      button
+- [ ] The existing score-breakdown link and back-link behavior stays unchanged
+- [ ] The vote-submitted banner on the results page remains unchanged
+
+### Verification
+
+- [ ] **Web tests (Vitest):** both views re-fetch on "Refresh results" from a
+      loaded state; existing not-found and Retry behavior still passes
+- [ ] **API tests:** unchanged (manual refresh reuses the existing
+      `GET /polls/:id/results` contract)
+- [ ] **Manual:** against `make web` + `make api`, submit a ballot in one tab,
+      use "Refresh results" in another tab on both pages, and see updated
+      totals without navigation
+
+### Out of Scope (tracked separately)
+
+- Live automatic updates (push/polling/websockets) → ID-16
+- Extracting shared load/error/retry/refresh logic between results views → ID-26
+
+### Readiness Decisions
+
+- Accepted by the owner: "Refresh results" appears on both `/poll/:id/results`
+  and `/poll/:id/results/options/:optionId`, because both can become stale
+- Accepted by the owner: ID-20 is temporary and should be removed by default
+  once ID-16 lands, unless ID-16 explicitly keeps it as fallback
+- Implementation choices, settled in the implementation PR and its review:
+  button placement, whether refresh is disabled while a request is in
+  flight, and how much shared fetch/retry logic is reused without doing ID-26
+- No architectural or product questions remain open for ID-20.
+
+---
+
 ## #17 Migrate to PostgreSQL
 
 Accepted in `docs/06-decisions.md` (Storage, Database Hosting); requirements in

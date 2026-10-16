@@ -120,7 +120,7 @@ adapts to the column rather than moving the column.
 | ID  | Title                      | Type     | Level  | State   | Notes                                               |
 | --- | -------------------------- | -------- | ------ | ------- | --------------------------------------------------- |
 | 6   | Mobile responsive layout   | Quality  | Medium | Ready   | Main flows from 320px; long-press touch drag        |
-| 20  | Refresh results button     | Quality  | Medium | —       | Manual results refresh until ID-16                  |
+| 20  | Refresh results button     | Quality  | Medium | Ready   | Manual results refresh until ID-16                  |
 | 8   | Add IRV counting           | Value    | Medium | —       | Instant-runoff voting                               |
 | 9   | Add Condorcet counting     | Value    | Medium | —       | Pairwise comparison winner                          |
 | 10  | Compare counting methods   | Value    | Medium | —       | Show different winners; needs ID-8, ID-9            |
