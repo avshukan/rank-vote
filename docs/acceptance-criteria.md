@@ -2575,43 +2575,48 @@ separate work in ID-10.
       Borda (`method: "BORDA"`) and IRV (`method: "IRV"`)
 - [ ] Borda variant stays behavior-compatible with ID-4 and ID-19
 - [ ] IRV variant includes:
-      `{ pollId, title, method: "IRV", winners, rounds, totalBallots }`
+      `{ pollId, title, method: "IRV", winners, rounds, standings, totalBallots }`
+- [ ] `standings` includes `{ optionId, text, placeFrom, placeTo }` for every
+      poll option in non-zero-ballot results
+- [ ] `winners` matches exactly the standing group whose `placeFrom` is `1`
 - [ ] Every IRV `rounds[]` entry includes:
-      `{ round, activeBallots, majorityThreshold, tallies, eliminatedOptionIds }`
-      and optional `tieBreak`
+      `{ round, tallies, eliminatedOptionIds }` and optional `tieBreak`
 - [ ] Every IRV `tallies[]` entry includes `{ optionId, text, votes }`
 - [ ] IRV `tieBreak` uses the rank-profile contract:
       `{ rule: "RANK_PROFILE", tiedOptionIds, comparisons, allActiveCandidatesStillTied }`
 - [ ] In IRV `tieBreak`, `tiedOptionIds` is the original lowest first-choice
-      tie-set for that round; `comparisons` records one entry per compared rank,
-      where each entry contains counts for the current tie-set before narrowing,
-      and later entries contain only candidates that survived the previous
-      comparison
+      tie-set for that round; each `comparisons[]` entry contains counts for the
+      current tie-set before narrowing, and later entries contain only
+      candidates that survived the previous comparison
+- [ ] If `majorityThreshold` is returned, it is explanatory metadata only and
+      does not change elimination behavior
 - [ ] No new endpoint is added; ID-8 extends only
       `GET /polls/:id/results`
 - [ ] `Poll.countingMethods` is not persisted or updated in ID-8; Prisma schema,
       poll create/get contracts and storage remain unchanged
 
-### IRV elimination and tie-break behavior
+### IRV full-ranking algorithm and tie-break behavior
 
-- [ ] IRV rounds consider only active candidates: already eliminated candidates
-      are removed from ballots and ranks are compressed before counting each
-      round
-- [ ] In each round, candidates tied for minimum first-choice votes enter the
-      tie-break set
-- [ ] After first-choice tallies, if a candidate has
-      `votes >= majorityThreshold`, stop: that candidate is the sole winner and
-      `eliminatedOptionIds: []` for that round
-- [ ] Rank-profile tie-break compares only the tie-break set by second-place
-      counts, keeps only candidates with the minimum count, and if one candidate
-      remains, eliminates that candidate
-- [ ] If several candidates remain in the tie-break set after narrowing, compare
-      only those survivors by third-place counts, then later ranks
-- [ ] If ties remain through every rank and the remaining tied set is only a
-      subset of active candidates, eliminate all of them simultaneously
-- [ ] If ties remain through every rank and the remaining tied set is all active
-      candidates, stop elimination and declare all active candidates winners
-- [ ] Zero ballots is a separate state: `winners: []` (not an all-option tie)
+- [ ] IRV builds a complete ranking bottom-up by repeated elimination
+- [ ] A first-choice majority does **not** terminate counting; rounds continue
+      until all places are assigned
+- [ ] Each round uses only active candidates: eliminated candidates are removed
+      from every ballot and ranks are compressed before counting
+- [ ] For each round, find the candidate(s) with the minimum first-choice count
+- [ ] If several are tied for the minimum, compare only that tie-set by
+      second-place counts and keep only candidates with the minimum count
+- [ ] If one candidate remains in the tie-set, eliminate that candidate
+- [ ] If several remain, continue narrowing with third-place counts, then later
+      ranks, each time comparing only tie-set survivors
+- [ ] If candidates remain tied after every available rank and they are a subset
+      of active candidates, eliminate all of them simultaneously
+- [ ] If candidates remain tied after every available rank and they are all
+      active candidates, none is eliminated; they share all remaining top places
+      and are all winners
+- [ ] Each eliminated group fills the lowest still-unassigned places; if `k`
+      candidates are eliminated together, they share that `k`-place range
+- [ ] Zero ballots is a separate case:
+      `winners: []`, `rounds: []`, `standings: []`, `totalBallots: 0`
 
 ### Results page scope (no ID-10 absorption)
 
@@ -2620,21 +2625,20 @@ separate work in ID-10.
 - [ ] Method selection is reflected in the query parameter sent to
       `GET /polls/:id/results`; omitted method keeps BORDA default behavior
 - [ ] Borda keeps the existing score table and score-breakdown flow from ID-19
-- [ ] IRV shows a round-based explanation using `rounds` from the API response
+- [ ] IRV shows a round-based explanation and standings from the API response
+- [ ] Extend `/poll/:id/results/options/:optionId` for IRV: when `method=IRV`,
+      navigation between Results and Details preserves `method=IRV`
+- [ ] IRV Details explains the selected option's final place using that option's
+      round/elimination/tie-break history
 - [ ] No side-by-side method comparison, no “different winner” surface and no
       multi-method analytics (these remain ID-10)
 
 ### Required automated domain fixtures (must be tests)
 
-- [ ] **Fixture 1 — lower ranks resolve elimination** is a required domain test.
-      It must assert the intermediate tie-break counts and elimination outcome.
-      Required narrowing path: `B/C/D` (first-choice tie) → `C/D`
-      (after second-place comparison) → eliminate `D` (after third-place
-      comparison).
+- [ ] **Fixture 1 — rank-profile narrowing, full standings** is a required domain
+      test.
 
 ```text
-Options A, B, C, D; ballots:
-
 ACDB
 ACDB
 ADCB
@@ -2648,65 +2652,266 @@ DBCA
 ```
 
 ```text
-Round 1 first choices:
-A=4 B=2 C=2 D=2
+Round 1:
+first: A=4 B=2 C=2 D=2
+rank 2 for B/C/D: B=3 C=2 D=2
+rank 3 for C/D: C=5 D=4
 ```
 
 ```text
-Second-place counts for B/C/D:
-B=3 C=2 D=2
+Eliminate D -> place 4.
+After compression, round 2: A=4 B=4 C=2.
+Eliminate C -> place 3.
+Round 3: A=5 B=5.
+A/B remain identical through the full profile.
 ```
 
 ```text
-Third-place counts for C/D:
-C=5 D=4
+Expected:
+A = places 1-2
+B = places 1-2
+C = place 3
+D = place 4
+winners = [A, B]
 ```
 
-```text
-Therefore D is eliminated and A/B/C remain active.
-```
-
-- [ ] **Fixture 2 — complete symmetric tie** is a required domain test.
-      It must assert that all active candidates are declared winners (no
-      arbitrary elimination).
+- [ ] **Fixture 2 — complete symmetric tie from the start** is a required domain
+      test.
 
 ```text
-Options A, B, C; ballots:
-
 ABC
 BCA
 CAB
 ```
 
 ```text
-Rank profiles are identical:
+Profiles:
 A=[1,1,1]
 B=[1,1,1]
 C=[1,1,1]
 ```
 
 ```text
-All active candidates remain tied through every rank, so none is arbitrarily eliminated and:
+Expected:
+A = places 1-3
+B = places 1-3
+C = places 1-3
 winners = [A, B, C]
 ```
 
+- [ ] **Fixture 3 — zero first-choice candidate and rank compression** is a
+      required domain test.
+
+```text
+CABD
+DBAC
+CBDA
+BDCA
+CDAB
+```
+
+```text
+Round 1:
+A=0 B=1 C=3 D=1
+```
+
+```text
+Eliminate A -> place 4.
+Compressed ballots:
+CBD
+DBC
+CBD
+BDC
+CDB
+```
+
+```text
+Round 2:
+B=1 C=3 D=1
+rank 2 for B/D: B=3 D=2
+Eliminate D -> place 3.
+```
+
+```text
+Round 3:
+B=2 C=3
+Eliminate B -> place 2; C remains -> place 1.
+```
+
+```text
+Expected standings:
+C=1
+B=2
+D=3
+A=4
+winners=[C]
+```
+
+- [ ] **Fixture 4 — unresolved tie among a subset** is a required domain test.
+
+```text
+ABCD
+ACBD
+DBCA
+DCBA
+BADC
+CADB
+```
+
+```text
+Round 1 first choices:
+A=2 B=1 C=1 D=2
+```
+
+```text
+B/C profiles:
+B=[1,2,2,1]
+C=[1,2,2,1]
+```
+
+```text
+They are only a subset of active candidates, so eliminate B and C simultaneously.
+Expected final standings:
+A=1
+D=2
+B=3-4
+C=3-4
+winners=[A]
+```
+
+- [ ] **Fixture 5 — three candidates eliminated simultaneously** is a required
+      domain test.
+
+```text
+ABCDE
+ABCDE
+ACDBE
+ACDBE
+ADBCE
+ADBCE
+EBCDA
+ECDBA
+EDBCA
+```
+
+```text
+Round 1:
+A=6 E=3 B=0 C=0 D=0
+```
+
+```text
+Profiles:
+B=[0,3,3,3,0]
+C=[0,3,3,3,0]
+D=[0,3,3,3,0]
+```
+
+```text
+B/C/D are indistinguishable but are only a subset of active candidates, so
+eliminate all three simultaneously. They share places 3-5.
+Remaining A/E: A=6 E=3.
+Eliminate E -> place 2; A remains -> place 1.
+```
+
+```text
+Expected:
+A=1
+E=2
+B=3-5
+C=3-5
+D=3-5
+winners=[A]
+```
+
+- [ ] **Fixture 6 — early absolute majority does not stop ranking** is a required
+      domain test and regression.
+
+```text
+ABCD
+ACDB
+ADBC
+ABDC
+BCDA
+CDBA
+DCBA
+```
+
+```text
+Round 1:
+A=4 B=1 C=1 D=1
+```
+
+```text
+A already has 4/7 first choices, but counting MUST continue because complete
+standings are required.
+Among B/C/D, rank-profile narrowing leaves B/D tied and eliminates them
+simultaneously.
+```
+
+```text
+Expected:
+A=1
+C=2
+B=3-4
+D=3-4
+winners=[A]
+```
+
+- [ ] **Fixture 7 — two-candidate complete tie** is a required domain test.
+
+```text
+AB
+BA
+```
+
+```text
+Expected:
+A=1-2
+B=1-2
+winners=[A,B]
+```
+
+- [ ] **Fixture 8 — zero ballots** is a required domain test.
+
+```text
+Expected:
+winners=[]
+rounds=[]
+standings=[]
+```
+
+### General domain-test invariants (required)
+
+- [ ] For non-zero ballots, every poll option appears exactly once in
+      `standings`
+- [ ] For non-zero ballots, final place ranges cover the complete `1..N`
+      ranking without gaps
+- [ ] Candidates eliminated in one group receive the same place range
+- [ ] `winners` exactly match the standing group whose `placeFrom` is `1`
+- [ ] `rounds` and `standings` agree about elimination order
+- [ ] Rank-profile comparison never includes a candidate removed from the
+      current tie-set
+- [ ] Eliminated candidates never participate in later rounds
+
 ### Verification
 
-- [ ] **Domain tests (`irv.spec.ts`):** include both required fixtures above as
-      executable tests with assertions for intermediate rank-profile counts,
-      elimination decisions and winners
-- [ ] **API e2e (`polls.e2e-spec.ts`):** - omitted `method` returns Borda variant - `method=IRV` returns IRV variant with `rounds` - unsupported `method` returns `400`
+- [ ] **Domain tests (`irv.spec.ts`):** implement all 8 fixtures above as
+      executable tests, plus the required invariants
+- [ ] **API e2e (`polls.e2e-spec.ts`):** - omitted `method` returns Borda variant - `method=IRV` returns IRV variant with `rounds` and `standings` - unsupported `method` returns `400`
 - [ ] **Shared/web tests (Vitest):** method selector wiring, one-method-at-a-time
-      rendering and method-specific view behavior (Borda vs IRV)
+      rendering, method-preserving Results/Details navigation and
+      method-specific behavior (Borda vs IRV)
 - [ ] **Manual:** with `make web` + `make api`, switch methods on the results
-      page and verify Borda breakdown flow still works while IRV shows rounds
+      page, open Details from IRV and return back while preserving `method=IRV`,
+      and verify Borda breakdown flow remains intact
 
 ### Out of Scope (tracked separately)
 
 - Condorcet method implementation and explanation → ID-9
 - Side-by-side or “different winner” method comparison → ID-10
 - Persisted per-poll counting-method configuration (`Poll.countingMethods`)
-- Non-strict ballots (ties/partial/pairwise) → ID-14/ID-15 and future pairwise work
+- Non-strict ballots (ties/partial/pairwise) → ID-14/ID-15 and future pairwise
+  work
 
 ### Readiness Decisions
 
@@ -2714,11 +2919,14 @@ winners = [A, B, C]
   (`method=BORDA|IRV`), omitted method defaults to BORDA, unsupported methods
   return `400`, and the UI provides a minimal BORDA/IRV selector without doing
   ID-10
-- Accepted by the owner: IRV uses rank-profile tie-break among candidates tied
-  for the fewest first-choice votes, exactly as specified above, including the
-  two required fixtures
-- Accepted by the owner: IRV has its own round-based explanation contract;
-  Borda keeps its existing score-breakdown contract
+- Accepted by the owner: IRV builds complete standings by elimination rounds,
+  does not stop on first-choice majority, and uses rank-profile tie-break as
+  specified above
+- Accepted by the owner: the 8 fixtures above are mandatory domain tests for
+  implementation
+- Accepted by the owner: IRV Details extends
+  `/poll/:id/results/options/:optionId` and preserves `method=IRV` when
+  navigating between Results and Details
 - Accepted by the owner: ID-8 does not persist or update `Poll.countingMethods`
 - No architectural or product questions remain open for ID-8.
 

@@ -227,42 +227,85 @@ Response `200 OK`:
 
 ```json
 {
-  "pollId": "string",
-  "title": "string",
+  "pollId": "poll-1",
+  "title": "Lunch",
   "method": "IRV",
-  "winners": [{ "optionId": "string", "text": "string" }],
+  "winners": [
+    { "optionId": "a", "text": "A" },
+    { "optionId": "b", "text": "B" }
+  ],
   "rounds": [
     {
       "round": 1,
-      "activeBallots": 0,
-      "majorityThreshold": 1,
-      "tallies": [{ "optionId": "string", "text": "string", "votes": 0 }],
-      "eliminatedOptionIds": ["string"],
+      "tallies": [
+        { "optionId": "a", "text": "A", "votes": 4 },
+        { "optionId": "b", "text": "B", "votes": 2 },
+        { "optionId": "c", "text": "C", "votes": 2 },
+        { "optionId": "d", "text": "D", "votes": 2 }
+      ],
+      "eliminatedOptionIds": ["d"],
       "tieBreak": {
         "rule": "RANK_PROFILE",
-        "tiedOptionIds": ["option-b", "option-c", "option-d"],
+        "tiedOptionIds": ["b", "c", "d"],
         "comparisons": [
           {
             "rank": 2,
             "counts": [
-              { "optionId": "option-b", "votes": 3 },
-              { "optionId": "option-c", "votes": 2 },
-              { "optionId": "option-d", "votes": 2 }
+              { "optionId": "b", "votes": 3 },
+              { "optionId": "c", "votes": 2 },
+              { "optionId": "d", "votes": 2 }
             ]
           },
           {
             "rank": 3,
             "counts": [
-              { "optionId": "option-c", "votes": 5 },
-              { "optionId": "option-d", "votes": 4 }
+              { "optionId": "c", "votes": 5 },
+              { "optionId": "d", "votes": 4 }
             ]
           }
         ],
         "allActiveCandidatesStillTied": false
       }
+    },
+    {
+      "round": 2,
+      "tallies": [
+        { "optionId": "a", "text": "A", "votes": 4 },
+        { "optionId": "b", "text": "B", "votes": 4 },
+        { "optionId": "c", "text": "C", "votes": 2 }
+      ],
+      "eliminatedOptionIds": ["c"]
+    },
+    {
+      "round": 3,
+      "tallies": [
+        { "optionId": "a", "text": "A", "votes": 5 },
+        { "optionId": "b", "text": "B", "votes": 5 }
+      ],
+      "eliminatedOptionIds": [],
+      "tieBreak": {
+        "rule": "RANK_PROFILE",
+        "tiedOptionIds": ["a", "b"],
+        "comparisons": [
+          {
+            "rank": 2,
+            "counts": [
+              { "optionId": "a", "votes": 5 },
+              { "optionId": "b", "votes": 5 }
+            ]
+          }
+        ],
+        "allActiveCandidatesStillTied": true
+      }
     }
   ],
-  "totalBallots": 0
+  "standings": [
+    { "optionId": "a", "text": "A", "placeFrom": 1, "placeTo": 2 },
+    { "optionId": "b", "text": "B", "placeFrom": 1, "placeTo": 2 },
+    { "optionId": "c", "text": "C", "placeFrom": 3, "placeTo": 3 },
+    { "optionId": "d", "text": "D", "placeFrom": 4, "placeTo": 4 }
+  ],
+  "totalBallots": 10
 }
 ```
 
@@ -272,30 +315,30 @@ Notes:
   explanation UI
 - each `round` lists active candidates in `tallies`, sorted by `votes` DESC then
   `option.order` ASC
-- `activeBallots` is the count of ballots that still contain at least one active
-  candidate in that round
-- `majorityThreshold` is `floor(activeBallots / 2) + 1`
-- after first-choice tallies for a round, if a candidate has
-  `votes >= majorityThreshold`, counting stops, that candidate is the sole
-  winner and `eliminatedOptionIds: []` for that round
-- `eliminatedOptionIds` holds the candidate(s) removed at the end of the round;
-  it may contain multiple IDs when an unresolved lowest tie covers only a subset
-  of active candidates
+- IRV does not terminate on first-choice majority; it continues elimination rounds
+  to build complete `standings`
+- each round uses only active candidates: previously eliminated candidates are
+  removed from each ballot and ranks are compressed before counting
+- `eliminatedOptionIds` holds the candidate(s) removed at the end of that round;
+  it may contain multiple IDs when an unresolved tie covers only a subset of
+  active candidates
 - `tieBreak` is omitted when the lowest tally is unique
-- `totalBallots` is the total submitted ballots for the poll (same meaning as in
-  Borda)
-- zero ballots is a separate case: `winners: []`, `rounds: []`, `totalBallots: 0`
+- if `majorityThreshold` is returned, it is explanatory metadata only and does
+  not affect elimination behavior
+- `standings` records final places per option with `{ placeFrom, placeTo }`
+- each eliminated group fills the lowest still-unassigned places; if `k`
+  candidates are eliminated together, they share that `k`-place range
+- `winners` is exactly the standing group whose `placeFrom` is `1`
+- `totalBallots` is the total submitted ballots for the poll
+- zero ballots is a separate case:
+  `winners: []`, `rounds: []`, `standings: []`, `totalBallots: 0`
 
 IRV elimination tie-break (`tieBreak.rule = "RANK_PROFILE"`):
 
-- before tie-break comparison, only active candidates are considered:
-  previously eliminated candidates are removed from each ballot and ranks are
-  compressed
 - start from candidates tied for the minimum first-choice tally in that round
 - `tieBreak.tiedOptionIds` stores that original lowest first-choice tie-set
-- compare only those tied candidates by second-place counts and keep only
-  candidate(s) with the minimum count; if one candidate remains, eliminate that
-  candidate
+- compare only that tie-set by second-place counts and keep only candidates with
+  the minimum count; if one candidate remains, eliminate that candidate
 - if several candidates remain tied, compare only those survivors by
   third-place counts, then fourth-place counts, and so on
 - each `tieBreak.comparisons[]` entry records one compared rank and includes
@@ -304,9 +347,15 @@ IRV elimination tie-break (`tieBreak.rule = "RANK_PROFILE"`):
 - if candidates remain tied through every available rank:
   - when they are only a subset of active candidates, eliminate all of them
     simultaneously
-  - when they are all active candidates, stop elimination for that round and
-    declare all active candidates winners; in this case
+  - when they are all active candidates, none is eliminated; they share all
+    remaining top places and are all winners; in this case
     `eliminatedOptionIds: []`, `tieBreak.allActiveCandidatesStillTied: true`
+
+Client routing note for ID-8 web behavior:
+
+- when `method=IRV`, navigation between `/poll/:id/results` and
+  `/poll/:id/results/options/:optionId` preserves `method=IRV` in the URL query
+  so both views render the same method variant
 
 ---
 
