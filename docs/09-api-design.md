@@ -339,6 +339,8 @@ IRV elimination tie-break (`tieBreak.rule = "RANK_PROFILE"`):
 - `tieBreak.tiedOptionIds` stores that original lowest first-choice tie-set
 - compare only that tie-set by second-place counts and keep only candidates with
   the minimum count; if one candidate remains, eliminate that candidate
+- `tieBreak.comparisons[]` starts at `rank: 2`. Rank 1 counts are already in
+  the round's first-choice `tallies`
 - if several candidates remain tied, compare only those survivors by
   third-place counts, then fourth-place counts, and so on
 - each `tieBreak.comparisons[]` entry records one compared rank and includes

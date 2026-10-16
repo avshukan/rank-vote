@@ -2588,6 +2588,8 @@ separate work in ID-10.
       tie-set for that round; each `comparisons[]` entry contains counts for the
       current tie-set before narrowing, and later entries contain only
       candidates that survived the previous comparison
+- [ ] `comparisons[]` starts at rank 2. Rank 1 counts are the round's
+      first-choice `tallies` and are not repeated in `comparisons[]`
 - [ ] If `majorityThreshold` is returned, it is explanatory metadata only and
       does not change elimination behavior
 - [ ] No new endpoint is added; ID-8 extends only
@@ -2663,6 +2665,7 @@ rank 3 for C/D: C=5 D=4
 Eliminate D -> place 4.
 After compression, round 2: A=4 B=4 C=2.
 Eliminate C -> place 3.
+After C elimination, one ballot transfers to A and one to B.
 Round 3: A=5 B=5.
 A/B remain identical through the full profile.
 ```
