@@ -2849,7 +2849,8 @@ A=4 B=1 C=1 D=1
 A already has 4/7 first choices, but counting MUST continue because complete
 standings are required.
 rank 2 for B/C/D: B=2 C=3 D=2
-C has the highest rank-2 count, so it leaves the tie-set; survivors: B/D.
+C is not at the minimum on rank 2, so it is narrowed out; survivors: B/D
+(minimum=2).
 rank 3 for B/D: B=3 D=3
 rank 4 for B/D: B=1 D=1
 B/D remain indistinguishable through all ranks and are only a subset of active

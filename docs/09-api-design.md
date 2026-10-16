@@ -348,6 +348,8 @@ IRV elimination tie-break (`tieBreak.rule = "RANK_PROFILE"`):
   include only candidates that survived the previous comparison
 - by round 3 in the example, only two candidates remain active, so compressed
   ballots have ranks `1..2` and `rank: 2` is the last available comparison
+- with two active candidates, rank-2 counts mirror round-3 first-choice
+  `tallies`, because each ballot contributes its other active candidate at rank 2
 - if candidates remain tied through every available rank:
   - when they are only a subset of active candidates, eliminate all of them
     simultaneously
