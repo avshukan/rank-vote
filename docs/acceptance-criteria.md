@@ -2774,7 +2774,12 @@ C=[1,2,2,1]
 ```
 
 ```text
-They are only a subset of active candidates, so eliminate B and C simultaneously.
+Tie-set at minimum first-choice count is B/C.
+rank 2 for B/C: B=2 C=2
+rank 3 for B/C: B=2 C=2
+rank 4 for B/C: B=1 C=1
+B/C remain indistinguishable through all ranks and are only a subset of active
+candidates, so eliminate B and C simultaneously.
 Expected final standings:
 A=1
 D=2
@@ -2811,6 +2816,11 @@ D=[0,3,3,3,0]
 ```
 
 ```text
+Tie-set at minimum first-choice count is B/C/D.
+rank 2 for B/C/D: B=3 C=3 D=3
+rank 3 for B/C/D: B=3 C=3 D=3
+rank 4 for B/C/D: B=3 C=3 D=3
+rank 5 for B/C/D: B=0 C=0 D=0
 B/C/D are indistinguishable but are only a subset of active candidates, so
 eliminate all three simultaneously. They share places 3-5.
 Remaining A/E: A=6 E=3.

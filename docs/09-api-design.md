@@ -350,6 +350,8 @@ IRV elimination tie-break (`tieBreak.rule = "RANK_PROFILE"`):
   ballots have ranks `1..2` and `rank: 2` is the last available comparison
 - with two active candidates, rank-2 counts mirror round-3 first-choice
   `tallies`, because each ballot contributes its other active candidate at rank 2
+- in the example, that mirror relationship is intentional: round 3 has
+  `tallies` A=5/B=5 and `rank: 2` counts A=5/B=5
 - if candidates remain tied through every available rank:
   - when they are only a subset of active candidates, eliminate all of them
     simultaneously
