@@ -2639,6 +2639,10 @@ separate work in ID-10.
       test.
 
 ```text
+Ballots (10 total):
+```
+
+```text
 ACDB
 ACDB
 ADCB
