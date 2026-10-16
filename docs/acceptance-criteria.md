@@ -2844,8 +2844,11 @@ A=4 B=1 C=1 D=1
 ```text
 A already has 4/7 first choices, but counting MUST continue because complete
 standings are required.
-Among B/C/D, rank-profile narrowing leaves B/D tied and eliminates them
-simultaneously.
+rank 2 for B/C/D: B=2 C=3 D=2
+rank 3 for B/D: B=3 D=3
+rank 4 for B/D: B=1 D=1
+B/D remain indistinguishable through all ranks and are only a subset of active
+candidates, so eliminate B and D simultaneously.
 ```
 
 ```text

@@ -196,6 +196,8 @@ Response `200 OK`:
 }
 ```
 
+The IRV example above mirrors Fixture 1 in `docs/acceptance-criteria.md`.
+
 Notes:
 
 - `winners` and `scores` share one entry shape (`{ optionId, text, score, breakdown }`), so the results page needs no lookup between them
