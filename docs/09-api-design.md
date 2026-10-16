@@ -344,6 +344,8 @@ IRV elimination tie-break (`tieBreak.rule = "RANK_PROFILE"`):
 - each `tieBreak.comparisons[]` entry records one compared rank and includes
   counts for the current tie-set before narrowing; later comparison entries
   include only candidates that survived the previous comparison
+- by round 3 in the example, only two candidates remain active, so compressed
+  ballots have ranks `1..2` and `rank: 2` is the last available comparison
 - if candidates remain tied through every available rank:
   - when they are only a subset of active candidates, eliminate all of them
     simultaneously
