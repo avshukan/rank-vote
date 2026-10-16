@@ -240,11 +240,22 @@ Response `200 OK`:
       "eliminatedOptionIds": ["string"],
       "tieBreak": {
         "rule": "RANK_PROFILE",
-        "tiedOptionIds": ["string"],
+        "tiedOptionIds": ["option-b", "option-c", "option-d"],
         "comparisons": [
           {
             "rank": 2,
-            "counts": [{ "optionId": "string", "votes": 0 }]
+            "counts": [
+              { "optionId": "option-b", "votes": 3 },
+              { "optionId": "option-c", "votes": 2 },
+              { "optionId": "option-d", "votes": 2 }
+            ]
+          },
+          {
+            "rank": 3,
+            "counts": [
+              { "optionId": "option-c", "votes": 5 },
+              { "optionId": "option-d", "votes": 4 }
+            ]
           }
         ],
         "allActiveCandidatesStillTied": false
@@ -264,6 +275,9 @@ Notes:
 - `activeBallots` is the count of ballots that still contain at least one active
   candidate in that round
 - `majorityThreshold` is `floor(activeBallots / 2) + 1`
+- after first-choice tallies for a round, if a candidate has
+  `votes >= majorityThreshold`, counting stops, that candidate is the sole
+  winner and `eliminatedOptionIds: []` for that round
 - `eliminatedOptionIds` holds the candidate(s) removed at the end of the round;
   it may contain multiple IDs when an unresolved lowest tie covers only a subset
   of active candidates
@@ -278,11 +292,15 @@ IRV elimination tie-break (`tieBreak.rule = "RANK_PROFILE"`):
   previously eliminated candidates are removed from each ballot and ranks are
   compressed
 - start from candidates tied for the minimum first-choice tally in that round
-- compare only those tied candidates by second-place counts; keep only
-  candidate(s) with the minimum count
-- if still tied, compare third-place counts, then fourth-place counts, and so on
-- at the first rank that distinguishes them, eliminate the remaining weakest
-  candidate(s)
+- `tieBreak.tiedOptionIds` stores that original lowest first-choice tie-set
+- compare only those tied candidates by second-place counts and keep only
+  candidate(s) with the minimum count; if one candidate remains, eliminate that
+  candidate
+- if several candidates remain tied, compare only those survivors by
+  third-place counts, then fourth-place counts, and so on
+- each `tieBreak.comparisons[]` entry records one compared rank and includes
+  counts for the current tie-set before narrowing; later comparison entries
+  include only candidates that survived the previous comparison
 - if candidates remain tied through every available rank:
   - when they are only a subset of active candidates, eliminate all of them
     simultaneously

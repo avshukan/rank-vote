@@ -2582,6 +2582,11 @@ separate work in ID-10.
 - [ ] Every IRV `tallies[]` entry includes `{ optionId, text, votes }`
 - [ ] IRV `tieBreak` uses the rank-profile contract:
       `{ rule: "RANK_PROFILE", tiedOptionIds, comparisons, allActiveCandidatesStillTied }`
+- [ ] In IRV `tieBreak`, `tiedOptionIds` is the original lowest first-choice
+      tie-set for that round; `comparisons` records one entry per compared rank,
+      where each entry contains counts for the current tie-set before narrowing,
+      and later entries contain only candidates that survived the previous
+      comparison
 - [ ] No new endpoint is added; ID-8 extends only
       `GET /polls/:id/results`
 - [ ] `Poll.countingMethods` is not persisted or updated in ID-8; Prisma schema,
@@ -2594,10 +2599,14 @@ separate work in ID-10.
       round
 - [ ] In each round, candidates tied for minimum first-choice votes enter the
       tie-break set
+- [ ] After first-choice tallies, if a candidate has
+      `votes >= majorityThreshold`, stop: that candidate is the sole winner and
+      `eliminatedOptionIds: []` for that round
 - [ ] Rank-profile tie-break compares only the tie-break set by second-place
-      counts, then third-place counts, then later ranks
-- [ ] At the first rank that distinguishes candidates, eliminate the weakest
-      remaining candidate(s)
+      counts, keeps only candidates with the minimum count, and if one candidate
+      remains, eliminates that candidate
+- [ ] If several candidates remain in the tie-break set after narrowing, compare
+      only those survivors by third-place counts, then later ranks
 - [ ] If ties remain through every rank and the remaining tied set is only a
       subset of active candidates, eliminate all of them simultaneously
 - [ ] If ties remain through every rank and the remaining tied set is all active
@@ -2619,6 +2628,9 @@ separate work in ID-10.
 
 - [ ] **Fixture 1 — lower ranks resolve elimination** is a required domain test.
       It must assert the intermediate tie-break counts and elimination outcome.
+      Required narrowing path: `B/C/D` (first-choice tie) → `C/D`
+      (after second-place comparison) → eliminate `D` (after third-place
+      comparison).
 
 ```text
 Options A, B, C, D; ballots:
