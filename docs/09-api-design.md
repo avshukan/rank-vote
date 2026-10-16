@@ -346,18 +346,18 @@ IRV elimination tie-break (`tieBreak.rule = "RANK_PROFILE"`):
 - each `tieBreak.comparisons[]` entry records one compared rank and includes
   counts for the current tie-set before narrowing; later comparison entries
   include only candidates that survived the previous comparison
-- by round 3 in the example, only two candidates remain active, so compressed
-  ballots have ranks `1..2` and `rank: 2` is the last available comparison
-- with two active candidates, rank-2 counts mirror round-3 first-choice
-  `tallies`, because each ballot contributes its other active candidate at rank 2
-- in this example, that mirror relationship follows directly: with only two
-  active candidates, round 3 has `tallies` A=5/B=5 and `rank: 2` counts A=5/B=5
 - if candidates remain tied through every available rank:
   - when they are only a subset of active candidates, eliminate all of them
     simultaneously
   - when they are all active candidates, none is eliminated; they share all
     remaining top places and are all winners; in this case
     `eliminatedOptionIds: []`, `tieBreak.allActiveCandidatesStillTied: true`
+
+Example walkthrough note (non-normative):
+
+- in the JSON example's round 3, only two candidates remain active, so
+  compressed ballots have ranks `1..2`; therefore `rank: 2` is the last
+  comparison and its counts mirror round-3 first-choice `tallies` (A=5/B=5)
 
 Client routing note for ID-8 web behavior:
 

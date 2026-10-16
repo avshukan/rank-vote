@@ -2780,6 +2780,8 @@ rank 3 for B/C: B=2 C=2
 rank 4 for B/C: B=1 C=1
 B/C remain indistinguishable through all ranks and are only a subset of active
 candidates, so eliminate B and C simultaneously.
+Round 2 (A vs D): A=4 D=2.
+Eliminate D -> place 2; A remains -> place 1.
 Expected final standings:
 A=1
 D=2
@@ -2859,8 +2861,8 @@ A=4 B=1 C=1 D=1
 A already has 4/7 first choices, but counting MUST continue because complete
 standings are required.
 rank 2 for B/C/D: B=2 C=3 D=2
-C is not at the minimum on rank 2, so it is narrowed out; survivors: B/D
-(minimum=2).
+B and D share the minimum rank-2 count (2), so C (rank-2 count 3) is narrowed
+out; survivors: B/D.
 rank 3 for B/D: B=3 D=3
 rank 4 for B/D: B=1 D=1
 B/D remain indistinguishable through all ranks and are only a subset of active
