@@ -313,6 +313,12 @@ Notes:
 
 - `rounds` is ordered by `round` ascending and is the source for the IRV
   explanation UI
+- `rounds` contains only rounds in which either an elimination decision is
+  made or a terminal full tie among all remaining active candidates is
+  recorded. When the last elimination leaves exactly one candidate active,
+  that candidate receives place 1 and becomes the sole winner directly from
+  the resulting `standings`; no synthetic final round containing only that
+  candidate is added
 - each `round` lists active candidates in `tallies`, sorted by `votes` DESC then
   `option.order` ASC
 - IRV does not terminate on first-choice majority; it continues elimination rounds
@@ -323,15 +329,17 @@ Notes:
   it may contain multiple IDs when an unresolved tie covers only a subset of
   active candidates
 - `tieBreak` is omitted when the lowest tally is unique
-- if `majorityThreshold` is returned, it is explanatory metadata only and does
-  not affect elimination behavior
-- `standings` records final places per option with `{ placeFrom, placeTo }`
+- `standings` records final places per option with `{ placeFrom, placeTo }`,
+  sorted by `placeFrom` ASC; options that share a place range are ordered by
+  `option.order` ASC, so the web renders the final ranked option list in
+  response order without deriving it client-side
 - each eliminated group fills the lowest still-unassigned places; if `k`
   candidates are eliminated together, they share that `k`-place range
 - `winners` is exactly the standing group whose `placeFrom` is `1`
 - `totalBallots` is the total submitted ballots for the poll
-- zero ballots is a separate case:
-  `winners: []`, `rounds: []`, `standings: []`, `totalBallots: 0`
+- zero ballots is a separate case: the response has `winners: []`,
+  `rounds: []`, `standings: []` and `totalBallots: 0`; no places are assigned
+  before at least one ballot exists
 
 IRV elimination tie-break (`tieBreak.rule = "RANK_PROFILE"`):
 

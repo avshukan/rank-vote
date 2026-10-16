@@ -2578,6 +2578,10 @@ separate work in ID-10.
       `{ pollId, title, method: "IRV", winners, rounds, standings, totalBallots }`
 - [ ] `standings` includes `{ optionId, text, placeFrom, placeTo }` for every
       poll option in non-zero-ballot results
+- [ ] `standings` is sorted by `placeFrom` ascending; options that share a
+      place range are ordered by `option.order` ascending, so the web renders
+      the final ranked option list in response order without deriving it
+      client-side
 - [ ] `winners` matches exactly the standing group whose `placeFrom` is `1`
 - [ ] Every IRV `rounds[]` entry includes:
       `{ round, tallies, eliminatedOptionIds }` and optional `tieBreak`
@@ -2590,8 +2594,6 @@ separate work in ID-10.
       candidates that survived the previous comparison
 - [ ] `comparisons[]` starts at rank 2. Rank 1 counts are the round's
       first-choice `tallies` and are not repeated in `comparisons[]`
-- [ ] If `majorityThreshold` is returned, it is explanatory metadata only and
-      does not change elimination behavior
 - [ ] No new endpoint is added; ID-8 extends only
       `GET /polls/:id/results`
 - [ ] `Poll.countingMethods` is not persisted or updated in ID-8; Prisma schema,
@@ -2617,8 +2619,16 @@ separate work in ID-10.
       and are all winners
 - [ ] Each eliminated group fills the lowest still-unassigned places; if `k`
       candidates are eliminated together, they share that `k`-place range
-- [ ] Zero ballots is a separate case:
-      `winners: []`, `rounds: []`, `standings: []`, `totalBallots: 0`
+- [ ] `rounds` contains only rounds in which either an elimination decision is
+      made or a terminal full tie among all remaining active candidates is
+      recorded
+- [ ] When the last elimination leaves exactly one candidate active, that
+      candidate receives place 1 and becomes the sole winner directly from the
+      resulting standings; no synthetic final round containing only that
+      candidate is added to `rounds`
+- [ ] Zero ballots is a separate case: the IRV response has `winners: []`,
+      `rounds: []`, `standings: []` and `totalBallots: 0`; no places are
+      assigned before at least one ballot exists
 
 ### Results page scope (no ID-10 absorption)
 
@@ -2899,6 +2909,7 @@ Expected:
 winners=[]
 rounds=[]
 standings=[]
+totalBallots=0
 ```
 
 ### General domain-test invariants (required)
@@ -2908,7 +2919,12 @@ standings=[]
 - [ ] For non-zero ballots, final place ranges cover the complete `1..N`
       ranking without gaps
 - [ ] Candidates eliminated in one group receive the same place range
+- [ ] `standings` is sorted by `placeFrom` ascending, then by `option.order`
+      ascending
 - [ ] `winners` exactly match the standing group whose `placeFrom` is `1`
+- [ ] Every `rounds[]` entry either eliminates at least one candidate or
+      records a terminal full tie among all active candidates; no round holds
+      a single active candidate
 - [ ] `rounds` and `standings` agree about elimination order
 - [ ] Rank-profile comparison never includes a candidate removed from the
       current tie-set
@@ -2943,6 +2959,11 @@ standings=[]
 - Accepted by the owner: IRV builds complete standings by elimination rounds,
   does not stop on first-choice majority, and uses rank-profile tie-break as
   specified above
+- Accepted by the owner: `rounds` records only elimination decisions and a
+  terminal full tie, with no synthetic round for the sole remaining candidate;
+  `standings` is sorted by `placeFrom`, then `option.order`; zero ballots
+  assign no places (`winners`, `rounds` and `standings` are empty,
+  `totalBallots: 0`)
 - Accepted by the owner: the 8 fixtures above are mandatory domain tests for
   implementation
 - Accepted by the owner: IRV Details extends
