@@ -196,6 +196,10 @@ drifted matches only the stable part.
 - The backlog source of truth is `docs/backlog.md`; see current priorities there.
   Its tables have fixed column widths — read the `Format` section in that file
   before editing them
+- **Readiness boundary.** For small, low-risk tasks, ask the owner to choose
+  explicitly between a combined readiness + implementation PR and a separate
+  readiness PR. Never combine without approval for that specific task; see
+  `task-readiness` and `docs/backlog.md`.
 - **Ready pool.** When you pick a `Ready` item for work, count the `Ready` rows
   of `Todo` without it. If fewer than 2 remain, request a backlog sweep, naming
   the picked item and the count:
