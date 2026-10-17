@@ -132,8 +132,13 @@ Frontend only — no API or shared-package change.
 
 ## ID-20 Refresh results button
 
-Manual result refresh for the existing Borda pages until ID-16 ships real-time
-updates. Frontend only: no API, shared-package or storage changes.
+Manual result refresh for the existing results pages until ID-16 ships
+real-time updates. Frontend only: no API, shared-package or storage changes.
+
+Refresh and Retry keep the counting method the page shows, selected by ID-8's
+`method=BORDA|IRV` query parameter. These method rules hold whether ID-8 ships
+before or after ID-20: if ID-20 ships first, there is no `method` yet, and the
+IRV rules and checks below apply once ID-8 adds it.
 
 ### Scope
 
@@ -141,9 +146,15 @@ updates. Frontend only: no API, shared-package or storage changes.
       `/poll/:id/results/options/:optionId` in loaded states, including the
       zero-ballot state
 - [ ] Clicking the button re-fetches `GET /polls/:id/results` for that poll and
-      re-renders from the fresh response
+      the currently selected counting method, and re-renders from the fresh
+      response
+- [ ] On Borda Results and Details, refresh keeps Borda behavior; an omitted
+      `method` may still use the BORDA default
+- [ ] On IRV Results and Details, refresh requests
+      `GET /polls/:id/results?method=IRV` and never switches the page from IRV
+      back to Borda
 - [ ] The button keeps each page on its current route (`/results` or
-      `/results/options/:optionId`)
+      `/results/options/:optionId`), including its `method` query parameter
 - [ ] API and shared DTO contracts stay unchanged
 
 ### States and edge cases
@@ -151,7 +162,8 @@ updates. Frontend only: no API, shared-package or storage changes.
 - [ ] `404` remains the shared not-found state with no Retry and no refresh
       button
 - [ ] Network/5xx load failures remain retryable through the existing Retry
-      button
+      button. Retry re-fetches the currently selected method, so a failed IRV
+      request retries IRV rather than the default Borda method
 - [ ] The existing score-breakdown link and back-link behavior stays unchanged
 - [ ] The vote-submitted banner on the results page remains unchanged
 
@@ -159,6 +171,10 @@ updates. Frontend only: no API, shared-package or storage changes.
 
 - [ ] **Web tests (Vitest):** both views re-fetch on "Refresh results" from a
       loaded state; existing not-found and Retry behavior still passes
+- [ ] **Web tests (Vitest), IRV:** "Refresh results" on IRV Results and on IRV
+      Details requests `method=IRV`, and the selected method remains IRV: the
+      URL keeps `method=IRV` and the page still renders the IRV variant. A
+      failed IRV load retries with `method=IRV`
 - [ ] **API tests:** unchanged (manual refresh reuses the existing
       `GET /polls/:id/results` contract)
 - [ ] **Manual:** against `make web` + `make api`, submit a ballot in one tab,
@@ -176,6 +192,10 @@ updates. Frontend only: no API, shared-package or storage changes.
   and `/poll/:id/results/options/:optionId`, because both can become stale
 - Accepted by the owner: ID-20 is temporary and should be removed by default
   once ID-16 lands, unless ID-16 explicitly keeps it as fallback
+- Accepted by the owner: refresh, and the existing Retry, re-fetch the
+  currently selected counting method and keep the route's `method` query
+  parameter. This is a compatibility update for ID-8's method selection, not a
+  new feature
 - Implementation choices, settled in the implementation PR and its review:
   button placement, whether refresh is disabled while a request is in
   flight, and how much shared fetch/retry logic is reused without doing ID-26
@@ -2642,6 +2662,9 @@ separate work in ID-10.
       navigation between Results and Details preserves `method=IRV`
 - [ ] IRV Details explains the selected option's final place using that option's
       round/elimination/tie-break history
+- [ ] If ID-20 ships before ID-8, ID-8 extends ID-20's method rules to IRV:
+      Refresh and Retry on IRV Results and Details request `method=IRV`, and
+      ID-8 adds ID-20's IRV web tests
 - [ ] No side-by-side method comparison, no “different winner” surface and no
       multi-method analytics (these remain ID-10)
 
