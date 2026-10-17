@@ -151,15 +151,23 @@ reset on restart.
 GET /polls/:id/results
 ```
 
+Query parameters:
+
+- `method` (optional): `BORDA` or `IRV`
+- if omitted, `method` defaults to `BORDA`
+
+Response `400 Bad Request` when `method` is provided but not one of the
+supported values (`BORDA`, `IRV`).
+
 The response is discriminated by `method`, the counting method that produced
 it. Each method has its own response variant, and a client reads `method`
-before any method-specific field. Borda is the only method implemented, so
-`"BORDA"` is the only variant. A future method adds its variant in its own
-backlog item (IRV ID-8, Condorcet ID-9).
+before any method-specific field.
 
 Response `404 Not Found` if poll does not exist, whatever the method.
 
 #### Borda — `method: "BORDA"`
+
+Returned when `method` is omitted or set to `BORDA`.
 
 Response `200 OK`:
 
@@ -211,6 +219,160 @@ and holds no counting formula; the web shows them on each option's Details view.
   `totalBallots`: a strict full ranking places every option exactly once
 - with no ballots, every row has `ballots: 0` and `subtotal: 0`
 
+#### Instant-runoff voting — `method: "IRV"`
+
+Returned when `method=IRV`.
+
+Response `200 OK`:
+
+```json
+{
+  "pollId": "poll-1",
+  "title": "Lunch",
+  "method": "IRV",
+  "winners": [
+    { "optionId": "a", "text": "A" },
+    { "optionId": "b", "text": "B" }
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "tallies": [
+        { "optionId": "a", "text": "A", "votes": 4 },
+        { "optionId": "b", "text": "B", "votes": 2 },
+        { "optionId": "c", "text": "C", "votes": 2 },
+        { "optionId": "d", "text": "D", "votes": 2 }
+      ],
+      "eliminatedOptionIds": ["d"],
+      "tieBreak": {
+        "rule": "RANK_PROFILE",
+        "tiedOptionIds": ["b", "c", "d"],
+        "comparisons": [
+          {
+            "rank": 2,
+            "counts": [
+              { "optionId": "b", "votes": 3 },
+              { "optionId": "c", "votes": 2 },
+              { "optionId": "d", "votes": 2 }
+            ]
+          },
+          {
+            "rank": 3,
+            "counts": [
+              { "optionId": "c", "votes": 5 },
+              { "optionId": "d", "votes": 4 }
+            ]
+          }
+        ],
+        "allActiveCandidatesStillTied": false
+      }
+    },
+    {
+      "round": 2,
+      "tallies": [
+        { "optionId": "a", "text": "A", "votes": 4 },
+        { "optionId": "b", "text": "B", "votes": 4 },
+        { "optionId": "c", "text": "C", "votes": 2 }
+      ],
+      "eliminatedOptionIds": ["c"]
+    },
+    {
+      "round": 3,
+      "tallies": [
+        { "optionId": "a", "text": "A", "votes": 5 },
+        { "optionId": "b", "text": "B", "votes": 5 }
+      ],
+      "eliminatedOptionIds": [],
+      "tieBreak": {
+        "rule": "RANK_PROFILE",
+        "tiedOptionIds": ["a", "b"],
+        "comparisons": [
+          {
+            "rank": 2,
+            "counts": [
+              { "optionId": "a", "votes": 5 },
+              { "optionId": "b", "votes": 5 }
+            ]
+          }
+        ],
+        "allActiveCandidatesStillTied": true
+      }
+    }
+  ],
+  "standings": [
+    { "optionId": "a", "text": "A", "placeFrom": 1, "placeTo": 2 },
+    { "optionId": "b", "text": "B", "placeFrom": 1, "placeTo": 2 },
+    { "optionId": "c", "text": "C", "placeFrom": 3, "placeTo": 3 },
+    { "optionId": "d", "text": "D", "placeFrom": 4, "placeTo": 4 }
+  ],
+  "totalBallots": 10
+}
+```
+
+Notes:
+
+- `rounds` is ordered by `round` ascending and is the source for the IRV
+  explanation UI
+- `rounds` contains only rounds in which either an elimination decision is
+  made or a terminal full tie among all remaining active candidates is
+  recorded. When the last elimination leaves exactly one candidate active,
+  that candidate receives place 1 and becomes the sole winner directly from
+  the resulting `standings`; no synthetic final round containing only that
+  candidate is added
+- each `round` lists active candidates in `tallies`, sorted by `votes` DESC then
+  `option.order` ASC
+- IRV does not terminate on first-choice majority; it continues elimination rounds
+  to build complete `standings`
+- each round uses only active candidates: previously eliminated candidates are
+  removed from each ballot and ranks are compressed before counting
+- `eliminatedOptionIds` holds the candidate(s) removed at the end of that round;
+  it may contain multiple IDs when an unresolved tie covers only a subset of
+  active candidates
+- `tieBreak` is omitted when the lowest tally is unique
+- `standings` records final places per option with `{ placeFrom, placeTo }`,
+  sorted by `placeFrom` ASC; options that share a place range are ordered by
+  `option.order` ASC, so the web renders the final ranked option list in
+  response order without deriving it client-side
+- each eliminated group fills the lowest still-unassigned places; if `k`
+  candidates are eliminated together, they share that `k`-place range
+- `winners` is exactly the standing group whose `placeFrom` is `1`
+- `totalBallots` is the total submitted ballots for the poll
+- zero ballots is a separate case: the response has `winners: []`,
+  `rounds: []`, `standings: []` and `totalBallots: 0`; no places are assigned
+  before at least one ballot exists
+
+IRV elimination tie-break (`tieBreak.rule = "RANK_PROFILE"`):
+
+- start from candidates tied for the minimum first-choice tally in that round
+- `tieBreak.tiedOptionIds` stores that original lowest first-choice tie-set
+- compare only that tie-set by second-place counts and keep only candidates with
+  the minimum count; if one candidate remains, eliminate that candidate
+- `tieBreak.comparisons[]` starts at `rank: 2`. Rank 1 counts are already in
+  the round's first-choice `tallies`
+- if several candidates remain tied, compare only those survivors by
+  third-place counts, then fourth-place counts, and so on
+- each `tieBreak.comparisons[]` entry records one compared rank and includes
+  counts for the current tie-set before narrowing; later comparison entries
+  include only candidates that survived the previous comparison
+- if candidates remain tied through every available rank:
+  - when they are only a subset of active candidates, eliminate all of them
+    simultaneously
+  - when they are all active candidates, none is eliminated; they share all
+    remaining top places and are all winners; in this case
+    `eliminatedOptionIds: []`, `tieBreak.allActiveCandidatesStillTied: true`
+
+Example walkthrough note (non-normative):
+
+- in the JSON example's round 3, only two candidates remain active, so
+  compressed ballots have ranks `1..2`; therefore `rank: 2` is the last
+  comparison and its counts mirror round-3 first-choice `tallies` (A=5/B=5)
+
+Client routing note for ID-8 web behavior:
+
+- when `method=IRV`, navigation between `/poll/:id/results` and
+  `/poll/:id/results/options/:optionId` preserves `method=IRV` in the URL query
+  so both views render the same method variant
+
 ---
 
 ## Operational Endpoint
@@ -245,7 +407,7 @@ scaffold and does not add a shared product DTO.
 
 - All IDs are UUIDs
 - Timestamps are ISO 8601 (UTC)
-- Counting method is Borda in MVP
+- Counting methods: BORDA is the current baseline; IRV is specified for ID-8
 - No authentication required
 - Product endpoints and the operational liveness endpoint are public
 

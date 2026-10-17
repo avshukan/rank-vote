@@ -121,7 +121,7 @@ adapts to the column rather than moving the column.
 | --- | -------------------------- | -------- | ------ | ------- | --------------------------------------------------- |
 | 6   | Mobile responsive layout   | Quality  | Medium | Ready   | Main flows from 320px; long-press touch drag        |
 | 20  | Refresh results button     | Quality  | Medium | Ready   | Manual results refresh until ID-16                  |
-| 8   | Add IRV counting           | Value    | Medium | —       | Instant-runoff voting                               |
+| 8   | Add IRV counting           | Value    | Medium | Ready   | Instant-runoff voting                               |
 | 9   | Add Condorcet counting     | Value    | Medium | —       | Pairwise comparison winner                          |
 | 10  | Compare counting methods   | Value    | Medium | —       | Show different winners; needs ID-8, ID-9            |
 | 25  | Unify eslint and TS majors | Refactor | Medium | —       | web eslint 10/TS 6; rest eslint 9/TS 5              |
