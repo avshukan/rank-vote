@@ -197,13 +197,18 @@ drifted matches only the stable part.
   Its tables have fixed column widths — read the `Format` section in that file
   before editing them
 - **Ready pool.** When you pick a `Ready` item for work, count the `Ready` rows
-  of `Todo` without it. If fewer than 2 remain,
-  request a backlog sweep, naming the picked item and the count:
+  of `Todo` without it. If fewer than 2 remain, request a backlog sweep, naming
+  the picked item and the count:
   `gh workflow run backlog-sweep.yml -f reason="Ready pool: picked ID-N; M Ready left"`
   (or **Run workflow** on _Backlog sweep request_ in the Actions tab). There is
   no `In progress` state and no reservation: the rule is procedural
 - Documentation is part of the Definition of Done — update relevant `docs/`
   files alongside code changes
+- **PR handoff report.** Start with the backlog ID and what the change does,
+  then link the PR, checks and manual verification. State explicitly that the
+  PR is ready for owner review and merge. Name unfinished findings via an
+  existing backlog item (`ID-N`), an open Issue (`#N`), or a new Issue routed
+  through triage and owner acceptance; never assign backlog IDs directly.
 - See `docs/07-process.md` for the full process, `docs/12-ai-first.md` for the
   AI-first strategy and roadmap
 
