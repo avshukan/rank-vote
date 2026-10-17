@@ -149,8 +149,8 @@ drifted matches only the stable part.
   Add the matching symlink whenever a skill is added; never edit through a
   second copy.
 - **Automatic skills** should be recognised when the procedure applies
-  (`new-slice` when picking up a backlog item, `task-readiness` before
-  implementing one, `backlog-sweep` when a sweep is requested).
+  (`task-readiness` when a backlog item needs readiness, `backlog-sweep`
+  when a sweep is requested, `verify-app` for web changes).
 - **Explicit-only skills** are rituals the human starts at a chosen moment
   (`retro`, `handoff`). Keep them manual-only for every supported agent: set
   `disable-model-invocation: true` in the `SKILL.md` frontmatter — Claude Code's
@@ -196,8 +196,8 @@ drifted matches only the stable part.
 - The backlog source of truth is `docs/backlog.md`; see current priorities there.
   Its tables have fixed column widths — read the `Format` section in that file
   before editing them
-- **Ready pool.** When you pick a `Ready` item for work — through `new-slice`
-  or not — count the `Ready` rows of `Todo` without it. If fewer than 2 remain,
+- **Ready pool.** When you pick a `Ready` item for work, count the `Ready` rows
+  of `Todo` without it. If fewer than 2 remain,
   request a backlog sweep, naming the picked item and the count:
   `gh workflow run backlog-sweep.yml -f reason="Ready pool: picked ID-N; M Ready left"`
   (or **Run workflow** on _Backlog sweep request_ in the Actions tab). There is

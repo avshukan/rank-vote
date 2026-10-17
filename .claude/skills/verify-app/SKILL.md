@@ -6,8 +6,8 @@ description: Drive the running app in a real browser against a live API, to sati
 # verify-app
 
 Prove a change works in the actual app, not only in jsdom. `AGENTS.md` makes
-"Manually verified end-to-end" part of the Definition of Done, and `new-slice`
-step 7 requires it — this is how.
+"Manually verified end-to-end" part of the Definition of Done. This skill
+explains how to verify browser-facing changes.
 
 ## When to use
 

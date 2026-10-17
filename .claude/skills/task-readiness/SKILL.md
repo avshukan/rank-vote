@@ -1,87 +1,113 @@
 ---
 name: task-readiness
-description: Check whether a backlog item is ready to implement — contracts, acceptance criteria and open questions — and land the answers as a docs PR before any code is written.
+description: Check a backlog item's readiness, settle decisions and acceptance criteria, or record design work and blockers before implementation.
 ---
 
 # task-readiness
 
-Answer one question about a backlog item: **can it be implemented as specified,
-or does something still need deciding?** Everything ambiguous is cheaper to
-settle in `docs/` than in review. Runs before `new-slice`, not instead of it.
+Answer one question: **can this backlog item be implemented as specified,
+or does something significant still need deciding or unblocking?**
+Settle ambiguity before implementation, without turning simple tasks into
+large documentation exercises.
 
 ## When to use
 
-Before starting any `Value`/`Quality` backlog item — especially when the user
-asks whether the documentation for a task is sufficient. Skip for pure refactors
-and for items whose acceptance criteria were written in the same session.
+Use for any `Todo` item not yet `Ready` (`—`, `Design` or `Blocked`), regardless
+of Type (`Value`, `Quality`, `Refactor` or `Ops`), before implementation.
+Recheck a `Ready` item when its scope, dependencies, contract or assumptions
+may have become stale. Do not repeat readiness for a current `Ready` item.
+
+Scale the work to the risk: a small refactor may need only a clear boundary
+and verification plan; a voting algorithm, schema change or production operation
+may need explicit contracts, examples, failure cases and owner decisions.
 
 ## Steps
 
-1. **Read the specification, in this order.** The row in `docs/backlog.md` (note
-   the ID — titles repeat across items, IDs do not), then the item's section in
-   `docs/acceptance-criteria.md`, then `docs/09-api-design.md` for the wire
-   contract. `docs/04-domain-model.md` and `docs/10-storage.md` when the item
-   touches data.
+1. **Establish the baseline.** Read the row in `docs/backlog.md`, its existing
+   `docs/acceptance-criteria.md` section, dependencies and relevant accepted
+   decisions. Inspect the current `main` state. Read only applicable documents:
+   API design for wire contracts, domain model for voting rules, storage for
+   persistence, production runbooks for operations, and user stories for
+   user-facing behaviour. Do not treat a future target as shipped behaviour.
 
-2. **Find out what already exists.** Read the code, do not assume the item is
-   greenfield: routes in `apps/web/src/App.tsx`, DTOs in `packages/shared/src/`,
-   the API client in `apps/web/src/shared/api/`, the controller, and the e2e
-   specs in `apps/api/test/`. Items are often partly delivered by an earlier
-   slice — which layers remain decides whether this is a full vertical slice or
-   a single-package change.
+2. **Inspect implementation and tests.** Check the relevant routes, DTOs, code,
+   tests and existing user flows before assuming greenfield work. Identify
+   what is already delivered, what would change and what must remain compatible.
+   Read more broadly only when a real cross-cutting dependency warrants it.
 
-3. **Collect the gaps.** Two buckets, and keep them apart:
-   - _needs a decision_ — the docs allow several behaviours (what a shared link
-     points at, how tied positions are numbered, whether a UI surface exists at
-     all). These block the item.
-   - _judgment call_ — a sensible default exists; state it and move on.
+3. **Identify material gaps.** Separate:
+   - **Owner decision:** multiple meaningful product, architecture or scope
+     options remain; the agent must not choose for the owner.
+   - **Implementation judgment:** the contract permits a reasonable technical
+     choice; record it as a proposal or implementation choice, not approval.
+   - **Known blocker:** an external dependency or prerequisite prevents work.
+   Check goal, scope, dependencies, risks, contracts and credible verification.
+   For complex algorithms, confirm that examples, fixtures, invariants and
+   API responses agree with the latest accepted semantics. Do not repeat
+   already accepted decisions or invent requirements to fill documentation.
 
-   Read `docs/02-user-stories.md` against the acceptance criteria: a story with
-   no matching criterion is either a missing criterion or a separate backlog
-   item. Cross-check `docs/11-testing-strategy.md` and
-   `docs/implementation-plan.md` against the code — statements about behaviour
-   that already shipped are the ones that go stale first.
+4. **Resolve the decisions.** Report only unresolved decisions, with concise
+   options, trade-offs and a recommendation. Wait for owner approval before
+   recording product/design decisions, new scope exclusions or owner-operated
+   actions as accepted. A question that can be answered during ordinary
+   readiness does not by itself justify `Design`.
 
-4. **Get the decisions.** Present the gaps compactly with a recommendation for
-   each, and wait. Do not implement around an open question.
+5. **Choose and document one outcome:**
+   - **`Ready`:** the goal and bounded scope are clear, material decisions are
+     settled, dependencies are understood, and verification is credible.
+     Write proportionate, testable criteria in `docs/acceptance-criteria.md`;
+     update `docs/09-api-design.md` or other permanent contract/ADR documents
+     only where relevant. Record confirmed decisions separately from technical
+     judgment calls. Set the backlog row to `Ready` through task-readiness only.
+   - **`Design`:** substantial analysis or design decisions remain and cannot
+     be closed in the ordinary readiness pass. Set `Design` and name the
+     unanswered questions in the backlog note. If one row is insufficient,
+     use optional `docs/backlog/<id>-<slug>.md` with **confirmed facts**,
+     **open owner decisions**, **unconfirmed proposals** and **next step**.
+     Do not write speculative answers as acceptance criteria. Once resolved,
+     rerun readiness; move durable decisions to permanent docs and delete
+     the temporary file when superseded.
+   - **`Blocked`:** a known unresolved prerequisite prevents implementation
+     even if the design is sufficiently clear. Set `Blocked`; state precisely
+     what blocks it (an existing `ID-N`, Issue `#N` or external condition)
+     and what would unblock it. Recheck readiness after the blocker clears.
+   Do not label an item `Ready` merely because an agent suggested a solution.
+   `Design` and `Blocked` are outcomes, not mandatory stages.
 
-5. **Write the answers down.** Decisions go into the item's section of
-   `docs/acceptance-criteria.md`, contract changes into `docs/09-api-design.md`.
-   Add an _Out of Scope_ block naming where the deferred work went — a backlog
-   item (`ID-N`) or a follow-up Issue from step 6 (`#N`). A criterion that was
-   dropped without a destination comes back.
+6. **Keep boundaries explicit.** For `Ready`, describe testable behaviour,
+   relevant edge/failure cases, compatibility, and a verification approach.
+   Add `Out of Scope` with a destination for deferred work where relevant:
+   an existing backlog item (`ID-N`) or a follow-up Issue (`#N`).
+   Do not silently drop a requirement, add owner obligations or treat an
+   implementation preference as a product constraint.
 
-6. **File the follow-ups.** New work found during readiness enters the backlog
-   the way every idea does (`docs/backlog.md`, `Workflow`): a GitHub Issue, the
-   automatic triage recommendation, the owner's decision, backlog promotion.
-   Never add a backlog row or pick an ID yourself, and never apply
-   `triage: accepted` — that label is the owner's decision. When a backlog item
-   or an open Issue already covers the work, cite it instead of filing a
-   duplicate. State the dependency direction in the Issue (`blocks ID-N` /
-   `needs ID-N`), as context for triage and for the owner, who decides where
-   the item goes in `Todo`. A blocker that is cross-cutting (a shared page, a
-   shared component, a route change) ships as its own PR — folding it into the
-   feature makes that PR touch unrelated flows.
+7. **Route new work through intake.** Before filing a follow-up, search for
+   existing backlog items or open Issues. Otherwise create a GitHub Issue,
+   leaving triage, owner decision and promotion to the established workflow.
+   Never assign a backlog ID or apply `triage: accepted`. Note dependency
+   direction (`blocks ID-N` / `needs ID-N`) for triage. Cross-cutting blockers
+   that affect unrelated flows should be scoped as separate work, not hidden
+   inside the feature.
 
-7. **Ship the docs.** Own branch `docs/<name>`, `make format-check` and
-   `node --test scripts/backlog-promotion.test.mjs` (the fixed-width backlog
-   rules), PR — then stop at green CI and hand it over, exactly as `new-slice`
-   step 8 does. The merge is the repository owner's call. `new-slice` starts
-   once the docs PR has actually landed, so the code is written against
-   decisions that are on `main`.
+8. **Ship a documentation PR.** Use `docs/<name>`; run `make format-check` and
+   `node --test scripts/backlog-promotion.test.mjs`. Summarize the verified
+   baseline, owner-approved decisions, chosen state and next action.
+   Stop at a PR with green CI for the owner's review and merge. For `Ready`,
+   implementation starts only after the readiness PR lands on `main`.
+   For `Design` or `Blocked`, do not start implementation around open gaps.
 
 ## Gotchas learned the hard way
 
-- Deciding an item is "documented enough" without reading the code is how a
-  finished endpoint gets built twice.
-- The backlog `## Todo` table is ordered by priority, not by ID, and the ID
-  column is what everything else references.
-- Size the criteria to the item. A `Medium` `Quality` fix needs testable rules
-  and a short verification checklist, not an evidence protocol heavier than the
-  change itself.
-- An _Out of Scope_ exclusion already set by canonical scope, an accepted
-  decision or a tracked backlog item is cited, not asked again. A product or
-  design exclusion first introduced during readiness needs the owner's explicit
-  confirmation, and so does any check that asks the owner to act. Anything else
-  is an implementation judgment call and is recorded as one, not as
-  owner-approved scope.
+- Read existing code before declaring work missing, or an already shipped
+  endpoint can be built again.
+- `Todo` is ordered for work selection, not by backlog ID. Keep fixed-width
+  rows intact; put longer temporary notes outside the table.
+- Match criteria to risk. A minor quality fix does not need a production
+  evidence protocol; a risky operational change may need one.
+- A scope exclusion already fixed by canonical documentation, an accepted
+  decision or another tracked item needs a citation, not a new owner decision.
+  New product/design exclusions and owner-operated checks need owner approval.
+- ID-32 exercised `Design → Ready`: distinguish facts, unconfirmed options
+  and decisions, then remove temporary design notes after settling them.
+- ID-8 showed why algorithm fixtures and API examples must be reconciled
+  against the final accepted rules before implementation.
