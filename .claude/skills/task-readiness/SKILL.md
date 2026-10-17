@@ -41,6 +41,7 @@ may need explicit contracts, examples, failure cases and owner decisions.
    - **Implementation judgment:** the contract permits a reasonable technical
      choice; record it as a proposal or implementation choice, not approval.
    - **Known blocker:** an external dependency or prerequisite prevents work.
+
    Check goal, scope, dependencies, risks, contracts and credible verification.
    For complex algorithms, confirm that examples, fixtures, invariants and
    API responses agree with the latest accepted semantics. Do not repeat
@@ -71,6 +72,7 @@ may need explicit contracts, examples, failure cases and owner decisions.
      even if the design is sufficiently clear. Set `Blocked`; state precisely
      what blocks it (an existing `ID-N`, Issue `#N` or external condition)
      and what would unblock it. Recheck readiness after the blocker clears.
+
    Do not label an item `Ready` merely because an agent suggested a solution.
    `Design` and `Blocked` are outcomes, not mandatory stages.
 
