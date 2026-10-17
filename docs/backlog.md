@@ -58,6 +58,13 @@
 - New backlog items start with `State = —`.
 - Task-readiness can run on demand for a chosen item or proactively for likely
   next work. It sets `State` to `Ready`, `Design`, or `Blocked`.
+- For a small, low-risk item with settled scope, no blockers and clear checks,
+  an agent may ask the owner whether to combine readiness and implementation in
+  one PR. Only an explicit owner decision **for that item** permits this; silence
+  or earlier approvals do not. Record criteria before coding. If completed and
+  verified, the combined PR moves the item from `—` directly to `Done`
+  without `Ready` appearing on `main`. Otherwise use a separate readiness PR;
+  `Design` and `Blocked` are not eligible for combined implementation.
 - Backlog sweeps keep `Todo` current: whether each item is still needed, its
   Type, Level, dependencies and State, stale readiness, and candidates for the
   `Ready` pool. `.github/workflows/backlog-sweep.yml` requests a sweep on the
@@ -70,9 +77,10 @@
 - An item that is no longer wanted moves from `Todo` to the end of `Cancelled`
   by the owner's decision. It keeps its ID, Title, Type and Level, and Notes
   records the reason. Rows are never deleted.
-- Work is pulled continuously from `Ready` items. `Level` guides selection but
-  is not a strict queue order. The Ready-pool rule for picking an item is in
-  `AGENTS.md` (Process Rules).
+- Work is pulled continuously from `Ready` items, except the explicitly
+  approved combined-PR case above. `Level` guides selection but is not a strict
+  queue order. The Ready-pool rule for picking an item is in `AGENTS.md`
+  (Process Rules).
 - A detailed file under `docs/backlog/<id>-<slug>.md` is optional when one row
   is not enough. It is normally deleted when the task is done; durable decisions
   move to permanent documentation.
