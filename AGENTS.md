@@ -149,8 +149,8 @@ drifted matches only the stable part.
   Add the matching symlink whenever a skill is added; never edit through a
   second copy.
 - **Automatic skills** should be recognised when the procedure applies
-  (`new-slice` when picking up a backlog item, `task-readiness` before
-  implementing one, `backlog-sweep` when a sweep is requested).
+  (`task-readiness` when a backlog item needs readiness, `backlog-sweep`
+  when a sweep is requested, `verify-app` for web changes).
 - **Explicit-only skills** are rituals the human starts at a chosen moment
   (`retro`, `handoff`). Keep them manual-only for every supported agent: set
   `disable-model-invocation: true` in the `SKILL.md` frontmatter — Claude Code's
@@ -196,14 +196,22 @@ drifted matches only the stable part.
 - The backlog source of truth is `docs/backlog.md`; see current priorities there.
   Its tables have fixed column widths — read the `Format` section in that file
   before editing them
-- **Ready pool.** When you pick a `Ready` item for work — through `new-slice`
-  or not — count the `Ready` rows of `Todo` without it. If fewer than 2 remain,
-  request a backlog sweep, naming the picked item and the count:
+- **Readiness boundary.** Combining readiness and implementation for an item
+  not yet `Ready` requires explicit owner approval for that specific item;
+  see `task-readiness`.
+- **Ready pool.** When you pick a `Ready` item for work, count the `Ready` rows
+  of `Todo` without it. If fewer than 2 remain, request a backlog sweep, naming
+  the picked item and the count:
   `gh workflow run backlog-sweep.yml -f reason="Ready pool: picked ID-N; M Ready left"`
   (or **Run workflow** on _Backlog sweep request_ in the Actions tab). There is
   no `In progress` state and no reservation: the rule is procedural
 - Documentation is part of the Definition of Done — update relevant `docs/`
   files alongside code changes
+- **PR handoff report.** Start with the backlog ID (if any) and what changed,
+  then link the PR, checks and manual verification. State explicitly that the
+  PR is ready for owner review and merge. Name unfinished findings via an
+  existing backlog item (`ID-N`), an open Issue (`#N`), or a new Issue routed
+  through triage and owner acceptance; never assign backlog IDs directly.
 - See `docs/07-process.md` for the full process, `docs/12-ai-first.md` for the
   AI-first strategy and roadmap
 
