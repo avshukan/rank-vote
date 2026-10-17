@@ -43,8 +43,9 @@ may need explicit contracts, examples, failure cases and owner decisions.
    - **Known blocker:** an external dependency or prerequisite prevents work.
 
    Check goal, scope, dependencies, risks, contracts and credible verification.
-   For complex algorithms, confirm that examples, fixtures, invariants and
-   API responses agree with the latest accepted semantics. Do not repeat
+   For complex algorithms (as in ID-8), confirm that examples, fixtures,
+   invariants and API responses agree with the latest accepted semantics.
+   Do not repeat
    already accepted decisions or invent requirements to fill documentation.
 
 4. **Resolve the decisions.** Report only unresolved decisions, with concise
@@ -59,9 +60,9 @@ may need explicit contracts, examples, failure cases and owner decisions.
      Write proportionate, testable criteria in `docs/acceptance-criteria.md`;
      update `docs/09-api-design.md` or other permanent contract/ADR documents
      only where relevant. Record confirmed decisions separately from technical
-     judgment calls. Set the backlog row to `Ready` through task-readiness only.
+     judgment calls. Set the backlog state to `Ready`.
    - **`Design`:** substantial analysis or design decisions remain and cannot
-     be closed in the ordinary readiness pass. Set `Design` and name the
+     be closed in the ordinary readiness pass, as happened with ID-32. Set `Design` and name the
      unanswered questions in the backlog note. If one row is insufficient,
      use optional `docs/backlog/<id>-<slug>.md` with **confirmed facts**,
      **open owner decisions**, **unconfirmed proposals** and **next step**.
@@ -100,16 +101,8 @@ may need explicit contracts, examples, failure cases and owner decisions.
 
 ## Gotchas learned the hard way
 
-- Read existing code before declaring work missing, or an already shipped
-  endpoint can be built again.
 - `Todo` is ordered for work selection, not by backlog ID. Keep fixed-width
   rows intact; put longer temporary notes outside the table.
-- Match criteria to risk. A minor quality fix does not need a production
-  evidence protocol; a risky operational change may need one.
 - A scope exclusion already fixed by canonical documentation, an accepted
   decision or another tracked item needs a citation, not a new owner decision.
   New product/design exclusions and owner-operated checks need owner approval.
-- ID-32 exercised `Design → Ready`: distinguish facts, unconfirmed options
-  and decisions, then remove temporary design notes after settling them.
-- ID-8 showed why algorithm fixtures and API examples must be reconciled
-  against the final accepted rules before implementation.
