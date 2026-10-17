@@ -56,10 +56,9 @@ runtime evidence is under #29 in `docs/acceptance-criteria.md`. See
 3. Pick the next item, usually a `Ready` one. If it still needs readiness, agree
    scope in `docs/acceptance-criteria.md` **before** starting the work — the PR
    description then refers to those criteria instead of restating them.
-   For small, low-risk tasks, readiness and implementation may share a PR only
-   after the owner explicitly chooses that option for the individual task (see
-   `task-readiness`); otherwise land a readiness docs PR first. Keep a small
-   `Ready` pool: when picking a `Ready` item leaves fewer than 2 others,
+   An exception allowing a combined PR with explicit per-item owner approval
+   is defined in `task-readiness`. Keep a small `Ready` pool: when picking a
+   `Ready` item leaves fewer than 2 others,
    whoever picked it requests a backlog sweep (the exact rule and command are in
    `AGENTS.md`, Process Rules)
 4. Implement features as vertical slices, sized to fit one agent session

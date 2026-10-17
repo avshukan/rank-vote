@@ -53,14 +53,16 @@ may need explicit contracts, examples, failure cases and owner decisions.
    owner-operated actions as accepted. A question answered during ordinary
    readiness does not by itself justify `Design`.
 
-   For a small, low-risk item with settled decisions, no known blockers and a
-   simple verification plan, **ask the owner before combining readiness and
-   implementation**: "This item looks small and low-risk. Should I put
-   readiness and implementation in one PR, or use a separate readiness PR
-   first?" Wait for an explicit choice **for this item**. Prior approvals,
-   silence and a risk assessment alone are not permission. Without an
-   affirmative answer, use the separate readiness PR. Do not offer this
-   shortcut for substantial contract, data or production-safety changes.
+   For a small, low-risk item still in state `—`, with settled decisions, no
+   known blockers and a simple verification plan, the agent **may propose**
+   combining readiness and implementation. If proposing it, ask: "This item
+   looks small and low-risk. Should I put readiness and implementation in one
+   PR, or use a separate readiness PR first?" Wait for an explicit affirmative
+   decision **for this item**. Prior approvals, silence or the agent's risk
+   assessment are not permission. Without that decision, use a separate
+   readiness PR. Do not propose this shortcut for items already `Ready`, in
+   `Design` or `Blocked`, or for substantial contract, data or production-
+   safety changes.
 
 5. **Choose and document one outcome:**
    - **`Ready`:** the goal and bounded scope are clear, material decisions are
@@ -73,8 +75,8 @@ may need explicit contracts, examples, failure cases and owner decisions.
    - **`Design`:** substantial analysis or design decisions remain and cannot
      be closed in the ordinary readiness pass, as happened with ID-32.
      Set `Design` and name the unanswered questions in the backlog note.
-     If one row is insufficient,
-     use optional `docs/backlog/<id>-<slug>.md` with **confirmed facts**,
+     If one row is insufficient, use an optional
+     `docs/backlog/<id>-<slug>.md` with **confirmed facts**,
      **open owner decisions**, **unconfirmed proposals** and **next step**.
      Do not write speculative answers as acceptance criteria. Once resolved,
      rerun readiness; move durable decisions to permanent docs and delete
@@ -111,11 +113,12 @@ may need explicit contracts, examples, failure cases and owner decisions.
    - **Explicitly owner-approved single PR:** first write the agreed acceptance
      criteria and applicable decisions on the work branch, **before coding**;
      then implement and verify in that same PR. Record the owner's per-item
-     permission and the readiness result in the PR description. Only when the
-     full Definition of Done is satisfied, move the backlog item from `Todo`
-     directly to `Done` in that PR; no intermediate `Ready` state must land
-     on `main`. If readiness finds new material decisions or blockers, stop
-     and use the normal separate readiness path.
+     permission and the readiness result in the PR description. When the
+     acceptance criteria are met, `make verify` passes and applicable manual
+     runtime checks are complete, move the item from `Todo` directly to
+     `Done` in that PR. Do not land an intermediate `Ready` state on `main`.
+     Review and merge remain the owner's decision. If readiness finds new
+     material decisions or blockers, stop and use the separate readiness path.
 
    In either path, summarise the verified baseline, decisions, checks and next
    action. Stop at a PR with green CI for the owner's review and merge.

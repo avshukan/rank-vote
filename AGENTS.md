@@ -196,10 +196,9 @@ drifted matches only the stable part.
 - The backlog source of truth is `docs/backlog.md`; see current priorities there.
   Its tables have fixed column widths — read the `Format` section in that file
   before editing them
-- **Readiness boundary.** For small, low-risk tasks, ask the owner to choose
-  explicitly between a combined readiness + implementation PR and a separate
-  readiness PR. Never combine without approval for that specific task; see
-  `task-readiness` and `docs/backlog.md`.
+- **Readiness boundary.** Combining readiness and implementation for an item
+  not yet `Ready` requires explicit owner approval for that specific item;
+  see `task-readiness`.
 - **Ready pool.** When you pick a `Ready` item for work, count the `Ready` rows
   of `Todo` without it. If fewer than 2 remain, request a backlog sweep, naming
   the picked item and the count:
@@ -208,7 +207,7 @@ drifted matches only the stable part.
   no `In progress` state and no reservation: the rule is procedural
 - Documentation is part of the Definition of Done — update relevant `docs/`
   files alongside code changes
-- **PR handoff report.** Start with the backlog ID and what the change does,
+- **PR handoff report.** Start with the backlog ID (if any) and what changed,
   then link the PR, checks and manual verification. State explicitly that the
   PR is ready for owner review and merge. Name unfinished findings via an
   existing backlog item (`ID-N`), an open Issue (`#N`), or a new Issue routed
