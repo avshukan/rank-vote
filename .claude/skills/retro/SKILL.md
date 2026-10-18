@@ -30,6 +30,3 @@ Rules:
   do not invent hypothetical ones.
 - Present proposals as a short list with rationale and wait for confirmation.
   Do not create or edit any skill or instruction file until the user approves.
-- Skill roadmap candidates for this repo (create only once the procedure has
-  actually been performed): `new-slice` (Phase 1+), `db-migration` (Phase 2+),
-  `verify-app` end-to-end poll flow (Phase 4+).
