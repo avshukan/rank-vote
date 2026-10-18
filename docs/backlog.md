@@ -65,11 +65,14 @@
   Type, Level, dependencies and State, stale readiness, and candidates for the
   `Ready` pool. `.github/workflows/backlog-sweep.yml` requests a sweep on the
   one Issue labelled `backlog-sweep`: open while a sweep is requested, closed by
-  the owner once none is pending. Requests come when picking work leaves fewer
-  than 2 `Ready` items, after a verified production release, and from a weekly
-  check about 30 days after the last sweep. The `backlog-sweep` skill only
-  recommends; the owner decides, and the approved changes land as a reviewed
-  docs pull request.
+  the owner once none is pending. At pickup, a request is made if fewer than
+  2 other `Ready` items remain **or** they are less than 25% of all `Todo`
+  rows (including the picked item). Other triggers are a verified production
+  release and a weekly check about 30 days after the last sweep. The
+  `backlog-sweep` skill only recommends; the owner decides, and the approved
+  changes land as a reviewed docs pull request.
+- Aim for a soft 25–50% `Ready` share of `Todo`, not a mandatory quota. A
+  sweep can suggest readiness candidates but cannot set an item to `Ready`.
 - An item that is no longer wanted moves from `Todo` to the end of `Cancelled`
   by the owner's decision. It keeps its ID, Title, Type and Level, and Notes
   records the reason. Rows are never deleted.
