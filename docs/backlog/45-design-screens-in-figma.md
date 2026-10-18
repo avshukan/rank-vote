@@ -73,8 +73,9 @@ committed to the repository.
 - Start with what the current Figma plan allows; buying a subscription needs
   separate owner approval.
 - No further screens, permissions or tools unless the loop cannot be completed
-  without them. On Starter, where `use_figma` is not listed, the loop may stop
-  at the agent's change; the owner decides how to continue.
+  without them. If native canvas editing is unavailable on the current plan,
+  stop after capturing the UI, record the limitation and ask the owner how to
+  proceed.
 - Bring to the next readiness pass: what worked, limits hit, time and AI
   credits spent, and how usable the agent's change was.
 
