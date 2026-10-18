@@ -48,15 +48,18 @@ that is `task-readiness`, which stays a separate step.
      `Design` item whose question was answered elsewhere.
    - **Readiness stale?** For a `Ready` item: do its criteria still match `main`
      — code, contracts and decisions that changed since they were written?
-   - **A candidate for the `Ready` pool?** Count all `Todo` rows, but
-     exclude already picked items from the available `Ready` count, even if
-     their backlog state is still `Ready`. Identify picked items from the
-     tracker's request reasons since it was last opened and open implementation
-     PRs. Report the available `Ready` share using all `Todo` rows as the
-     denominator. Aim for a soft 25–50% range. If under 25%, recommend enough
-     suitable candidates for `task-readiness` to restore the lower bound
-     where practical, by Level and dependencies. This is not a quota: do not
-     recommend weak candidates merely to meet a percentage.
+   - **A candidate for the `Ready` pool?** Count all `Todo` rows.
+     Exclude each picked item **once** from available `Ready`, and only if it
+     is still a `Ready` row in `Todo`. Identify picks from workflow-generated
+     request reasons on the tracker since it was last opened and open
+     implementation PRs. List each excluded ID and its evidence (reason or PR)
+     beside the available count; flag stale or abandoned picks for the owner's
+     confirmation instead of silently treating them as unavailable. Calculate
+     the share against all `Todo` rows. If fewer than 2 are available **or**
+     the share is under 25%, recommend suitable `task-readiness` candidates
+     by Level and dependencies to replenish the pool where practical. Aim for
+     a soft 25–50% range, not a quota: do not recommend weak candidates merely
+     to reach a percentage.
 
 4. **Recommend, then wait.** Present one compact list: the item (`ID-N`), the
    proposed change and its reason, grouped as move to `Done` or `Cancelled` /
