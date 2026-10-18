@@ -883,6 +883,10 @@ Chosen:
 
 Reason:
 
+- **Updated 2026-10-18:** the original fixed count threshold did not scale
+  with backlog size: 2 available `Ready` items out of 28 `Todo` rows are
+  only about 7%, leaving too little choice. The percentage trigger keeps the
+  future-work pool proportional without making 25–50% a hard quota
 - the same procedure serves every trigger, so it lives once, in the skill, and
   neither the workflow nor the tracker repeats it
 - one tracker gathers repeated triggers in one place; a new Issue per request
