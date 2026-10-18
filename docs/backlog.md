@@ -148,7 +148,7 @@ adapts to the column rather than moving the column.
 | 36  | Export results as CSV      | Value    | Low    | —       | Download scores/ranks from results page or API      |
 | 37  | Add short poll links       | Quality  | Low    | —       | Replace/alias UUID with short ID; redirect needed   |
 | 38  | Breakdown hover preview    | Value    | Low    | —       | Desktop hover/focus preview of score breakdown      |
-| 41  | Fix backlog lint fixture   | Ops      | Medium | —       | Fixture backlog; drop hard-coded live-file IDs      |
+| 41  | Fix backlog lint fixture   | Ops      | Medium | Ready   | Fixture backlog; tests pass for any valid backlog   |
 | 43  | Guard prod-deploy same SHA | Ops      | High   | —       | Refuse or warn if deploy SHA = current; add test    |
 | 44  | Revoke legacy GH CLI OAuth | Ops      | Medium | —       | Security cleanup; revoke old GH CLI OAuth auth      |
 | 45  | Design screens in Figma    | Quality  | High   | Design  | Redesign via Figma+AI; scope/apply open, spike next |

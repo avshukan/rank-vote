@@ -2997,6 +2997,87 @@ totalBallots=0
 
 ---
 
+## ID-41 Fix backlog lint fixture
+
+Test-only: `scripts/backlog-promotion.test.mjs` stops depending on particular
+rows of the live `docs/backlog.md`. For any `docs/backlog.md` that passes the
+live format test, the rest of the suite passes, so moving, cancelling or
+rewording backlog rows never requires a test change. The backlog lint, backlog
+promotion, the workflows and the backlog `Format` stay unchanged.
+
+### Scope
+
+- [ ] A fixed fixture backlog in the `docs/backlog.md` format (Legend, `Todo`,
+      `Done` and `Cancelled` tables) is added, and a test asserts that
+      `lintBacklog` reports no problems for it
+- [ ] The lint test that injects a duplicate ID, an unknown Type, an
+      overflowing Notes cell and misaligned cells builds its input from the
+      fixture
+- [ ] The promotion refusal for a backlog that already breaks its format
+      builds that backlog from the fixture, and still asserts the
+      `Todo line N: ID X is already used` reason, the recovery step and that
+      nothing is written
+- [ ] The duplicate-IDs-across-sections test and the append-to-`Todo` test use
+      the fixture instead of the first or last live `Todo` row
+- [ ] No test locates a row of the live `docs/backlog.md` by a literal ID or
+      literal cell text
+- [ ] `docs/backlog.md follows its fixed-width Format rules` and the
+      triage-prompt width check still read the live file
+- [ ] Everything the suite covers today stays covered, including the backlog
+      tooling tests required by ID-39
+
+### Verification
+
+- [ ] **Manual, recorded in the PR:** on scratch copies of the repository,
+      `node --test scripts/backlog-promotion.test.mjs` passes after each of
+      these valid edits to `docs/backlog.md`, which fail it on `main` today
+      (see Baseline): (1) `Todo` rows 6, 8, 9, 14 and 20 moved to `Done` and
+      rows 11 and 12 to `Cancelled`, every remaining Notes cell rewritten,
+      some States changed and the `Todo` order reversed; (2) only the Notes of
+      ID-8 reworded; (3) every `Todo` row moved to `Done`, leaving `Todo` empty
+- [ ] A broken `docs/backlog.md`, for example a misaligned row, still fails
+      `docs/backlog.md follows its fixed-width Format rules`
+- [ ] `make verify` passes
+
+### Baseline on `main`
+
+Verified during readiness at `c216504`, where all 42 tests pass, on scratch
+copies of the repository:
+
+- The lint test finds rows 6, 8, 9, 14 and 20 by ID and edits them by cell
+  text: the Notes of ID-8 and the Type of ID-20 and ID-9. The format-refusal
+  case replaces `| 6   |` with `| 14  |`
+- Moving ID-6 or ID-14 to `Done` fails both tests; moving ID-8 or ID-20 fails
+  the lint test with a `TypeError`; rewording only the Notes of ID-8 fails it
+  with an assertion error
+- Edit (1) above fails only these two tests. With an empty `Todo`, the
+  duplicate-IDs-across-sections test (`todo.rows[0]`) and the append-to-`Todo`
+  test fail as well
+- `scripts/backlog-sweep.test.mjs` does not read the backlog. The release tests
+  had the same coupling to `CHANGELOG.md`; since #96 they read
+  `scripts/fixtures/release-changelog.v0.1.0.md`
+
+### Readiness Decisions
+
+- Approach: a fixed fixture backlog instead of the live file, as the backlog
+  row and #87 describe; #96 set the same pattern for the release tests
+- Accepted by the owner: the full scope. Every test that needs particular rows
+  uses the fixture, so the suite passes for any valid backlog, an empty `Todo`
+  included. This goes beyond the two tests #87 names
+- Accepted by the owner: ID-41 keeps its `Todo` position. If ID-6, ID-20 or
+  ID-8 moves to `Done` before ID-41 lands, that pull request repoints the
+  pinned rows, as #86 did for ID-19
+- Implementation choices, settled in the implementation PR and its review: the
+  fixture's location and form (a file under `scripts/fixtures/`, as in #96, or
+  inline in the test), its rows (clearly synthetic titles; the live column
+  widths and Legend values), and whether assertions match the exact problem
+  list
+- Documentation: none affected. The backlog `Format` section still names
+  `scripts/backlog-promotion.test.mjs` as the check of the live backlog
+- No architectural or product questions remain open for ID-41.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
