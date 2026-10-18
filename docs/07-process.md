@@ -57,10 +57,11 @@ runtime evidence is under #29 in `docs/acceptance-criteria.md`. See
    scope in `docs/acceptance-criteria.md` **before** starting the work — the PR
    description then refers to those criteria instead of restating them.
    An exception allowing a combined PR with explicit per-item owner approval
-   is defined in `task-readiness`. Keep a small `Ready` pool: when picking a
-   `Ready` item leaves fewer than 2 others,
-   whoever picked it requests a backlog sweep (the exact rule and command are in
-   `AGENTS.md`, Process Rules)
+   is defined in `task-readiness`. Aim for a soft 25–50% of `Todo` in
+   `Ready`. If picking a `Ready` item leaves fewer than 2 other `Ready` items
+   **or** they are less than 25% of all `Todo` rows (including the picked row),
+   whoever picked it requests a backlog sweep (the exact rule and command are
+   in `AGENTS.md`, Process Rules)
 4. Implement features as vertical slices, sized to fit one agent session
 5. Merge changes to `main` via PR; the PR updates `docs/backlog.md` for the items it completes
 6. Keep `Todo` current with backlog sweeps. A sweep is requested on the
