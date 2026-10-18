@@ -873,6 +873,11 @@ Chosen:
   work (a procedural rule for agents and people); a release, only after a
   successful deployment and production verification; and about 30 days since
   the last closing
+- **Updated 2026-10-18:** the pickup trigger now applies when fewer than 2 other
+  `Ready` items remain **or** they are less than 25% of all `Todo` rows,
+  including the picked item. This supersedes the count-only pickup trigger
+  above; other triggers remain unchanged. The 25–50% `Ready` target is soft,
+  not a quota. Sweep recommends candidates but does not set `Ready`
 - no longer wanted items move to a `Cancelled` section shaped like `Done`, so
   they keep their ID and the reason
 
