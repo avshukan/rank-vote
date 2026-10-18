@@ -30,8 +30,9 @@ that is `task-readiness`, which stays a separate step.
    Format, `Todo`, `Done`, `Cancelled`); the `docs/acceptance-criteria.md`
    sections of `Ready`, `Design` and `Blocked` items; any
    `docs/backlog/<id>-<slug>.md`; open Issues (the idea inbox, including
-   accepted ones not yet promoted); and what merged since the tracker was last
-   closed (`git log`, merged PRs). Read code where a question depends on it.
+   accepted ones not yet promoted); open implementation PRs; and what merged
+   since the tracker was last closed (`git log`, merged PRs). Read code where a
+   question depends on it.
 
 3. **Review every `Todo` item** — every row, none skipped:
    - **Still needed?** Work that was actually delivered belongs in `Done`, at
@@ -47,11 +48,15 @@ that is `task-readiness`, which stays a separate step.
      `Design` item whose question was answered elsewhere.
    - **Readiness stale?** For a `Ready` item: do its criteria still match `main`
      — code, contracts and decisions that changed since they were written?
-   - **A candidate for the `Ready` pool?** Count `Ready` and total `Todo`
-     items and report the share. Aim for a soft 25–50% `Ready` range. If under
-     25%, recommend enough suitable candidates for `task-readiness` to restore
-     the lower bound where practical, by Level and dependencies. This is not a
-     quota: do not recommend weak candidates merely to meet a percentage.
+   - **A candidate for the `Ready` pool?** Count all `Todo` rows, but
+     exclude already picked items from the available `Ready` count, even if
+     their backlog state is still `Ready`. Identify picked items from the
+     tracker's request reasons since it was last opened and open implementation
+     PRs. Report the available `Ready` share using all `Todo` rows as the
+     denominator. Aim for a soft 25–50% range. If under 25%, recommend enough
+     suitable candidates for `task-readiness` to restore the lower bound
+     where practical, by Level and dependencies. This is not a quota: do not
+     recommend weak candidates merely to meet a percentage.
 
 4. **Recommend, then wait.** Present one compact list: the item (`ID-N`), the
    proposed change and its reason, grouped as move to `Done` or `Cancelled` /
