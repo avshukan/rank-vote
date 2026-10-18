@@ -199,12 +199,16 @@ drifted matches only the stable part.
 - **Readiness boundary.** Combining readiness and implementation for an item
   not yet `Ready` requires explicit owner approval for that specific item;
   see `task-readiness`.
-- **Ready pool.** When you pick a `Ready` item for work, count the `Ready` rows
-  of `Todo` without it. If fewer than 2 remain, request a backlog sweep, naming
-  the picked item and the count:
-  `gh workflow run backlog-sweep.yml -f reason="Ready pool: picked ID-N; M Ready left"`
-  (or **Run workflow** on _Backlog sweep request_ in the Actions tab). There is
-  no `In progress` state and no reservation: the rule is procedural
+- **Ready pool.** Aim for 25–50% of `Todo` to be `Ready` as soft guidance,
+  not a mandatory quota. When picking a `Ready` item for work, count all
+  `Todo` rows (including the picked item) and other `Ready` rows (excluding
+  it). Request a backlog sweep if **either** fewer than 2 other `Ready` items
+  remain **or** they make up less than 25% of all `Todo` rows. Name the picked
+  item, remaining count and total in the reason:
+  `gh workflow run backlog-sweep.yml -f reason="Ready pool: picked ID-N; M/T Ready left"`
+  (or **Run workflow** on _Backlog sweep request_ in the Actions tab). The
+  sweep recommends readiness candidates; it never sets `Ready`. There is no
+  `In progress` state or reservation: the rule is procedural
 - Documentation is part of the Definition of Done — update relevant `docs/`
   files alongside code changes
 - **PR handoff report.** Start with the backlog ID (if any) and what changed,
