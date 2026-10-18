@@ -2,6 +2,45 @@
 
 Simple web app for group decisions using ranked voting (Borda count).
 
+## Work with AI agents
+
+Copy a prompt into Copilot, Claude Code or Codex. Replace `ID-N` and
+`[idea]` before sending. The agent must follow [AGENTS.md](AGENTS.md) and
+the repository skills.
+
+**Capture an idea** (triage and backlog promotion are separate):
+
+```text
+Create a GitHub Issue for this idea: [idea]. Do not edit the backlog or accept triage.
+```
+
+**Review the backlog:**
+
+```text
+Run the backlog-sweep skill. Review every Todo item and propose changes and task-readiness candidates. Wait for my approval before editing.
+```
+
+**Prepare an item:**
+
+```text
+Run task-readiness for ID-N against current main. Present unresolved owner decisions for approval. Do not start implementation.
+```
+
+**Choose what to work on next:**
+
+```text
+Compare current Ready items by impact, Level, dependencies, effort and risks. Recommend one for me to choose. Do not start work.
+```
+
+**Implement a Ready item:**
+
+```text
+Implement ID-N using its accepted criteria and AGENTS.md. Follow the Ready-pool sweep rule, run required checks and open a PR. Do not merge.
+```
+
+See [the backlog](docs/backlog.md) for current items and
+[the development process](docs/07-process.md) for the full workflow.
+
 ## Quick Start
 
 Run the complete application in containers:
