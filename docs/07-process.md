@@ -53,12 +53,13 @@ runtime evidence is under #29 in `docs/acceptance-criteria.md`. See
    decision and backlog promotion (see its `Workflow` section)
 2. Pull work continuously, without fixed-length iterations:
    pick → readiness if needed → work → merge → pick again
-3. Pick the next item, usually a `Ready` one. If it still needs readiness, agree
-   scope in `docs/acceptance-criteria.md` **before** starting the work — the PR
-   description then refers to those criteria instead of restating them.
-   An exception allowing a combined PR with explicit per-item owner approval
-   is defined in `task-readiness`. Aim for a soft 25–50% of `Todo` in
-   `Ready`. If picking a `Ready` item leaves fewer than 2 other `Ready` items
+3. Pick `Ready` items for implementation. Items in `—`, `Design` or `Blocked`
+   can instead be picked for preparation through `task-readiness`. For `Design`,
+   that can mean analysis or an owner-agreed spike. Preparation is not permission
+   to implement. Agree scope in `docs/acceptance-criteria.md`, then merge the
+   readiness PR before implementation. Only a small, low-risk `—` item may use
+   the combined-PR exception, with explicit per-item owner approval (see
+   `task-readiness`). Aim for a soft 25–50% of `Todo` in `Ready`. If picking a `Ready` item leaves fewer than 2 other `Ready` items
    **or** they are less than 25% of all `Todo` rows (including the picked row),
    whoever picked it requests a backlog sweep (the exact rule and command are
    in `AGENTS.md`, Process Rules)
