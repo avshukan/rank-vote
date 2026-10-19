@@ -59,7 +59,8 @@ runtime evidence is under #29 in `docs/acceptance-criteria.md`. See
    to implement. Agree scope in `docs/acceptance-criteria.md`, then merge the
    readiness PR before implementation. Only a small, low-risk `—` item may use
    the combined-PR exception, with explicit per-item owner approval (see
-   `task-readiness`). Aim for a soft 25–50% of `Todo` in `Ready`. If picking a `Ready` item leaves fewer than 2 other `Ready` items
+   `task-readiness`). Aim for a soft 25–50% of `Todo` in `Ready`. If picking
+   a `Ready` item leaves fewer than 2 other `Ready` items
    **or** they are less than 25% of all `Todo` rows (including the picked row),
    whoever picked it requests a backlog sweep (the exact rule and command are
    in `AGENTS.md`, Process Rules)
