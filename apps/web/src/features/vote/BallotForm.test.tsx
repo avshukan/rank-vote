@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import type { PollResponseDto } from '@rank-vote/shared';
@@ -149,5 +149,125 @@ describe('BallotForm', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Could not load the poll.');
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+  });
+});
+
+/**
+ * Dispatches a one-finger touch event at height y; only vertical movement
+ * matters to the ranking. jsdom has `TouchEvent` but no `Touch`, so the touch
+ * point is attached as a plain object.
+ */
+function touch(target: Element, type: 'touchstart' | 'touchmove' | 'touchend', y: number) {
+  const point = { identifier: 0, target, clientX: 150, clientY: y };
+  const event = new TouchEvent(type, { bubbles: true, cancelable: true });
+  Object.defineProperties(event, {
+    touches: { value: type === 'touchend' ? [] : [point] },
+    changedTouches: { value: [point] },
+  });
+  fireEvent(target, event);
+  return event;
+}
+
+describe('BallotForm dragging', () => {
+  // jsdom has no layout. Every ranking row gets a 40 px tall box, 50 px below
+  // the previous one in DOM order, so a drag can end over a particular row:
+  // row 0 is centred on y = 20, row 2 on y = 120.
+  beforeEach(() => {
+    getPollMock.mockReset().mockResolvedValue(POLL);
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const row = this.closest('li');
+      const index = row?.parentElement ? [...row.parentElement.children].indexOf(row) : -1;
+      const [top, height] = index === -1 ? [0, 0] : [index * 50, 40];
+      return {
+        x: 0,
+        y: top,
+        left: 0,
+        top,
+        right: 300,
+        bottom: top + height,
+        width: 300,
+        height,
+      } as DOMRect;
+    });
+  });
+
+  afterEach(() => {
+    // After a drag, dnd-kit removes its click-swallowing document listener on a
+    // timer. Run it, or that listener eats the clicks of the next test.
+    if (vi.isFakeTimers()) act(() => vi.runOnlyPendingTimers());
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  /** Renders the form and switches to fake timers once the poll is shown. */
+  async function renderLoaded() {
+    renderForm();
+    await screen.findByRole('heading', { name: 'Lunch?' });
+    vi.useFakeTimers();
+  }
+
+  it('leaves a touch swipe over an option to scroll the page', async () => {
+    await renderLoaded();
+    const pizza = screen.getByText('Pizza');
+
+    touch(pizza, 'touchstart', 20);
+    const swipe = [40, 80, 120].map((y) => touch(pizza, 'touchmove', y));
+    act(() => vi.advanceTimersByTime(1000));
+
+    // No move was cancelled, so the browser scrolls, and holding still after
+    // the swipe does not start a drag either.
+    expect(swipe.map((move) => move.defaultPrevented)).toEqual([false, false, false]);
+    expect(pizza).not.toHaveAttribute('aria-pressed');
+    touch(pizza, 'touchend', 120);
+    expect(rankedTexts()).toEqual(['1PizzaRank 1 of 3', '2SushiRank 2 of 3', '3SaladRank 3 of 3']);
+  });
+
+  it('starts a touch drag after a press and hold, and dropping it reorders', async () => {
+    await renderLoaded();
+    const pizza = screen.getByText('Pizza');
+
+    touch(pizza, 'touchstart', 20);
+    act(() => vi.advanceTimersByTime(249));
+    expect(pizza).not.toHaveAttribute('aria-pressed');
+    act(() => vi.advanceTimersByTime(1));
+    expect(pizza).toHaveAttribute('aria-pressed', 'true');
+    // Android raises the context menu on a long press; the drag cancels it.
+    expect(fireEvent.contextMenu(pizza)).toBe(false);
+
+    const drag = touch(pizza, 'touchmove', 120);
+    touch(pizza, 'touchend', 120);
+
+    // A drag in progress keeps the page still.
+    expect(drag.defaultPrevented).toBe(true);
+    expect(rankedTexts()).toEqual(['1SushiRank 1 of 3', '2SaladRank 2 of 3', '3PizzaRank 3 of 3']);
+    expect(fireEvent.contextMenu(pizza)).toBe(true);
+  });
+
+  it('never starts a drag from a press on the ↑/↓ buttons', async () => {
+    await renderLoaded();
+    const moveUp = screen.getByRole('button', { name: 'Move Salad up' });
+
+    touch(moveUp, 'touchstart', 120);
+    act(() => vi.advanceTimersByTime(1000));
+    touch(moveUp, 'touchend', 120);
+    fireEvent.click(moveUp);
+
+    expect(screen.queryByRole('button', { pressed: true })).not.toBeInTheDocument();
+    expect(rankedTexts()).toEqual(['1PizzaRank 1 of 3', '2SaladRank 2 of 3', '3SushiRank 3 of 3']);
+  });
+
+  it('still drags with a mouse after 8 px of movement, with no hold', async () => {
+    await renderLoaded();
+    const pizza = screen.getByText('Pizza');
+
+    fireEvent.mouseDown(pizza, { clientX: 150, clientY: 20 });
+    fireEvent.mouseMove(document, { clientX: 150, clientY: 30 });
+    expect(pizza).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.mouseMove(document, { clientX: 150, clientY: 120 });
+    fireEvent.mouseUp(document, { clientX: 150, clientY: 120 });
+
+    expect(rankedTexts()).toEqual(['1SushiRank 1 of 3', '2SaladRank 2 of 3', '3PizzaRank 3 of 3']);
   });
 });

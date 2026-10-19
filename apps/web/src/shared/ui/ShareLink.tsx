@@ -40,7 +40,7 @@ export function ShareLink({ url, label = 'Shareable poll link' }: ShareLinkProps
           readOnly
           value={url}
           aria-label={label}
-          className="flex-1 rounded border border-gray-300 px-3 py-2"
+          className="min-w-0 flex-1 rounded border border-gray-300 px-3 py-2"
         />
         <button
           type="button"

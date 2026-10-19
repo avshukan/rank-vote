@@ -11,8 +11,8 @@ interface SortableOptionProps {
 }
 
 /**
- * One row of the ranking list: draggable by pointer, and reorderable with the
- * ↑/↓ buttons — which are the primary control on touch devices.
+ * One row of the ranking list: dragged by its text with a mouse, the keyboard,
+ * or a touch after a press and hold, and reorderable with the ↑/↓ buttons.
  */
 export function SortableOption({ option, rank, total, onMoveUp, onMoveDown }: SortableOptionProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -30,7 +30,13 @@ export function SortableOption({ option, rank, total, onMoveUp, onMoveDown }: So
       <span aria-hidden="true" className="w-6 shrink-0 text-center font-semibold text-gray-500">
         {rank}
       </span>
-      <span {...attributes} {...listeners} className="flex-1 cursor-grab touch-none select-none">
+      {/* Not touch-none: a swipe over the text must scroll the page. The touch
+          sensor's hold delay is what tells a drag apart from a swipe. */}
+      <span
+        {...attributes}
+        {...listeners}
+        className="flex-1 cursor-grab touch-manipulation select-none wrap-anywhere"
+      >
         {option.text}
       </span>
       <span className="sr-only">{`Rank ${rank} of ${total}`}</span>

@@ -37,11 +37,12 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
    port to restart it takes the API down with it.
 
 3. **Seed real data** with `make seed`, so the browser drives real UUIDs. It
-   creates three polls and prints a vote and a results URL for each: one with no
+   creates four polls and prints a vote and a results URL for each: one with no
    ballots, one with a single winner, one with a tie at the top and a trailing
-   option.
+   option, and one with long content — unbroken URLs and a 48-character word,
+   the two longest options tied for first — for layouts at 320 px (ID-6).
 
-   All three exist because a results page is in one of those states and
+   The first three exist because a results page is in one of those states and
    verifying only the middle one leaves the others unproven — the tie is what
    exercises shared position ranges, and the empty poll is a different render
    path, not a table of zeroes.

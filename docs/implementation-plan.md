@@ -100,7 +100,7 @@ Work is pulled continuously from `docs/backlog.md`, where current priorities are
 
 ## Phase 3 — Frontend (`apps/web`)
 
-**Status:** shipped. Full mobile layout is backlog #6.
+**Status:** shipped, including the mobile layout from 320 CSS px (ID-6).
 
 **Goal:** Three usable pages; no registration required.
 
@@ -136,7 +136,7 @@ Work is pulled continuously from `docs/backlog.md`, where current priorities are
 
 - API client (thin `fetch` wrapper pointing at `VITE_API_URL`)
 - Loading and error states
-- Basic responsive layout using Tailwind utility classes
+- Responsive layout using Tailwind utility classes, usable from 320 CSS px
 
 ### 3.6 Tests
 

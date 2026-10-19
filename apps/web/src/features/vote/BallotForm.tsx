@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   DndContext,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   closestCenter,
   useSensor,
   useSensors,
@@ -60,8 +61,11 @@ export function BallotForm({ pollId }: { pollId: string }) {
   }, [pollId, reloadKey]);
 
   const sensors = useSensors(
-    // A small distance threshold keeps taps on the ↑/↓ buttons from starting a drag.
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    // A mouse drag starts after 8 px of movement, so a click never starts one.
+    // A touch drag starts only after a press and hold: a swipe leaves the 5 px
+    // tolerance at once, which cancels the drag and leaves the page to scroll.
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
@@ -148,7 +152,7 @@ export function BallotForm({ pollId }: { pollId: string }) {
       }}
       className="flex flex-col gap-6"
     >
-      <h1 className="text-2xl font-bold">{poll.title}</h1>
+      <h1 className="text-2xl font-bold wrap-anywhere">{poll.title}</h1>
       <p className="text-gray-600">
         Rank every option from best (1) to worst — drag a row, or use the ↑/↓ buttons.
       </p>

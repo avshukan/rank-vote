@@ -125,7 +125,6 @@ adapts to the column rather than moving the column.
 <!-- prettier-ignore -->
 | ID  | Title                      | Type     | Level  | State   | Notes                                               |
 | --- | -------------------------- | -------- | ------ | ------- | --------------------------------------------------- |
-| 6   | Mobile responsive layout   | Quality  | Medium | Ready   | Main flows from 320px; long-press touch drag        |
 | 20  | Refresh results button     | Quality  | Medium | Ready   | Manual results refresh until ID-16                  |
 | 8   | Add IRV counting           | Value    | Medium | Ready   | Instant-runoff voting                               |
 | 9   | Add Condorcet counting     | Value    | Medium | —       | Pairwise comparison winner                          |
@@ -179,6 +178,7 @@ adapts to the column rather than moving the column.
 |  40 | Record v0.1.0 evidence     | Ops      | Medium | #29 Completion evidence; changelog dated; stale docs fixed    |
 |  19 | Explain score calculation  | Value    | Medium | Per-place Borda `breakdown`; score links to a Details view    |
 |  42 | Automate tagged releases   | Ops      | High   | v0.2.0 verified; VPS GitHub login removed; revoke → ID-44     |
+|   6 | Mobile responsive layout   | Quality  | Medium | From 320 px: long text wraps; touch drag after press and hold |
 
 ---
 

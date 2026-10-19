@@ -294,7 +294,7 @@ test('docs/backlog.md follows its fixed-width Format rules', () => {
 test('the backlog lint reports duplicate IDs, overflow, misalignment and unknown values', () => {
   const lines = realBacklog.split('\n');
   const row = (id) => lines.findIndex((line) => line.startsWith(`| ${id} `));
-  lines[row(6)] = lines[row(14)];
+  lines[row(13)] = lines[row(14)];
   lines[row(20)] = lines[row(20)].replace('Quality ', 'Feature ');
   lines[row(8)] = lines[row(8)].replace(
     'Instant-runoff voting',
@@ -767,7 +767,7 @@ const refusals = [
   ],
   [
     'a backlog that already breaks its format',
-    { backlog: realBacklog.replace('| 6   |', '| 14  |') },
+    { backlog: realBacklog.replace('| 13  |', '| 14  |') },
     /does not follow its own `Format` rules.*\n\n- Todo line \d+: ID 14 is already used/s,
     /Fix `docs\/backlog.md` on `main` in a docs pull request, then remove and re-apply/,
   ],
