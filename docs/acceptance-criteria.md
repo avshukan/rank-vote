@@ -155,6 +155,9 @@ IRV rules and checks below apply once ID-8 adds it.
       back to Borda
 - [ ] The button keeps each page on its current route (`/results` or
       `/results/options/:optionId`), including its `method` query parameter
+- [ ] The button follows the ID-6 mobile contract, whether ID-6 ships before or
+      after ID-20: it is at least 24×24 CSS px and adds no horizontal scrolling
+      at 320 CSS px
 - [ ] API and shared DTO contracts stay unchanged
 
 ### States and edge cases
@@ -199,6 +202,8 @@ IRV rules and checks below apply once ID-8 adds it.
 - Implementation choices, settled in the implementation PR and its review:
   button placement, whether refresh is disabled while a request is in
   flight, and how much shared fetch/retry logic is reused without doing ID-26
+- Accepted by the owner in the 2026-10-19 backlog sweep: the button follows the
+  ID-6 mobile contract, like ID-19's Details view
 - No architectural or product questions remain open for ID-20.
 
 ---
@@ -1495,6 +1500,10 @@ and visual-regression suites out of the MVP.
       every `button`, `a[href]` and `input` at least 24×24. Compare with `W`,
       not `window.innerWidth`: under mobile emulation an overflowing page widens
       the layout viewport (613 px at 320 on `main`), so that check always passes
+- [ ] **Details view:** the same measurements pass on the score-breakdown
+      Details view (`/poll/:id/results/options/:optionId`), which ID-19 added
+      and already holds to this contract, so ID-6's layout changes cannot
+      regress it unnoticed
 - [ ] **Gestures** at 320 px on the long-content ballot: a swipe without holding
       scrolls and keeps the ranking; press, hold and move reorders; a tap on
       ↑/↓ moves one place. At 1280 px a mouse drag still reorders
@@ -1553,6 +1562,8 @@ touch emulation, the API stubbed with the long-content data above:
   `min-w-0`, a narrower page gutter); the hold delay, movement tolerance and
   dnd-kit sensor setup; whether `make seed` gains the long-content poll; the
   emulation tooling used to measure.
+- Accepted by the owner in the 2026-10-19 backlog sweep: ID-6 also measures the
+  Details view, which ID-19 added after these criteria were written.
 - No architectural or product questions remain open for ID-6.
 
 ---
@@ -2668,6 +2679,18 @@ separate work in ID-10.
 - [ ] No side-by-side method comparison, no “different winner” surface and no
       multi-method analytics (these remain ID-10)
 
+### Mobile (ID-6 contract)
+
+These rules hold whether ID-6 ships before or after ID-8.
+
+- [ ] From 320 CSS px upward, the results page with its method selector, for
+      both methods, and the IRV Details view need no horizontal scrolling
+      (`document.documentElement.scrollWidth <= W` at 320 and 375 px). The poll
+      title and option text wrap, in the rounds and standings too, including a
+      single unbroken token
+- [ ] Every interactive control ID-8 adds — the method selector and the links
+      between IRV Results and IRV Details — is at least 24×24 CSS px
+
 ### Required automated domain fixtures (must be tests)
 
 - [ ] **Fixture 1 — rank-profile narrowing, full standings** is a required domain
@@ -2964,6 +2987,10 @@ totalBallots=0
 - [ ] **Manual:** with `make web` + `make api`, switch methods on the results
       page, open Details from IRV and return back while preserving `method=IRV`,
       and verify Borda breakdown flow remains intact
+- [ ] **Mobile:** Chromium mobile emulation at 320 and 375 px on a 10-option
+      poll with ID-6's long-content options and enough ballots for several IRV
+      rounds. The two Mobile checks pass; the PR includes 320 px screenshots of
+      IRV Results and IRV Details
 
 ### Out of Scope (tracked separately)
 
@@ -2993,6 +3020,10 @@ totalBallots=0
   `/poll/:id/results/options/:optionId` and preserves `method=IRV` when
   navigating between Results and Details
 - Accepted by the owner: ID-8 does not persist or update `Poll.countingMethods`
+- Accepted by the owner in the 2026-10-19 backlog sweep: the method selector and
+  the IRV views follow the ID-6 mobile contract, like ID-19's Details view. How
+  rounds and standings fit a narrow screen is an implementation choice, settled
+  in the implementation PR and its review
 - No architectural or product questions remain open for ID-8.
 
 ---
