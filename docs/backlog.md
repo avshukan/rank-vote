@@ -66,9 +66,9 @@
   `Done`. This exception is defined in `.claude/skills/task-readiness/SKILL.md`.
 - Backlog sweeps keep `Todo` current: whether each item is still needed, its
   Type, Level, dependencies and State, stale readiness, and candidates for the
-  `Ready` pool and `Design` preparation. `.github/workflows/backlog-sweep.yml`
-  requests a sweep on the
-  one Issue labelled `backlog-sweep`: open while a sweep is requested, closed by
+  `Ready` pool and `Design` preparation. The
+  `.github/workflows/backlog-sweep.yml` workflow requests a sweep on the one
+  Issue labelled `backlog-sweep`: open while a sweep is requested, closed by
   the owner once none is pending. At pickup, a request is made if fewer than
   2 other `Ready` items remain **or** they are less than 25% of all `Todo`
   rows (including the picked item). Other triggers are a verified production
