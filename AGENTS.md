@@ -196,10 +196,11 @@ drifted matches only the stable part.
 - The backlog source of truth is `docs/backlog.md`; see current priorities there.
   Its tables have fixed column widths — read the `Format` section in that file
   before editing them
-- **Work selection.** Pick `Ready` items for implementation. Items in `—`,
-  `Design` or `Blocked` can be picked for preparation through `task-readiness`;
-  `Design` may include an owner-agreed investigation or spike. This is not
-  permission to implement while material questions or blockers remain.
+- **Work selection.** Pick `Ready` items for implementation. For preparation,
+  run `task-readiness` on `—` items, recheck prerequisites of `Blocked` items,
+  or do analysis or an owner-agreed spike for `Design`. After `Design` work
+  or blocker removal, rerun `task-readiness`. Preparation is not permission
+  to implement.
 - **Readiness boundary.** Only a small, low-risk `—` item can combine
   readiness and implementation, with explicit owner approval for that item.
   `Design` and `Blocked` require the separate readiness path; see
