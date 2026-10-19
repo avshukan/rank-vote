@@ -17,7 +17,9 @@ Create a GitHub Issue for this idea: [idea]. Do not edit the backlog or accept t
 **Review the backlog:**
 
 ```text
-Run the backlog-sweep skill. Review every Todo item and propose changes and task-readiness candidates. Wait for my approval before editing.
+Run the backlog-sweep skill. Review every Todo item and propose changes,
+task-readiness candidates and Design preparation candidates. Wait for my
+approval before editing.
 ```
 
 **Prepare an item:**
@@ -29,7 +31,9 @@ Run task-readiness for ID-N against current main. Present unresolved owner decis
 **Choose what to work on next:**
 
 ```text
-Compare current Ready items by impact, Level, dependencies, effort and risks. Recommend one for me to choose. Do not start work.
+Compare current Ready items for implementation and Design items for preparation
+by impact, Level, dependencies, effort and risks. Recommend one for me to
+choose, naming the next action. Do not start work.
 ```
 
 **Implement a Ready item:**
