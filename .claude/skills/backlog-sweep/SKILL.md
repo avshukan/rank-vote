@@ -68,7 +68,7 @@ that is `task-readiness`, which stays a separate step.
      or decide open product/design questions for the owner. Rerun
      `task-readiness` after the design work.
 
-4. **Recommend, then wait. Present one compact list: the item (`ID-N`), the
+4. **Recommend, then wait.** Present one compact list: the item (`ID-N`), the
    proposed change and its reason, grouped as move to `Done` or `Cancelled` /
    Type or Level / dependencies or Notes / State / readiness candidates /
    `Design` preparation candidates. Items
