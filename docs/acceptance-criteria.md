@@ -3145,6 +3145,8 @@ the shared package stay unchanged.
 - [ ] **API e2e:** `test/app.e2e-spec.ts` replaces the test that keeps the
       scaffold with one asserting the standard `404` from `GET /api/v1`; the
       liveness test stays
+- [ ] **API e2e:** `test/app.e2e-spec.ts` also asserts the standard NestJS
+      `404` from `GET /api/v1/`, the prefix with a trailing slash
 - [ ] **API e2e:** in `test/rate-limit.e2e-spec.ts`, the check of routes that
       are not rate-limited expects `404` from `GET /api/v1` once the write
       buckets are exhausted, instead of the scaffold's `200`; a `429` fails it
@@ -3180,7 +3182,9 @@ Verified during readiness at `db86f5a`:
 
 ### Out of Scope (tracked separately)
 
-- A deliberate root response or a machine-readable API description → ID-22
+- An OpenAPI specification of the API → ID-22
+- A deliberate root response at `/api/v1` stays out of ID-30 as the option not
+  chosen (see Readiness Decisions) and has no backlog item
 
 ### Readiness Decisions
 
