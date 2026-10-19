@@ -3109,6 +3109,103 @@ copies of the repository:
 
 ---
 
+## ID-30 Drop the scaffold endpoint
+
+API cleanup: remove the Nest scaffold `GET /api/v1`, which answers
+`Hello World!`. The exact `/api/v1` path stays part of the API's namespace, so
+Caddy is unchanged, and with no root endpoint it answers like any unknown API
+path: with the standard NestJS `404` error. Liveness, the product endpoints and
+the shared package stay unchanged.
+
+### Scope
+
+- [ ] `AppController`, `AppService` and their unit test
+      `app.controller.spec.ts` are deleted, and nothing replaces them
+- [ ] `AppModule` registers no root controller or provider and keeps the
+      `OnModuleDestroy` HTTP drain from ID-35 unchanged
+- [ ] `GET /api/v1` and `GET /api/v1/` return `404` with the standard error
+      shape (`statusCode: 404`, `error: "Not Found"`), like any unknown path
+      under the prefix
+- [ ] `GET /api/v1/health`, the four product endpoints, `packages/shared` and
+      the web client are unchanged
+- [ ] `deploy/Caddyfile.rank-vote` is unchanged: Caddy still routes the exact
+      `/api/v1` path and all descendants to the API, as ID-29 requires. No
+      owner-operated production step is added; the change reaches production
+      with the next ordinary release
+- [ ] `probe.smoke()` in `scripts/production/probe.py` gets no assertion about
+      `GET /api/v1`. `make prod-rollback` runs it from the current tooling
+      against the previous release's images, so a rollback to a release that
+      still serves the scaffold, such as `v0.2.0`, still verifies
+- [ ] `docs/09-api-design.md` and `apps/api/README.md` no longer describe the
+      scaffold. The API design states that the `/api/v1` prefix has no root
+      endpoint and that the path returns the standard `404`
+
+### Verification
+
+- [ ] **API e2e:** `test/app.e2e-spec.ts` replaces the test that keeps the
+      scaffold with one asserting the standard `404` from `GET /api/v1`; the
+      liveness test stays
+- [ ] **API e2e:** `test/app.e2e-spec.ts` also asserts the standard NestJS
+      `404` from `GET /api/v1/`, the prefix with a trailing slash
+- [ ] **API e2e:** in `test/rate-limit.e2e-spec.ts`, the check of routes that
+      are not rate-limited expects `404` from `GET /api/v1` once the write
+      buckets are exhausted, instead of the scaffold's `200`; a `429` fails it
+- [ ] **Production smoke:** the exact-prefix check in
+      `scripts/production/container_smoke.py` expects the API's JSON `404`
+      instead of `200`. It still fails when Caddy sends the exact path to web,
+      whose SPA fallback answers `200` with `index.html`
+- [ ] `make verify`, `make prod-check` and `make prod-smoke` pass, as required
+      for a production tooling change; CI `checks` and `containers` are green
+- [ ] **Manual:** against `make api`, `GET /api/v1` returns `404` with the JSON
+      error, `GET /api/v1/health` returns `{"status":"ok"}`, and creating a
+      poll, submitting a ballot and reading its results still work
+
+### Baseline on `main`
+
+Verified during readiness at `db86f5a`:
+
+- `AppController` and `AppService` answer `GET /api/v1` with `Hello World!`.
+  `app.controller.spec.ts` and `test/app.e2e-spec.ts` cover it, and
+  `test/rate-limit.e2e-spec.ts` expects its `200` among the routes that are not
+  rate-limited
+- `scripts/production/container_smoke.py` requires `200` from the exact
+  `/api/v1` path through Caddy ("Exact API prefix not routed")
+- Nothing else calls the root. Both Compose API healthchecks and
+  `test/shutdown.e2e-spec.ts` use `/api/v1/health`; `make container-smoke`,
+  `make seed`, the web client and `probe.smoke()` call only `/health` and
+  `/polls` paths
+- With the installed NestJS 11.1.22, an application with the `api/v1` global
+  prefix and no root controller answers `GET /api/v1` and `GET /api/v1/` with
+  `404`, `application/json` and
+  `{"message":"Cannot GET /api/v1","error":"Not Found","statusCode":404}`,
+  checked in a throwaway process
+
+### Out of Scope (tracked separately)
+
+- An OpenAPI specification of the API → ID-22
+- A deliberate root response at `/api/v1` stays out of ID-30 as the option not
+  chosen (see Readiness Decisions) and has no backlog item
+
+### Readiness Decisions
+
+- Accepted by the owner: the exact `/api/v1` path keeps reaching the API and,
+  with no root endpoint, answers with the standard `404`, like any unknown API
+  path. Caddy keeps routing by prefix, independent of the API's routes, and
+  every path under the prefix gets the API's JSON errors
+- Not chosen: narrowing the Caddy route to `/api/v1/*`, which would send the
+  exact path to the SPA (`200` with HTML), make `/api/v1` and `/api/v1/` behave
+  differently and need an owner-operated edit of the live Caddyfile; and a
+  deliberate root response, a new public contract with no consumer
+- Implementation choices, settled in the implementation PR and its review: how
+  the tests assert the `404` (status alone or the error body), test names, and
+  the wording of the API design and README updates
+- Documentation: the Done-item criteria of ID-27, ID-29 and ID-31 that mention
+  the scaffold stay unchanged as historical records. Feature pull requests do
+  not edit `CHANGELOG.md`; Prepare release drafts it (`docs/07-process.md`)
+- No architectural or product questions remain open for ID-30.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
