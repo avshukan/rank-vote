@@ -53,17 +53,19 @@ runtime evidence is under #29 in `docs/acceptance-criteria.md`. See
    decision and backlog promotion (see its `Workflow` section)
 2. Pull work continuously, without fixed-length iterations:
    pick → readiness if needed → work → merge → pick again
-3. Pick `Ready` items for implementation. Items in `—`, `Design` or `Blocked`
-   can instead be picked for preparation through `task-readiness`. For `Design`,
-   that can mean analysis or an owner-agreed spike. Preparation is not permission
-   to implement. Agree scope in `docs/acceptance-criteria.md`, then merge the
-   readiness PR before implementation. Only a small, low-risk `—` item may use
-   the combined-PR exception, with explicit per-item owner approval (see
-   `task-readiness`). Aim for a soft 25–50% of `Todo` in `Ready`. If picking
-   a `Ready` item leaves fewer than 2 other `Ready` items
-   **or** they are less than 25% of all `Todo` rows (including the picked row),
-   whoever picked it requests a backlog sweep (the exact rule and command are
-   in `AGENTS.md`, Process Rules)
+3. Pick `Ready` items for implementation. For preparation, run
+   `task-readiness` on `—` items, recheck prerequisites of `Blocked` items,
+   or do analysis or an owner-agreed spike for `Design`. After `Design` work
+   or blocker removal, rerun `task-readiness`. Preparation is not permission
+   to implement. Before implementation, agree scope in
+   `docs/acceptance-criteria.md` and merge the readiness PR; the implementation
+   PR refers to those criteria instead of restating them. Only a small,
+   low-risk `—` item may use the combined-PR exception, with explicit per-item
+   owner approval (see `task-readiness`). Aim for a soft 25–50% of `Todo`
+   in `Ready`. If picking a `Ready` item leaves fewer than 2 other `Ready`
+   items **or** they are less than 25% of all `Todo` rows (including the
+   picked row), whoever picked it requests a backlog sweep (the exact rule
+   and command are in `AGENTS.md`, Process Rules)
 4. Implement features as vertical slices, sized to fit one agent session
 5. Merge changes to `main` via PR; the PR updates `docs/backlog.md` for the items it completes
 6. Keep `Todo` current with backlog sweeps. A sweep is requested on the
