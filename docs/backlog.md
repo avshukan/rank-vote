@@ -57,7 +57,9 @@
   `not planned` by hand; no workflow closes it.
 - New backlog items start with `State = —`.
 - Task-readiness can run on demand for a chosen item or proactively for likely
-  next work. It sets `State` to `Ready`, `Design`, or `Blocked`.
+  next work. It sets `State` to `Ready`, `Design`, or `Blocked`. A `Design` item
+  may be picked for analysis or an owner-agreed spike, followed by another
+  readiness pass; that is preparation, not implementation.
 - With explicit owner approval for that specific item, a combined readiness
   and implementation PR may move a small, low-risk task from `—` directly to
   `Done`. This exception is defined in `.claude/skills/task-readiness/SKILL.md`.
@@ -76,8 +78,10 @@
 - An item that is no longer wanted moves from `Todo` to the end of `Cancelled`
   by the owner's decision. It keeps its ID, Title, Type and Level, and Notes
   records the reason. Rows are never deleted.
-- Work is pulled continuously from `Ready` items, except the approved
-  combined-PR exception. `Level` guides selection but is not a strict queue
+- Implementation is pulled continuously from `Ready` items, except the approved
+  combined-PR exception for small, low-risk `—` items. `Design` items can be
+  picked for preparation, not implementation. `Level` guides selection but is
+  not a strict queue
   order. The Ready-pool rule is in `AGENTS.md` (Process Rules).
 - A detailed file under `docs/backlog/<id>-<slug>.md` is optional when one row
   is not enough. It is normally deleted when the task is done; durable decisions
