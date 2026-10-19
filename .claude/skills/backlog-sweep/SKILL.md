@@ -60,13 +60,20 @@ that is `task-readiness`, which stays a separate step.
      by Level and dependencies to replenish the pool where practical. Aim for
      a soft 25–50% range, not a quota: do not recommend weak candidates merely
      to reach a percentage.
+   - **A candidate for `Design` work?** Independently of the `Ready` pool size,
+     consider `Design` items with a concrete next analysis step or agreed spike.
+     Recommend worthwhile preparation by impact, Level and dependencies, naming
+     the next step and unresolved questions. Distinguish this from implementation:
+     never count `Design` as available `Ready`, suggest implementing it as-is,
+     or decide open product/design questions for the owner. The proposed
+     design work is followed by a separate `task-readiness` pass.
 
 4. **Recommend, then wait.** Present one compact list: the item (`ID-N`), the
    proposed change and its reason, grouped as move to `Done` or `Cancelled` /
-   Type or Level / dependencies or Notes / State / readiness candidates. Items
-   with no change go on one line. Do not edit anything yet, and do not decide a
-   product or process question — put it to the owner as a question with a
-   recommendation.
+   Type or Level / dependencies or Notes / State / readiness candidates /
+   `Design` preparation candidates. Items with no change go on one line.
+   Do not edit anything yet, and do not decide a product or process question
+   — put it to the owner as a question with a recommendation.
 
 5. **Apply only what the owner approved,** on a branch
    `docs/backlog-sweep-<YYYY-MM-DD>`:
@@ -86,8 +93,8 @@ that is `task-readiness`, which stays a separate step.
 
 7. **Leave the tracker to the owner.** It stays open. The owner closes it once
    the approved changes have merged, or once they accept a no-change sweep,
-   after checking that the latest reasons on it were covered. Readiness for
-   the named candidates is a separate `task-readiness` run.
+   after checking that the latest reasons on it were covered. Preparing named
+   `Design` candidates and running `task-readiness` are separate from the sweep.
 
 ## Gotchas
 

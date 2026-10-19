@@ -57,14 +57,18 @@
   `not planned` by hand; no workflow closes it.
 - New backlog items start with `State = —`.
 - Task-readiness can run on demand for a chosen item or proactively for likely
-  next work. It sets `State` to `Ready`, `Design`, or `Blocked`.
+  next work. It sets `State` to `Ready`, `Design`, or `Blocked`. For `Design`,
+  analysis or an owner-agreed spike precedes another readiness pass. For
+  `Blocked`, recheck readiness after the prerequisite clears. Preparation is
+  not permission to implement.
 - With explicit owner approval for that specific item, a combined readiness
   and implementation PR may move a small, low-risk task from `—` directly to
   `Done`. This exception is defined in `.claude/skills/task-readiness/SKILL.md`.
 - Backlog sweeps keep `Todo` current: whether each item is still needed, its
   Type, Level, dependencies and State, stale readiness, and candidates for the
-  `Ready` pool. `.github/workflows/backlog-sweep.yml` requests a sweep on the
-  one Issue labelled `backlog-sweep`: open while a sweep is requested, closed by
+  `Ready` pool and `Design` preparation. The
+  `.github/workflows/backlog-sweep.yml` workflow requests a sweep on the one
+  Issue labelled `backlog-sweep`: open while a sweep is requested, closed by
   the owner once none is pending. At pickup, a request is made if fewer than
   2 other `Ready` items remain **or** they are less than 25% of all `Todo`
   rows (including the picked item). Other triggers are a verified production
@@ -76,9 +80,9 @@
 - An item that is no longer wanted moves from `Todo` to the end of `Cancelled`
   by the owner's decision. It keeps its ID, Title, Type and Level, and Notes
   records the reason. Rows are never deleted.
-- Work is pulled continuously from `Ready` items, except the approved
-  combined-PR exception. `Level` guides selection but is not a strict queue
-  order. The Ready-pool rule is in `AGENTS.md` (Process Rules).
+- Implementation is pulled continuously from `Ready` items, except the
+  approved combined-PR exception above. `Level` guides selection but is not a
+  strict queue order. The Ready-pool rule is in `AGENTS.md` (Process Rules).
 - A detailed file under `docs/backlog/<id>-<slug>.md` is optional when one row
   is not enough. It is normally deleted when the task is done; durable decisions
   move to permanent documentation.

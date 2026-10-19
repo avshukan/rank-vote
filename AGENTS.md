@@ -196,9 +196,15 @@ drifted matches only the stable part.
 - The backlog source of truth is `docs/backlog.md`; see current priorities there.
   Its tables have fixed column widths — read the `Format` section in that file
   before editing them
-- **Readiness boundary.** Combining readiness and implementation for an item
-  not yet `Ready` requires explicit owner approval for that specific item;
-  see `task-readiness`.
+- **Work selection.** Pick `Ready` items for implementation. For preparation,
+  run `task-readiness` on `—` items, recheck prerequisites of `Blocked` items,
+  or do analysis or an owner-agreed spike for `Design`. After `Design` work
+  or blocker removal, rerun `task-readiness`. Preparation is not permission
+  to implement.
+- **Readiness boundary.** Only a small, low-risk `—` item can combine
+  readiness and implementation, with explicit owner approval for that item.
+  `Design` and `Blocked` require the separate readiness path; see
+  `task-readiness`.
 - **Ready pool.** Aim for 25–50% of `Todo` to be `Ready` as soft guidance,
   not a mandatory quota. When picking a `Ready` item for work, count all
   `Todo` rows (including the picked item) and other `Ready` rows (excluding
