@@ -1449,37 +1449,37 @@ feature-oriented frontend architecture stay as they are.
 
 ### Scope
 
-- [ ] Every width from 320 CSS px upward is supported. 320 px is inside the
+- [x] Every width from 320 CSS px upward is supported. 320 px is inside the
       contract; narrower widths are not
-- [ ] Covered pages and states: the create form (2 and 10 options), "Poll
+- [x] Covered pages and states: the create form (2 and 10 options), "Poll
       created" with its share link, the ballot (a few and 10 options), results
       (single winner, tied winners, zero ballots with the share link) and "Poll
       not found". Their short status and error messages follow the same rules
-- [ ] At 1280 px each page keeps its current desktop structure — the centred
+- [x] At 1280 px each page keeps its current desktop structure — the centred
       `max-w-xl` column and the same arrangement
 
 ### Layout and long content
 
-- [ ] No page needs horizontal scrolling or renders zoomed out
-- [ ] No text or control is clipped, truncated or pushed off-screen
-- [ ] Poll titles, option text and winner text wrap inside their column,
+- [x] No page needs horizontal scrolling or renders zoomed out
+- [x] No text or control is clipped, truncated or pushed off-screen
+- [x] Poll titles, option text and winner text wrap inside their column,
       including a single unbroken token (a pasted URL, a long compound word)
-- [ ] Single-line text fields (question, options, share link) stay inside the
+- [x] Single-line text fields (question, options, share link) stay inside the
       viewport; longer text scrolls inside the field, and the share URL stays
       copyable with Copy
-- [ ] The score table stays a table, with no horizontally scrolling container;
+- [x] The score table stays a table, with no horizontally scrolling container;
       the option column wraps, and position labels (`1-2`) and scores are never
       split across lines
 
 ### Touch
 
-- [ ] Every interactive control has a bounding box of at least 24×24 CSS px
+- [x] Every interactive control has a bounding box of at least 24×24 CSS px
       (WCAG 2.2 AA). On `main` only `+ Add option` (83×20) falls short
-- [ ] On touch, a normal swipe over a ballot row — option text included —
+- [x] On touch, a normal swipe over a ballot row — option text included —
       scrolls the page and leaves the ranking unchanged
-- [ ] On touch, drag & drop starts after a press and hold, then movement; the
+- [x] On touch, drag & drop starts after a press and hold, then movement; the
       hold opens no text selection or context menu
-- [ ] The ↑/↓ buttons remain the alternative way to reorder, and a tap on them
+- [x] The ↑/↓ buttons remain the alternative way to reorder, and a tap on them
       never starts a drag. Mouse and keyboard dragging and the ballot
       instructions stay as they are on `main`
 
@@ -1490,27 +1490,27 @@ protocol) is the required path, against `make web` and `make api`. Layout cannot
 be observed in jsdom, and `docs/11-testing-strategy.md` keeps browser end-to-end
 and visual-regression suites out of the MVP.
 
-- [ ] **Data:** the `make seed` polls plus one long-content poll — a title that
+- [x] **Data:** the `make seed` polls plus one long-content poll — a title that
       ends in an unbroken URL of 60+ characters, and 10 options including a
       70+ character unbroken URL-like token and a 48-character single word
       (`Donaudampfschifffahrtsgesellschaftskapitänsmütze`), with the two
       longest options tied for first place
-- [ ] **Measure** at 320 and 375 px on every covered page:
+- [x] **Measure** at 320 and 375 px on every covered page:
       `document.documentElement.scrollWidth <= W`, the emulated width, and
       every `button`, `a[href]` and `input` at least 24×24. Compare with `W`,
       not `window.innerWidth`: under mobile emulation an overflowing page widens
       the layout viewport (613 px at 320 on `main`), so that check always passes
-- [ ] **Details view:** the same measurements pass on the score-breakdown
+- [x] **Details view:** the same measurements pass on the score-breakdown
       Details view (`/poll/:id/results/options/:optionId`), which ID-19 added
       and already holds to this contract, so ID-6's layout changes cannot
       regress it unnoticed
-- [ ] **Gestures** at 320 px on the long-content ballot: a swipe without holding
+- [x] **Gestures** at 320 px on the long-content ballot: a swipe without holding
       scrolls and keeps the ranking; press, hold and move reorders; a tap on
       ↑/↓ moves one place. At 1280 px a mouse drag still reorders
-- [ ] **Evidence** in the PR description: a short pass/fail summary,
+- [x] **Evidence** in the PR description: a short pass/fail summary,
       screenshots at 320 px of the long-content vote and results pages, and
       before/after screenshots at 1280 px of any page whose markup changed
-- [ ] **Tests:** the existing Vitest suites stay green. The touch activation
+- [x] **Tests:** the existing Vitest suites stay green. The touch activation
       gets a component test if dnd-kit's sensors can be driven in jsdom;
       otherwise the PR says so and the gesture check is the evidence
 
@@ -1520,9 +1520,9 @@ Chromium emulation cannot show iOS long-press text selection.
 
 ### Documentation
 
-- [ ] `docs/08-known-limitations.md` "Mobile Support" states the 320 CSS px
+- [x] `docs/08-known-limitations.md` "Mobile Support" states the 320 CSS px
       minimum instead of "basic mobile responsiveness"
-- [ ] `docs/implementation-plan.md` Phase 3 no longer points at ID-6 as pending
+- [x] `docs/implementation-plan.md` Phase 3 no longer points at ID-6 as pending
 
 ### Out of Scope (tracked separately)
 
