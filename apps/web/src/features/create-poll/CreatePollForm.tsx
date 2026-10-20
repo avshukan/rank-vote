@@ -85,7 +85,7 @@ export function CreatePollForm() {
               aria-label={`Option ${index + 1}`}
               onChange={(event) => updateOption(index, event.target.value)}
               placeholder={`Option ${index + 1}`}
-              className="flex-1 rounded border border-gray-300 px-3 py-2"
+              className="min-w-0 flex-1 rounded border border-gray-300 px-3 py-2"
             />
             <button
               type="button"
@@ -102,7 +102,7 @@ export function CreatePollForm() {
           type="button"
           onClick={addOption}
           disabled={options.length >= MAX_OPTIONS}
-          className="self-start text-sm text-blue-600 disabled:opacity-40"
+          className="min-h-6 self-start text-sm text-blue-600 disabled:opacity-40"
         >
           + Add option
         </button>

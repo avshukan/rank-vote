@@ -66,10 +66,10 @@ Users may need to refresh the page manually.
 
 ## Mobile Support
 
-Initial version targets:
-
-- desktop browsers
-- basic mobile responsiveness
+The web app supports desktop and mobile browsers at every width from 320 CSS px
+upward (ID-6); narrower screens are not supported. On a touch screen a swipe
+scrolls the page and a press and hold drags a ballot row; the ↑/↓ buttons
+remain the alternative.
 
 No native mobile app support.
 

@@ -73,7 +73,7 @@ export function ResultsView({ pollId }: { pollId: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">{title}</h1>
+      <h1 className="text-2xl font-bold wrap-anywhere">{title}</h1>
 
       {totalBallots === 0 ? (
         // Every option sits at score 0 here, so the table would be an empty
@@ -91,7 +91,10 @@ export function ResultsView({ pollId }: { pollId: string }) {
             </p>
             <ul className="flex flex-col gap-1">
               {winners.map((winner) => (
-                <li key={winner.optionId} className="text-xl font-bold text-green-900">
+                <li
+                  key={winner.optionId}
+                  className="text-xl font-bold text-green-900 wrap-anywhere"
+                >
                   {winner.text}
                 </li>
               ))}
@@ -115,9 +118,12 @@ export function ResultsView({ pollId }: { pollId: string }) {
             <tbody>
               {scores.map((score, row) => (
                 <tr key={score.optionId} className="border-b border-gray-200">
-                  <td className="py-2 pr-4 tabular-nums">{positions[row]}</td>
-                  <td className="py-2 pr-4">{score.text}</td>
-                  <td className="py-2 tabular-nums">
+                  {/* Only the option text may wrap, at any character, so a long
+                      token narrows its column instead of widening the table. A
+                      range like 1-2 or a score never splits across lines. */}
+                  <td className="py-2 pr-4 whitespace-nowrap tabular-nums">{positions[row]}</td>
+                  <td className="py-2 pr-4 wrap-anywhere">{score.text}</td>
+                  <td className="py-2 whitespace-nowrap tabular-nums">
                     {/* The score is the way into its breakdown; the label names
                         the option so the links differ outside the table row. */}
                     <Link

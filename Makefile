@@ -79,7 +79,8 @@ api: ## Run the API in watch mode on API_PORT (3000), in its own terminal
 # a single argument (zsh does not word-split), which the API then rejects as a
 # 400 that reads like an app bug. It seeds all three states a results page can
 # be in — no ballots, one winner, a tie — because verifying only the middle one
-# leaves the other two unproven.
+# leaves the other two unproven. A fourth poll carries the long content that the
+# 320 px layout contract (ID-6) is measured with.
 define SEED_PY
 import json, os, urllib.request
 
@@ -111,10 +112,33 @@ def seed(label, title, options, rankings):
 seed("no ballots", "Dinner?", ["Ramen", "Tacos", "Pho"], [])
 seed("one winner", "check", ["Alpha", "Beta"], [[0, 1]])
 seed("tie", "Offsite city?", ["Lisbon", "Porto", "Faro"], [[0, 1, 2], [1, 0, 2]])
+
+# Text that cannot wrap at a space: the title ends in a URL, and the two longest
+# options, a URL-like token and one 48-character word, tie for first place so
+# they also land in the winner box. Narrow layouts break on exactly these.
+seed(
+    "long content",
+    "Where should the 2026 offsite be? Full brief: "
+    "https://intranet.example.com/offsite/VenueShortlistTravelBudgetAndAgendaDraft2026",
+    [
+        "https://maps.example.com/place?q="
+        "HotelGrandRiversideConferenceCentreAndSpaBerlinMitteNearAlexanderplatz",
+        "Donaudampfschifffahrtsgesellschaftskapitänsmütze",
+        "Lisbon, by the river",
+        "Porto",
+        "A cabin in the mountains",
+        "Barcelona",
+        "Stay home and order pizza",
+        "Tallinn old town",
+        "Somewhere warm with a beach",
+        "Kraków",
+    ],
+    [list(range(10)), [1, 0] + list(range(2, 10))],
+)
 endef
 export SEED_PY
 
-seed: ## Seed three polls through the running API: no ballots, one winner, a tie
+seed: ## Seed four polls through the running API: no ballots, one winner, a tie, long content
 	@API_URL=$(API_URL) WEB_BASE=http://localhost:$(WEB_PORT) python3 -c "$$SEED_PY"
 
 render-app: ## Dump rendered DOM for local URL=... (optional BROWSER_BIN=...)

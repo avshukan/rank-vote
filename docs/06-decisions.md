@@ -752,6 +752,34 @@ Reason:
 - no jQuery or external DOM dependency
 - required for the ranked-ballot UI (drag & drop ranking)
 
+### Touch drag after a press and hold
+
+Status:
+
+- implemented by backlog ID-6
+
+Chosen:
+
+- one sensor per input instead of one pointer sensor: a mouse drag starts after
+  8 px of movement, a touch drag after a 250 ms press and hold that moves less
+  than 5 px, and the keyboard sensor is unchanged
+- the option text stays the drag activator, with `touch-action: manipulation`
+  instead of `none`; the ↑/↓ buttons remain the alternative to dragging
+
+Reason:
+
+- a long ballot is taller than a phone screen, so a swipe over a row has to
+  scroll the page. A swipe leaves the 5 px tolerance before the hold ends, which
+  cancels the drag and leaves the gesture to the browser
+- with one pointer sensor, `touch-action: none` on the text was the only way to
+  stop the browser scrolling mid-drag, and it turned every swipe there into a
+  drag
+
+Rejected for ID-6:
+
+- a drag handle — the owner kept dragging by the row text
+- ↑/↓ as the only touch control — the owner kept touch drag
+
 ---
 
 ## Agent Instructions

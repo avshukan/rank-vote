@@ -27,7 +27,8 @@ Participant opens the link
 
 → sees question and options
 
-→ ranks options using drag & drop
+→ ranks options using drag & drop or the ↑/↓ buttons; on a touch screen a
+press and hold starts the drag, so a swipe over the list still scrolls
 
 → clicks "Submit"
 

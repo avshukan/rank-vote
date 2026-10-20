@@ -37,11 +37,12 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
    port to restart it takes the API down with it.
 
 3. **Seed real data** with `make seed`, so the browser drives real UUIDs. It
-   creates three polls and prints a vote and a results URL for each: one with no
+   creates four polls and prints a vote and a results URL for each: one with no
    ballots, one with a single winner, one with a tie at the top and a trailing
-   option.
+   option, and one with long content — unbroken URLs and a 48-character word,
+   the two longest options tied for first — for layouts at 320 px (ID-6).
 
-   All three exist because a results page is in one of those states and
+   The first three exist because a results page is in one of those states and
    verifying only the middle one leaves the others unproven — the tie is what
    exercises shared position ranges, and the empty poll is a different render
    path, not a table of zeroes.
@@ -99,6 +100,18 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
 7. **Cover the error paths,** not just the happy one: an unknown id (API `404`),
    a malformed URL, and at least one real record.
 
+8. **Check 320 CSS px when the change affects responsive layout** — markup,
+   classes or content that can change how wide a page renders. Every width from
+   320 CSS px up is supported (ID-6). Open each affected route in a viewport
+   320 CSS px wide, for example DevTools device mode; the `render-app` fallback
+   only dumps the DOM and cannot measure. For ballot and results pages use the
+   `long content` poll from `make seed`. Check that:
+   - the page does not scroll sideways: `document.documentElement.scrollWidth`
+     is at most 320. Compare with 320, not `window.innerWidth`: under mobile
+     emulation an overflowing page widens the layout viewport, so that
+     comparison always passes
+   - every `button`, `a[href]` and `input` is at least 24×24 CSS px
+
 ## Gotchas learned the hard way
 
 - If the app misbehaves, compare it with `main` in a separate worktree when
@@ -109,3 +122,8 @@ Any slice that touches `apps/web`, before opening the PR. API-only changes need
   `ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL` and a non-zero `make` status. That is the
   teardown, not a broken build; check the log for the `✓ built` line before
   spending a call on it.
+- `make seed` creates four polls, but the API allows only five poll creations
+  per hour from one client IP (ID-31). After one seed, a single further poll
+  fits in that hour; a second `make seed` stops part-way with
+  `HTTP Error 429: Too Many Requests`. The limit is kept in the API's memory,
+  so restarting `make api` resets it.
