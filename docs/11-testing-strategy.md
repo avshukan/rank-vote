@@ -126,9 +126,10 @@ Focus:
   and the submit button is never disabled)
 - results page renders winner, score table and the zero-ballot state
 - loading and error/retry states of pages that fetch
-- how a ballot drag starts: a touch swipe is left to scroll the page, a press
-  and hold starts a touch drag, a mouse drag starts after 8 px. jsdom has no
-  layout, so these tests give each ranking row a stubbed box
+- ballot dragging: a touch swipe is left to scroll the page, a press and hold
+  starts a touch drag, a mouse drag starts after 8 px, and a dragged row keeps
+  its own height over taller and shorter rows. jsdom has no layout, so these
+  tests give each ranking row a stubbed box
 
 Framework: Vitest + React Testing Library
 

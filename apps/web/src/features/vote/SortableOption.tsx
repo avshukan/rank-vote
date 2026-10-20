@@ -22,7 +22,9 @@ export function SortableOption({ option, rank, total, onMoveUp, onMoveDown }: So
   return (
     <li
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      // Translate only: dnd-kit also scales the dragged row to the size of the
+      // row under it, which stretches or squashes rows of different heights.
+      style={{ transform: CSS.Translate.toString(transform), transition }}
       className={`flex items-center gap-3 rounded border border-gray-300 bg-white px-3 py-2 ${
         isDragging ? 'opacity-60 shadow-lg' : ''
       }`}

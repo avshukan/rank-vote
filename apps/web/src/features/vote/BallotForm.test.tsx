@@ -169,17 +169,26 @@ function touch(target: Element, type: 'touchstart' | 'touchmove' | 'touchend', y
 }
 
 describe('BallotForm dragging', () => {
-  // jsdom has no layout. Every ranking row gets a 40 px tall box, 50 px below
-  // the previous one in DOM order, so a drag can end over a particular row:
-  // row 0 is centred on y = 20, row 2 on y = 120.
+  // jsdom has no layout. The ranking rows get boxes stacked in DOM order with a
+  // 10 px gap, 40 px tall unless a test sets `rowHeights`, so a drag can end
+  // over a particular row: row 0 is centred on y = 20, row 2 on y = 120.
+  let rowHeights: number[];
+
   beforeEach(() => {
     getPollMock.mockReset().mockResolvedValue(POLL);
+    rowHeights = [40, 40, 40];
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
       this: HTMLElement,
     ) {
       const row = this.closest('li');
       const index = row?.parentElement ? [...row.parentElement.children].indexOf(row) : -1;
-      const [top, height] = index === -1 ? [0, 0] : [index * 50, 40];
+      const [top, height] =
+        index === -1
+          ? [0, 0]
+          : [
+              rowHeights.slice(0, index).reduce((sum, above) => sum + above + 10, 0),
+              rowHeights[index],
+            ];
       return {
         x: 0,
         y: top,
@@ -243,6 +252,32 @@ describe('BallotForm dragging', () => {
     expect(drag.defaultPrevented).toBe(true);
     expect(rankedTexts()).toEqual(['1SushiRank 1 of 3', '2SaladRank 2 of 3', '3PizzaRank 3 of 3']);
     expect(fireEvent.contextMenu(pizza)).toBe(true);
+  });
+
+  it('drags a row at its own height over taller and shorter rows', async () => {
+    // Long text wraps onto more lines: Pizza spans y = 0–40, Sushi 50–130 and
+    // Salad 140–260.
+    rowHeights = [40, 80, 120];
+    await renderLoaded();
+    const sushi = screen.getByText('Sushi');
+    const row = sushi.closest('li');
+
+    touch(sushi, 'touchstart', 90);
+    act(() => vi.advanceTimersByTime(250));
+    touch(sushi, 'touchmove', 20);
+    const overPizza = row?.style.transform;
+    touch(sushi, 'touchmove', 200);
+    const overSalad = row?.style.transform;
+    touch(sushi, 'touchend', 200);
+
+    // dnd-kit scales the dragged row to the row under it, to ½ over Pizza and
+    // 1½ over Salad; the row must only follow the finger. Checked after the
+    // drop, so a failure cannot leave a drag running into the next test.
+    expect([overPizza, overSalad]).toEqual([
+      'translate3d(0px, -70px, 0)',
+      'translate3d(0px, 110px, 0)',
+    ]);
+    expect(rankedTexts()).toEqual(['1PizzaRank 1 of 3', '2SaladRank 2 of 3', '3SushiRank 3 of 3']);
   });
 
   it('never starts a drag from a press on the ↑/↓ buttons', async () => {
