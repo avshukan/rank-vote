@@ -156,6 +156,7 @@ adapts to the column rather than moving the column.
 | 44  | Revoke legacy GH CLI OAuth | Ops      | Medium | —       | Security cleanup; revoke old GH CLI OAuth auth      |
 | 45  | Design screens in Figma    | Quality  | High   | Design  | Redesign via Figma+AI; scope/apply open, spike next |
 | 46  | Explain voting methods     | Value    | Low    | —       | Explain Borda/IRV/Condorcet incl. planned; UI TBD   |
+| 47  | Fix drag row z-index       | Quality  | Medium | —       | Dragged row needs z-10 to stay above siblings       |
 
 ---
 
