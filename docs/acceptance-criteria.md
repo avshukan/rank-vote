@@ -3218,8 +3218,10 @@ Verified during readiness at `db86f5a`:
 Open backlog items with no criteria in this file. Listed so the gap is visible;
 run `task-readiness` when one is picked up.
 
-- **#33 Add production monitoring** — dependency-aware readiness, external
-  uptime monitoring, alerting and error tracking follow the first deployment;
+- **#33 Add production monitoring** — `Design`: dependency-aware readiness,
+  external uptime checks with email alerts, and VPS disk and memory alerts.
+  Which service checks production is open; see
+  `docs/backlog/33-add-production-monitoring.md`. Error tracking is Issue #121;
   #27 supplies only process-level liveness.
 - **#34 Share rate-limit state** — replace #31's per-process counters before the
   API runs more than one replica.

@@ -119,7 +119,8 @@ sequence. Remaining operational limitations are:
   restart; there is no zero-downtime deployment
 - the #28 manual dump, offsite transfer and clean restore drill succeeded, but
   scheduled independent backups remain backlog #32
-- no production monitoring, alerting, or error tracking; tracked as #33
+- no production monitoring or alerting, tracked as ID-33; no error tracking,
+  tracked as Issue #121
 - API handles Docker `SIGTERM`, drains HTTP and closes Prisma (#35); the
   production Compose declares a 30-second stop grace period. Requests exceeding
   that period may be killed by Docker
