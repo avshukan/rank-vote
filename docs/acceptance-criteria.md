@@ -2980,7 +2980,10 @@ totalBallots=0
 
 - [ ] **Domain tests (`irv.spec.ts`):** implement all 8 fixtures above as
       executable tests, plus the required invariants
-- [ ] **API e2e (`polls.e2e-spec.ts`):** - omitted `method` returns Borda variant - `method=IRV` returns IRV variant with `rounds` and `standings` - unsupported `method` returns `400`
+- [ ] **API e2e (`polls.e2e-spec.ts`):** omitted `method` returns Borda variant
+- [ ] **API e2e (`polls.e2e-spec.ts`):** `method=IRV` returns IRV variant with
+      `rounds` and `standings`
+- [ ] **API e2e (`polls.e2e-spec.ts`):** unsupported `method` returns `400`
 - [ ] **Shared/web tests (Vitest):** method selector wiring, one-method-at-a-time
       rendering, method-preserving Results/Details navigation and
       method-specific behavior (Borda vs IRV)
@@ -3062,7 +3065,7 @@ promotion, the workflows and the backlog `Format` stay unchanged.
 - [ ] **Manual, recorded in the PR:** on scratch copies of the repository,
       `node --test scripts/backlog-promotion.test.mjs` passes after each of
       these valid edits to `docs/backlog.md`, which fail it on `main` today
-      (see Baseline): (1) `Todo` rows 6, 8, 9, 14 and 20 moved to `Done` and
+      (see Baseline): (1) `Todo` rows 8, 9, 13, 14 and 20 moved to `Done` and
       rows 11 and 12 to `Cancelled`, every remaining Notes cell rewritten,
       some States changed and the `Todo` order reversed; (2) only the Notes of
       ID-8 reworded; (3) every `Todo` row moved to `Done`, leaving `Todo` empty
@@ -3087,6 +3090,10 @@ copies of the repository:
 - `scripts/backlog-sweep.test.mjs` does not read the backlog. The release tests
   had the same coupling to `CHANGELOG.md`; since #96 they read
   `scripts/fixtures/release-changelog.v0.1.0.md`
+- Rechecked at `6372beb` in the 2026-10-21 backlog sweep: #117 moved ID-6 to
+  `Done` and repointed both tests from row 6 to row 13. The lint test copies
+  row 14 over row 13, the format-refusal case replaces `| 13  |` with
+  `| 14  |`, and edit (1) above still fails only these two tests
 
 ### Readiness Decisions
 
