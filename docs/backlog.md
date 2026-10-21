@@ -137,7 +137,7 @@ adapts to the column rather than moving the column.
 | 26  | Extract page fetch/retry   | Refactor | Medium | —       | BallotForm/ResultsView duplicate load/404/retry     |
 | 30  | Drop the scaffold endpoint | Refactor | Medium | Ready   | Remove scaffold `GET /api/v1`; prod smoke checks it |
 | 32  | Automate offsite backups   | Ops      | High   | Ready   | Daily dump to R2; 30d lock, 90d keep; email alerts  |
-| 33  | Add production monitoring  | Ops      | High   | —       | Dependency health, monitoring and alerts            |
+| 33  | Add production monitoring  | Ops      | High   | Design  | Readiness, uptime, disk alerts; uptime service open |
 | 34  | Share rate-limit state     | Quality  | Low    | —       | Shared counters before API replicas >1              |
 | 11  | Add PWA support            | Quality  | Low    | —       | Installable web app                                 |
 | 12  | Add poll editing           | Value    | Low    | —       | Edit poll after creation                            |

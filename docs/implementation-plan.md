@@ -217,8 +217,8 @@ by `protect-main`, and the operator runbook is `docs/production.md`.
 - Next automate scheduled offsite backups to independent object storage with a
   documented retention and restore-test policy
 
-Dependency-aware health, production monitoring/alerting and error tracking are
-tracked separately as #33.
+Dependency-aware health and production monitoring/alerting are tracked
+separately as ID-33, error tracking as Issue #121.
 
 See `docs/06-decisions.md` for the accepted deployment and database-hosting
 decisions, and `docs/10-storage.md` for the staged backup and recovery plan.

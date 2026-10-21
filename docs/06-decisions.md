@@ -450,7 +450,8 @@ Deferred:
 - #29 owns the production reverse proxy, direct-access firewalling and runtime
   hop-count value
 - #34 replaces process-local counters before horizontal API scaling
-- #33 owns limiter metrics and alerting with the rest of production monitoring
+- limiter metrics and alerting have no backlog item until a need appears; the
+  ID-33 readiness took them out of production monitoring
 
 Rejected for #31:
 
