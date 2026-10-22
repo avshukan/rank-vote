@@ -3351,6 +3351,209 @@ Verified during readiness at `40d28db`:
 
 ---
 
+## ID-11 Add PWA support
+
+Make the web app installable, on a phone's home screen or as a desktop app,
+with a web app manifest, icons and page metadata, and no service worker. The
+installed app opens the create page in its own window and, like the website,
+needs the network. An interim name and icon replace the Vite scaffold's tab
+title and favicon until ID-45 settles the branding, and a few links replace the
+browser navigation that the app window lacks. No API, shared-package, storage,
+Caddy or release-tooling change; it reaches production with the next ordinary
+release.
+
+### Scope
+
+- [ ] `index.html` links a web app manifest: `name` and `short_name` are
+      `Ranking Vote`, `start_url` and `scope` are `/`, `display` is
+      `standalone`, the icons include 192×192 and 512×512 px PNGs, and
+      `prefer_related_applications` is absent. This meets Chrome's
+      installability criteria (see the Baseline)
+- [ ] The icon is a new, simple interim icon, not the Vite logo. It also
+      replaces the Vite favicon, and `index.html` links it as an
+      `apple-touch-icon` for iOS, so the tab, the install dialog and the home
+      screen show the same icon
+- [ ] The tab title is `Ranking Vote` instead of `web`
+- [ ] No service worker is registered and nothing is cached for offline use.
+      Without network the installed app behaves like a browser tab: the
+      browser's offline page, or the existing error and Retry states once a
+      page has loaded
+
+### Navigation in the app window
+
+The window of an installed app has no address bar, Back or Reload; Android
+keeps its system Back. These links keep the main flows reachable there:
+
+- [ ] "Poll created" links to the new poll's vote page (`/poll/:id`) beside
+      the share link
+- [ ] The vote page and the results page link to `/` to create a new poll, in
+      their loaded states, the zero-ballot results included
+- [ ] Unchanged: Details links back to its results page, "Poll not found" links
+      to `/`, and the share link with Copy, the vote-submitted banner and the
+      redirect of an already-voted poll to its results stay as they are
+- [ ] The new links follow the ID-6 contract: from 320 CSS px no page needs
+      horizontal scrolling and each link is at least 24×24 CSS px; at 1280 px
+      every page keeps its current structure
+
+### Packaging and production
+
+- [ ] The web image serves the manifest and its icons as files. Hashed
+      `/assets/` stay immutable; the manifest and other unhashed files are not
+      cached immutably, like `favicon.svg` today
+- [ ] Caddy, both Compose files and the release tooling are unchanged. The root
+      still serves `<div id="root"></div>` and its `/assets/` scripts, so the
+      web healthcheck and `probe.smoke()` keep passing
+- [ ] `probe.smoke()` gets no manifest or icon check: `make prod-rollback` runs
+      it from the current tooling against the previous release's images, so a
+      rollback to a release without a manifest, such as `v0.2.0`, still
+      verifies
+
+### Verification
+
+- [ ] **Web tests (Vitest):** the manifest has the members above, every icon
+      it lists exists as a PNG of its declared size, and `index.html` links the
+      manifest and the `apple-touch-icon` and has the title `Ranking Vote`
+- [ ] **Web tests (Vitest):** "Poll created" links to `/poll/:id`, and the
+      loaded vote and results pages, with ballots and without, link to `/`
+- [ ] **Container smoke:** `make container-smoke` follows the manifest link in
+      the served `index.html` and requires `200` with JSON that names
+      `Ranking Vote`, `200` with `Content-Type: image/png` for each icon it
+      lists, and no immutable caching of the manifest. A missing manifest or
+      icon, which nginx answers with `index.html`, fails it
+- [ ] **Installability (Chromium, DevTools protocol):** in a non-incognito
+      profile, `Page.getInstallabilityErrors` returns no errors at `/` of the
+      production build (`make web` or `make stack-up`), and
+      `Page.getAppManifest` reports no manifest errors. The same check on a
+      build of `main` before the change returns `no-manifest`, which shows it
+      can fail
+- [ ] **Manual (`verify-app`):** against `make web` and `make api`, create a
+      poll, open it from "Poll created", vote, and go from the results to `/`;
+      the tab shows `Ranking Vote` and the new icon. With mobile emulation at
+      320 CSS px, measured as in ID-6, the changed pages need no horizontal
+      scrolling and the new links are at least 24×24
+- [ ] **Evidence** in the PR description: the installability results, the icon
+      at its sizes for the owner's approval, and screenshots of "Poll
+      created", the vote page and the results page at 320 and 1280 px
+- [ ] `make verify` and `make container-smoke` pass; CI `checks` and
+      `containers` are green
+
+Recommended, not required for Done: after the next release, a spot check on a
+real Android phone with Chrome (install; the name and icon; the app opens `/`
+in its own window; create, open, vote, results and a new poll) and on an iPhone
+(Safari: Share → Add to Home Screen; the same loop). Installation needs HTTPS,
+so a LAN preview over `http` cannot show it.
+
+### Documentation
+
+- [ ] `docs/06-decisions.md`, Mobile Strategy: the web app is installable
+      without a service worker (ID-11), and why
+- [ ] `docs/05-architecture.md` no longer lists PWA under Future Extensions
+- [ ] `docs/08-known-limitations.md`, Mobile Support: installable, with no
+      offline mode; on iOS the installed app keeps its storage apart from
+      Safari's, so `voted_poll_ids` is not shared and one person can vote once
+      in each
+- [ ] `docs/03-ux-flow.md` shows the new links: open the created poll, and
+      create a new poll from the vote and results pages
+- [ ] `docs/11-testing-strategy.md`, Containerization: the smoke check covers
+      the manifest and icons
+- [ ] `apps/web/README.md` mentions the manifest and icons
+
+### Out of Scope (tracked separately)
+
+- Offline mode, a service worker, push notifications, background sync and
+  other PWA capabilities such as a share target or app shortcuts — not
+  planned; a future need starts as a new Issue
+- An in-app install button or install instructions — not planned; browsers'
+  own install UI only
+- The final name, logo, favicon and colours → ID-45, which may replace the
+  interim ones
+- Refreshing results without the browser's Reload → ID-20
+- A native mobile app — deferred by `docs/06-decisions.md` (Mobile Strategy)
+- Duplicate-vote protection shared by Safari and the installed app on iOS: the
+  platform keeps their storage apart, and server-side protection is on the
+  Post-MVP list below
+- Unrelated cleanup elsewhere in `apps/web`, such as the unused scaffold files
+
+### Baseline on `main`
+
+Verified during readiness at `1a4e44a`:
+
+- `apps/web` has no manifest, service worker or PNG icon. `index.html` sets the
+  tab title `web` and links the Vite logo as `favicon.svg`; `public/icons.svg`
+  is unused
+- "Poll created" shows only the share link. The vote and results pages link
+  nowhere outside their poll, Details links back to its results, and only
+  "Poll not found" links to `/`
+- nginx caches `/assets/` immutably and answers every other path with
+  `no-cache` and the SPA fallback, so a missing root file returns `200` with
+  `index.html`. The upstream nginx `mime.types` has no `.webmanifest` entry, so
+  a manifest goes out as `application/octet-stream`. `make container-smoke`
+  checks the root, a nested route, the cache policy and `favicon.svg`;
+  `probe.smoke()` checks the root HTML, its `/assets/` scripts and the baked
+  API URL
+- `make prod-rollback` verifies a rollback with `probe.smoke()` from the
+  current tooling against the previous release's images
+- Production is served over HTTPS at `https://rankvote.avshukan.com`, with the
+  API on the same origin under `/api/v1`. Installation needs HTTPS or
+  `localhost`
+- Chromium 149, `Page.getInstallabilityErrors` in a non-incognito profile: a
+  production build of `main` returns `no-manifest`. The same build with a
+  manifest (`name`, `start_url`, `scope`, `display: standalone`, 192 and 512 px
+  PNG icons) served as `application/octet-stream`, and no service worker,
+  returns no errors. A pass-through service worker changes nothing
+- Chrome's [installability criteria](https://web.dev/articles/install-criteria):
+  HTTPS; a manifest with `name` or `short_name`, 192 and 512 px icons,
+  `start_url`, a `display` of `fullscreen`, `standalone`, `minimal-ui` or
+  `window-controls-overlay`, and no `prefer_related_applications`; no service
+  worker. Installing from the browser menu has needed no fetch handler since
+  Chrome 108 on Android and 112 on desktop
+- iOS 26 opens every site added to the Home Screen as a web app by default. An
+  iOS home-screen web app keeps its storage apart from Safari's
+  ([WebKit bug 181849](https://bugs.webkit.org/show_bug.cgi?id=181849))
+
+### Readiness Decisions
+
+- Accepted by the owner on 2026-10-22:
+  - installation only: a manifest, icons and page metadata, with no service
+    worker. Offline mode, push, background sync and other PWA capabilities are
+    not planned
+  - the interim name `Ranking Vote` and a new simple icon, which also replace
+    the tab title `web` and the Vite favicon. The owner approves the icon in
+    the implementation PR's review; ID-45 may replace both
+  - `display: standalone`, with links from "Poll created" to the poll and from
+    the vote and results pages to `/`, under the ID-6 contract
+  - browsers' own install UI only
+  - required verification: Vitest, `make container-smoke`, the Chromium
+    installability check and the manual `verify-app` flow. A real-device check
+    after a release is recommended, not required for Done
+- Not chosen:
+  - a service worker for an offline app shell: the main flows need the network
+    anyway, users would see a release only after the worker updates, and a
+    rollback to an image without the worker would leave it serving the cached
+    newer app, because nginx answers its update check with `index.html`
+  - offline data or a ballot queue, which would be a `Design` question: result
+    freshness, rate limits and duplicate votes
+  - waiting for ID-45's branding, which would block ID-11 behind ID-45's spike
+  - `standalone` without the links, which leaves dead ends, and `minimal-ui`,
+    which Safari does not support
+  - an in-app install button, which only Chromium could show
+- Settled during readiness, open to review in this PR:
+  - the separate iOS storage stays within the soft duplicate-vote protection
+    accepted in `docs/06-decisions.md`; it is documented, not solved
+  - `probe.smoke()` gets no manifest check, so rollbacks keep verifying
+- Implementation choices, settled in the implementation PR and its review: a
+  static manifest with no new dependency, its file name and further members;
+  how the icon is drawn and rasterised, and further icons such as a maskable
+  one; the colours, taken from the current UI; whether nginx maps
+  `.webmanifest` to `application/manifest+json`; the links' wording and
+  placement; how the smoke script reads the manifest; test names and
+  structure; the documentation wording
+- Documentation: as listed above. Feature pull requests do not edit
+  `CHANGELOG.md`; Prepare release drafts it (`docs/07-process.md`)
+- No architectural or product questions remain open for ID-11.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
