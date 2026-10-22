@@ -152,7 +152,7 @@ adapts to the column rather than moving the column.
 | 37  | Add short poll links       | Quality  | Low    | —       | Replace/alias UUID with short ID; redirect needed   |
 | 38  | Breakdown hover preview    | Value    | Low    | —       | Desktop hover/focus preview of score breakdown      |
 | 41  | Fix backlog lint fixture   | Ops      | Medium | Ready   | Fixture backlog; tests pass for any valid backlog   |
-| 43  | Guard prod-deploy same SHA | Ops      | High   | —       | Refuse or warn if deploy SHA = current; add test    |
+| 43  | Guard prod-deploy same SHA | Ops      | High   | Ready   | Same-SHA redeploy keeps previous.env and its tag    |
 | 44  | Revoke legacy GH CLI OAuth | Ops      | Medium | —       | Security cleanup; revoke old GH CLI OAuth auth      |
 | 45  | Design screens in Figma    | Quality  | High   | Design  | Redesign via Figma+AI; scope/apply open, spike next |
 | 46  | Explain voting methods     | Value    | Low    | —       | Explain Borda/IRV/Condorcet incl. planned; UI TBD   |

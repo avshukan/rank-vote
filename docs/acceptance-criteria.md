@@ -3213,6 +3213,144 @@ Verified during readiness at `db86f5a`:
 
 ---
 
+## ID-43 Guard prod-deploy same SHA
+
+Production tooling fix from Issue #92. A manual `make prod-deploy` of the SHA
+that `current.env` already records redeploys that release without losing the
+rollback target: `previous.env` keeps naming the release before it, and
+`current.env` keeps its release tag. Deploys of any other SHA, the
+tag-triggered release (ID-42), `make prod-rollback` and the `tag` command stay
+unchanged. The change reaches the VPS with the next ordinary release.
+
+### Scope
+
+- [ ] When `RELEASE_SHA` equals the `RELEASE_SHA` of `current.env`,
+      `make prod-deploy` redeploys that release through the existing
+      `release.deploy` sequence and its confirmations: images checked (reused
+      when they exist), web and API stopped, one migration, API then web
+      started, internal and public verification, promotion
+- [ ] Such a redeploy never writes `previous.env`: it stays byte-identical, or
+      absent if there was none, whether the redeploy succeeds or fails
+- [ ] A successful redeploy promotes the release with the `RELEASE_TAG` that
+      `current.env` held, an empty one included, and with the new
+      `DEPLOYED_AT`, `SMOKE_POLL_ID` and image identity of this run, as any
+      verified deployment records them
+- [ ] A failed redeploy leaves `current.env` byte-identical. As after any failed
+      deployment, the release it names may now be stopped or running
+      unverified (`docs/production.md`, section 4)
+- [ ] Before `HOST VERIFIED` is asked, and before anything is stopped, built or
+      written, `make prod-deploy` prints a notice that the release is already
+      current, with its tag when it has one, and that `previous.env` stays the
+      rollback target, naming its tag and SHA, or that no previous release
+      exists
+- [ ] A deploy of any other SHA behaves as today: `previous.env` receives the
+      verified `current.env` before downtime, and the candidate is promoted
+      with an empty `RELEASE_TAG` for the `tag` command to fill
+- [ ] The tag-triggered `release` action, `make prod-rollback` and the `tag`
+      command are unchanged; the `release` action still deploys nothing for
+      the same tag and SHA (ID-42)
+- [ ] `docs/production.md` describes the redeploy of the current SHA where
+      section 4 lists the deployment steps and where section 7 explains
+      `previous.env` and the rollback target
+
+### Verification
+
+Python unit tests in `scripts/production/test_production.py`, which `pnpm test`
+runs, with the existing fakes:
+
+- [ ] With `current.env` at a tagged SHA X and `previous.env` at P, a
+      successful redeploy of X keeps `previous.env` byte-identical, promotes X
+      with its tag and the new smoke poll in the usual stage order, and
+      `rollback_target()` still returns P
+- [ ] With no `previous.env`, a redeploy of X creates none
+- [ ] A redeploy that fails at the build, migration or public-verification
+      stage leaves both manifests byte-identical
+- [ ] The notice is printed before `HOST VERIFIED` is asked, and names the tag
+      and the rollback target, or says that no previous release exists
+- [ ] The existing tests of a deploy of a new SHA, the manifest transitions and
+      the tag-triggered release pass unchanged
+
+Other checks:
+
+- [ ] **Manual, recorded in the PR:** the reproduction from the Baseline, run on
+      `main` and on the branch, shows `previous.env` overwritten and
+      `RELEASE_TAG` emptied on `main`, and both preserved on the branch
+- [ ] `make verify`, `make prod-check` and `make prod-smoke` pass, as required
+      for a production tooling change; CI `checks` and `containers` are green
+
+### Baseline on `main`
+
+Verified during readiness at `40d28db`:
+
+- `ReleaseState.prepare()` in `scripts/production/core.py` copies `current.env`
+  to `previous.env` unconditionally, and `release.deploy` calls it after the
+  images pass, before web and API stop. The manual `deploy` action passes no
+  release tag, so `release.deploy` promotes the candidate with an empty
+  `RELEASE_TAG`
+- Reproduced with the real `release.deploy`, the fakes of `SequenceTests` and a
+  temporary state directory holding `current.env` at a `v0.2.0` SHA and
+  `previous.env` at a `v0.1.0` SHA: a deploy of the current SHA leaves
+  `previous.env` with the `v0.2.0` manifest, `current.env` with an empty
+  `RELEASE_TAG`, and `rollback_target()` pointing at the running release. A
+  following `make prod-rollback` would restore the release that is already
+  running, and a re-run of the `v0.2.0` release would be refused
+  (`already current as an untagged release`) until the `tag` command restores
+  the tag
+- `check_source` deploys only the checked-out commit (`HEAD` must equal
+  `RELEASE_SHA`), and the release wrapper leaves the production checkout
+  detached at the released SHA. A manual `make prod-deploy` on the VPS that
+  does not switch the checkout first is therefore a deploy of the current SHA
+- The tag-triggered path is unaffected: `release_plan` returns `current` for the
+  same tag and SHA, and `run_release` returns before `preflight` and
+  `release.deploy`
+- The "Tag-triggered releases" ADR in `docs/06-decisions.md` keeps
+  `make prod-deploy` for the first deployment, host, firewall, Caddy,
+  proxy-trust and infrastructure changes and break-glass recovery. Without a
+  new commit, such a run can only use the current SHA
+- `make prod-smoke` drives Compose directly and uses neither `ReleaseState`
+  nor `release.deploy`, so the manifests are covered by the Python unit tests,
+  as for ID-42
+- ID-43 changes tooling, not production state. The ID-42 evidence records
+  `current.env` at `v0.2.0` and `previous.env` at `v0.1.0`; if a manual deploy
+  of the current SHA has run on the VPS since, `previous.env` already names
+  `v0.2.0` until the next tagged release replaces it
+
+### Out of Scope (tracked separately)
+
+- A manual deploy of any other SHA, an older one included, keeps the behaviour
+  that ID-42 preserved for the manual commands (ID-42, Unattended deployment);
+  no change is planned
+
+### Readiness Decisions
+
+- Accepted by the owner on 2026-10-22: a manual `make prod-deploy` of the SHA
+  that `current.env` records stays allowed. It redeploys that release without
+  writing `previous.env`, keeps the `RELEASE_TAG` of `current.env`, and prints
+  a notice before `HOST VERIFIED`. The manual path stays usable for what the
+  ADR assigns to it, which without a new commit can only run on the current SHA
+- Not chosen: the same redeploy behind an extra typed `REDEPLOY <sha>`
+  confirmation, which would also stop an accidental redeploy (a short web and
+  API restart with no loss of state) at the cost of one more prompt on a rarely
+  used path; and refusing the deploy, which would leave no tool to recreate the
+  running release and would need a new `main` commit before a host or firewall
+  change could be re-checked
+- Settled during readiness, open to review in this PR:
+  - no production run is part of ID-43. As AGENTS.md requires for production
+    tooling changes, the unit tests, `make prod-check` and `make prod-smoke`
+    verify it, and ID-43 moves to `Done` in its implementation PR
+  - the backlog Notes state the chosen behaviour instead of "Refuse or warn"
+- Implementation choices, settled in the implementation PR and its review:
+  where the same-SHA rule lives (`ReleaseState.prepare`, `release.deploy` or
+  the CLI) and how the tag is carried over; the notice's wording; test names
+  and structure; the wording of the `docs/production.md` updates
+- Documentation: `docs/production.md` in the implementation PR. No ADR change:
+  the "Tag-triggered releases" ADR already assigns these uses to the manual
+  path. Feature pull requests do not edit `CHANGELOG.md`; Prepare release
+  drafts it (`docs/07-process.md`)
+- No architectural or product questions remain open for ID-43.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
