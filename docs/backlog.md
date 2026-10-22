@@ -139,7 +139,7 @@ adapts to the column rather than moving the column.
 | 32  | Automate offsite backups   | Ops      | High   | Ready   | Daily dump to R2; 30d lock, 90d keep; email alerts  |
 | 33  | Add production monitoring  | Ops      | High   | Design  | Readiness, uptime, disk alerts; uptime service open |
 | 34  | Share rate-limit state     | Quality  | Low    | —       | Shared counters before API replicas >1              |
-| 11  | Add PWA support            | Quality  | Low    | —       | Installable web app                                 |
+| 11  | Add PWA support            | Quality  | Low    | Ready   | Installable via manifest+icons; no service worker   |
 | 12  | Add poll editing           | Value    | Low    | —       | Edit poll after creation                            |
 | 13  | Add poll expiration        | Value    | Low    | —       | Closing date/time                                   |
 | 14  | Add ranking with ties      | Value    | Low    | —       | Multiple options can share same rank                |

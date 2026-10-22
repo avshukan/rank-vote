@@ -21,6 +21,11 @@ decisions then move to permanent documentation and this file is deleted.
 - The same screens change in ID-6 (responsive from 320 CSS px), ID-8 (BORDA/IRV
   selector) and ID-20 (Refresh results), all `Ready`. ID-6 keeps rebranding, a
   drag handle and a card layout for results as not planned.
+- ID-11 (`Ready`) gives the installable app an interim name, `Ranking Vote`,
+  and a simple icon, which also replace the tab title `web` and the Vite
+  favicon. It adds links on "Poll created", vote and results in place of the
+  browser navigation an app window lacks. The branding of decision 3 may
+  replace the interim name and icon.
 - Figma as documented on 2026-10-18, untried here:
   - The official remote MCP server (`https://mcp.figma.com/mcp`, OAuth) works
     with Claude Code, Codex and VS Code; Copilot cloud agent does not support
