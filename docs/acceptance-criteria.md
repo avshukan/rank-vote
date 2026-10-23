@@ -3796,10 +3796,14 @@ no API, shared-package, storage, nginx or Caddy change.
 
 - [ ] **Web tests (Vitest):** `App` routing for `/faq`, `/faq/`, each article,
       an unknown slug and `/faq/borda/extra`; the table of contents lists the
-      three articles with the label on IRV and Condorcet only; each article has
-      its Wikipedia link and its links back; the results page links to the
-      article of its `method`, with ballots and without; the vote and create
-      pages link as above; following the vote page's link keeps the ranking
+      three articles, and the label is on exactly the articles no results
+      variant maps to, the same set on each article page. The expectation
+      follows the variants that exist, not a fixed list: IRV and Condorcet
+      while Borda is the only one, Condorcet alone once ID-8 has shipped. Each
+      article has its Wikipedia link and its links back; the results page
+      links to the article of its `method`, with ballots and without; the vote
+      and create pages link as above; following the vote page's link keeps the
+      ranking
 - [ ] **Manual (`verify-app`):** against `make web` and `make api`: from the
       create page open `/faq` and an article; vote on a seeded poll and open
       the vote page's link without losing the ranking; on the results open the
