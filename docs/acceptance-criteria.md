@@ -3554,6 +3554,153 @@ Verified during readiness at `1a4e44a`:
 
 ---
 
+## ID-24 `pnpm dev` orphans the API
+
+Developer tooling fix. Stopping the API's watch-mode dev server must not leave
+`node dist/main` running on the API port. Readiness corrected the trigger: a
+Ctrl+C in a terminal stops everything, and the app is left behind when the stop
+signal reaches only the top process, as `kill <pid>` or a tool that signals a
+single process does. The fix upgrades `@nestjs/cli` within major 11 to the
+upstream release that forwards the signal to the app, guarded by a regression
+test. The API's code is unchanged; the same CLI also runs `nest build` for the
+API image, so the container checks apply.
+
+### Scope
+
+- [ ] `@nestjs/cli` in `apps/api` is upgraded within major 11 to a release
+      whose `nest start` forwards `SIGINT` and `SIGTERM` to the app and exits
+      after it: 11.0.22 or later, the latest 11.x when implemented (11.0.24 at
+      readiness). The specifier's floor excludes 11.0.21 and older
+- [ ] `SIGINT` or `SIGTERM` sent only to the top process of `make api`
+      (`pnpm --filter @rank-vote/api dev`) or of root `pnpm dev` stops
+      `node dist/main` within seconds; no process of the API's tree keeps
+      running, and the API port is free
+- [ ] Ctrl+C in a terminal still stops `make api` and root `pnpm dev`
+      completely
+- [ ] `apps/api/src` is unchanged. A forwarded `SIGTERM` now reaches the app,
+      which shuts down as ID-35 specifies
+
+### Verification
+
+- [ ] **Automated (`node:test`, run by `pnpm test`):** a test under `scripts/`
+      starts `pnpm --filter @rank-vote/api dev` on a free port with a dummy
+      `DATABASE_URL`, waits until the port accepts connections, sends `SIGTERM`
+      to the top process only, and requires the app process to exit and the
+      port to be free within a deadline. A second case does the same with
+      `SIGINT`. The test stops its whole process tree even when an assertion
+      fails
+- [ ] **The test catches the defect:** run before the upgrade, with 11.0.21, it
+      fails on the surviving app; the output is recorded in the PR
+- [ ] **Manual, recorded in the PR:** in a terminal, Ctrl+C stops `make api`
+      and root `pnpm dev` completely, and `kill -TERM` of root `pnpm dev`'s top
+      process leaves no `node dist/main`:
+      `lsof -nP -iTCP:3000 -sTCP:LISTEN` prints nothing
+- [ ] `make verify` passes; CI `checks` and `containers` are green
+
+### Documentation
+
+- [ ] `docs/11-testing-strategy.md`, Repository Tooling: the dev-server stop
+      test, and that it guards an upstream fix that was reverted once before
+
+### Out of Scope (tracked separately)
+
+- A sibling killed by a signal under root `pnpm dev` (`kill -9`, the OOM
+  killer): pnpm exits at once without stopping its other children, so no
+  signal reaches the CLI. `make down` (README, Stopping and Restarting) frees
+  the ports; no change is planned
+- A stop signal that lands during a watch-mode restart: in the 11.0.24 code the
+  restart path can start a new app after the signal. Derived from the code, not
+  reproduced; `make down` recovers; no change is planned
+
+### Baseline on `main`
+
+Verified during readiness at `bb2b436`, on macOS with Node 22.22.2, pnpm 11.11.0
+and `@nestjs/cli` 11.0.21 — the pnpm and CLI versions of 2026-08-20, when ID-24
+was filed:
+
+- `make api` runs `pnpm --filter @rank-vote/api dev`, which is
+  `nest start --watch`; root `pnpm dev` runs every package's `dev` in parallel.
+  pnpm starts the CLI without a shell in between, the CLI starts
+  `node --enable-source-maps dist/main`, and all of them share the job's
+  process group
+- Reproduced under a pseudo-terminal whose session leader outlives the job, as
+  an interactive shell does:
+  - Ctrl+C sends `SIGINT` to the whole foreground group and stops `make api`
+    and root `pnpm dev` completely. The original note, "Ctrl+C leaves
+    `node dist/main` on 3000", did not reproduce
+  - `SIGINT` or `SIGTERM` to the top process only — root `pnpm dev`, the pnpm
+    of `make api`, or a bare `nest start --watch` — leaves `node dist/main`
+    reparented to PID 1 and listening on port 3000. The report that filed
+    ID-24 describes the next run failing with `EADDRINUSE`
+  - the cause: the 11.0.21 CLI kills the app only from `process.on('exit')`,
+    which Node skips when an unhandled signal ends the process, and pnpm
+    passes a signal on to its direct children only
+  - under root `pnpm dev`, `kill -9` of vite makes pnpm exit at once and leaves
+    the CLI, the shared package's `tsc --watch` and `node dist/main` running. A
+    plain `kill` of vite (exit 143) makes pnpm stop every child, as README and
+    `verify-app` describe
+  - Claude Code's `TaskStop` on a background
+    `pnpm --filter @rank-vote/api dev` stops the whole process group and
+    leaves nothing behind
+  - `make down` stops only the listeners: the pnpm and the CLI of a live
+    `make api` keep running
+- A pseudo-terminal harness in which pnpm itself leads the session hides the
+  orphan: its exit sends `SIGHUP` to the whole foreground group. A process
+  spawned with `detached: true` has no controlling terminal, so a `node:test`
+  harness is not affected
+- Upstream, nestjs/nest-cli#3422 (merged 2026-05-01, released in 11.0.22) makes
+  `nest start` forward `SIGINT` and `SIGTERM` to the app and exit after it. An
+  earlier version of the fix (nestjs/nest-cli#3313, nestjs/nest-cli#3338) was
+  reverted in 11.0.20 and 11.0.21. Between 11.0.21 and 11.0.24 the CLI's direct
+  dependencies change only `@angular-devkit/*` 19.2.24 → 19.2.27 and `webpack`
+  5.106.0 → 5.106.2
+- A spike outside the repository ran the 11.0.24 CLI against `apps/api`. An
+  external `nest` binary hands off to the project's own
+  `node_modules/@nestjs/cli`, so the spike disabled that hand-off. `SIGTERM` or
+  `SIGINT` to the top process, bare and under
+  `pnpm --filter @rank-vote/api exec`, and Ctrl+C left nothing running and
+  freed port 3000
+- The API starts and listens with PostgreSQL stopped, so a test needs only a
+  dummy `DATABASE_URL`
+
+### Readiness Decisions
+
+- Accepted by the owner on 2026-10-23:
+  - ID-24 fixes the app left behind when the stop signal reaches only the top
+    process of `make api` or root `pnpm dev`. The two cases under Out of Scope
+    are excluded, with `make down` as their recovery and no follow-up Issue
+  - the fix is the `@nestjs/cli` upgrade within major 11, guarded by the
+    automated test in `pnpm test`, which adds an estimated 15 seconds to CI
+    `checks`
+- Not chosen:
+  - a repository supervisor for root `pnpm dev` that stops every child when
+    one dies: more code for a rare case
+  - a repository wrapper around `nest start --watch` that stops the whole
+    process group: independent of upstream and covering the restart case too,
+    but code to maintain where an upstream fix exists
+  - cancelling ID-24: Ctrl+C and `TaskStop` already stop cleanly and
+    `make down` exists, but a surviving app keeps serving old code on port
+    3000
+  - `@nestjs/cli` 12, a major upgrade that ID-24 does not need
+- Settled during readiness, open to review in this PR:
+  - the backlog Notes state the verified trigger; Title and Level stay
+  - the automated test covers the API's `dev` script, which root `pnpm dev`
+    runs too. Root `pnpm dev` itself and Ctrl+C are manual checks, because root
+    `pnpm dev` also starts the web dev server on port 5173
+  - no README change: `make down` stays the documented recovery, and its
+    wording still holds for the excluded cases
+- Implementation choices, settled in the implementation PR and its review: the
+  test's file name; how it finds the app process, for example by the PID in
+  Nest's `[Nest] <pid>` log prefix; its deadlines; whether its build output is
+  kept apart from `apps/api/dist`; the exact 11.x release and how the floor is
+  written; the documentation wording
+- Documentation: as listed above. No ADR: a patch-level upgrade of a
+  development tool records no decision. Feature pull requests do not edit
+  `CHANGELOG.md`; Prepare release drafts it (`docs/07-process.md`)
+- No architectural or product questions remain open for ID-24.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
