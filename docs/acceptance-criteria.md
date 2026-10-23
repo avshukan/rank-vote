@@ -3701,6 +3701,205 @@ was filed:
 
 ---
 
+## ID-46 Explain voting methods
+
+Users do not know what Borda count, IRV and Condorcet mean (Issue #107). The
+web app gets a help section at `/faq`: a table of contents and one short
+article per counting method, including the methods the app does not offer yet.
+The results, vote and create pages link to it. ID-19's breakdown explains one
+option's Borda score; these articles explain the methods themselves. Web only:
+no API, shared-package, storage, nginx or Caddy change.
+
+### Routes and table of contents
+
+- [ ] `/faq` is the table of contents. `/faq/` opens the same page
+- [ ] Articles have flat addresses under the same root: `/faq/borda`,
+      `/faq/irv` and `/faq/condorcet`. Later help articles join `/faq/<slug>`
+      the same way; ID-46 adds only these three
+- [ ] The table of contents groups the three articles under a "Voting methods"
+      heading, each with its title, a one-line summary and a link to the
+      article. It also links to `/` to create a poll
+- [ ] Adding an article is one new entry in the list the table of contents and
+      the routes are built from
+- [ ] Public like the rest of the app: every address opens directly, with no
+      poll, vote or prior page
+- [ ] `/faq/<unknown>` shows the shared `NotFound` with article-specific copy,
+      no Retry. `/faq/borda/extra` still reaches the generic not-found page
+      (#18)
+
+### Articles
+
+- [ ] Each article shows its title, the explanation, a link to the English
+      Wikipedia article ([Borda count](https://en.wikipedia.org/wiki/Borda_count),
+      [Instant-runoff voting](https://en.wikipedia.org/wiki/Instant-runoff_voting),
+      [Condorcet method](https://en.wikipedia.org/wiki/Condorcet_method)) that
+      opens in a new tab, and a link to `/faq`
+- [ ] Opened from a poll's results page, an article also links back to that
+      results URL, query included. Opened directly, it links to `/faq`, from
+      where `/` is one step away. No article is a dead end in an installed app
+      window (ID-11)
+- [ ] Copy is in English, like the rest of the UI
+- [ ] Each article aims to fit one 375×667 CSS px screen, from its title to the
+      Wikipedia link. A short example with ballots is included only if it fits.
+      This is a target judged in review, not a failing check
+- [ ] **Borda** matches the shipped rules (#4, `docs/glossary.md`): with `N`
+      options, place `r` on a ballot is worth `N − r` points; points add up
+      over all ballots; the highest total wins, and equal totals give several
+      winners. It mentions that a score on the results page opens its
+      breakdown (ID-19)
+- [ ] **IRV** matches ID-8's accepted rules: each round eliminates the option
+      with the fewest first choices, and its ballots move to their next choice;
+      counting continues until every option has a place, so a majority does not
+      stop it and does not change the winner; in a tie for fewest, the tied
+      option with the fewest second places goes, then third places are
+      compared, and so on; options still tied leave together, and if all
+      remaining options stay tied they share the top place. It says that this
+      differs from the Wikipedia article in counting to a full ranking and in
+      its tie rules
+- [ ] **Condorcet** explains the principle only: every pair of options is
+      compared by how many voters rank one above the other; an option that
+      beats every other option is the Condorcet winner; with some ballots no
+      option does, for example when A beats B, B beats C and C beats A. It does
+      not say how the app will choose a winner then; that is decided in ID-9
+
+### Methods not available yet
+
+- [ ] A method the app does not count yet carries a "Not available yet" label
+      in the table of contents and on its article. At ID-46 these are IRV and
+      Condorcet, unless ID-8 has shipped
+- [ ] The label is derived, not hard-coded per article: the web maps each
+      `method` of `PollResultsResponseDto` to its article, and an article with
+      no results variant mapped to it carries the label. The map is typed over
+      every variant of the union, so a new results variant without an article
+      fails `pnpm typecheck`, and mapping it removes the label
+- [ ] If ID-8 ships before ID-46, the IRV article has no label and IRV results
+      link to `/faq/irv`. ID-8's criteria are unchanged either way
+
+### Entry points
+
+- [ ] **Results:** in their loaded states, the zero-ballot one included, the
+      results page names the counting method of the response and links to its
+      article. Today that is Borda count and `/faq/borda`. The winner badge,
+      the score table and its breakdown links are unchanged
+- [ ] **Vote:** the vote page links to the article of the default results
+      method, Borda count (`/faq/borda`), beside the ranking instructions and
+      outside the sortable list. Following the link does not discard a ranking
+      in progress
+- [ ] **Create:** the create page links to `/faq`
+- [ ] The Details view (ID-19) and the not-found pages are unchanged
+- [ ] The new links and pages follow the ID-6 contract: from 320 CSS px no page
+      needs horizontal scrolling (`document.documentElement.scrollWidth <= W`
+      at 320 and 375 px), article text wraps, and each link is at least 24×24
+      CSS px. Touch drag on the vote page still starts after a press and hold
+
+### Verification
+
+- [ ] **Web tests (Vitest):** `App` routing for `/faq`, `/faq/`, each article,
+      an unknown slug and `/faq/borda/extra`; the table of contents lists the
+      three articles with the label on IRV and Condorcet only; each article has
+      its Wikipedia link and its links back; the results page links to the
+      article of its `method`, with ballots and without; the vote and create
+      pages link as above; following the vote page's link keeps the ranking
+- [ ] **Manual (`verify-app`):** against `make web` and `make api`: from the
+      create page open `/faq` and an article; vote on a seeded poll and open
+      the vote page's link without losing the ranking; on the results open the
+      Borda article and return to the same results
+- [ ] **Mobile:** Chromium mobile emulation at 320 and 375 px. The ID-6 checks
+      pass on `/faq`, each article and the changed pages
+- [ ] **Evidence** in the PR description: a 375×667 screenshot of each article
+      and a 320 px screenshot of `/faq`
+- [ ] `make verify` passes; CI `checks` is green
+
+### Documentation
+
+- [ ] `docs/03-ux-flow.md`: the FAQ links from the create, vote and results
+      pages, and the help section at `/faq`
+- [ ] `apps/web/README.md`: the FAQ routes and feature folder
+- [ ] `docs/backlog.md` moves ID-46 to `Done`
+
+### Out of Scope (tracked separately)
+
+- Completing the Condorcet article with ID-9's rule for ballots without a
+  Condorcet winner, and linking Condorcet results to it → ID-9. Its label goes
+  with the mapping above
+- Comparing methods or advice on which one to pick → ID-10
+- Articles for Schulze, Ranked Pairs or the future ballot formats (ID-14,
+  ID-15) — written with those items, if they are planned
+- Other help articles, such as anonymity or changing a vote — each starts as a
+  new Issue
+- A page shell, global navigation or FAQ search, and the visual design → ID-45
+- Translations — not planned; the UI is English only
+
+### Baseline on `main`
+
+Verified during readiness at `04fcb68`:
+
+- The UI never names the counting method. The results page shows the winner,
+  the score table, score links to the Details view and the ballot count; the
+  vote page has one line of ranking instructions; nothing links to an
+  explanation
+- Routes: `/`, `/poll/:id`, `/poll/:id/results`,
+  `/poll/:id/results/options/:optionId` and the `*` catch-all. There is no page
+  shell, header or footer
+- `PollResultsResponseDto` is discriminated by `method` and has only the Borda
+  variant. `CountingMethod` already lists `IRV`, `CONDORCET`, `SCHULZE` and
+  `RANKED_PAIRS`, so the enum alone cannot tell which methods are counted
+- nginx answers every path outside `/assets/` with the SPA fallback, so `/faq`
+  routes need no server change
+- ID-8 (`Ready`) counts IRV to a full ranking with rank-profile tie-breaks,
+  unlike the stop-at-majority IRV of the Wikipedia article. ID-9 (`—`) has not
+  decided what happens without a Condorcet winner
+- The ballot form keeps its ranking in component state only, so leaving the
+  vote page in the same tab discards a ranking in progress
+- ID-11 (`Ready`) adds links to `/` on the vote and results pages; both items'
+  links coexist there
+
+### Readiness Decisions
+
+- Accepted by the owner on 2026-10-23:
+  - help articles live under one `/faq` root, with the table of contents at
+    `/faq`, so later help articles can join it
+  - flat article addresses `/faq/borda`, `/faq/irv` and `/faq/condorcet`
+  - entry points: the results page links to the article of its method, the
+    vote page to a method article, the create page to `/faq`
+  - methods not available yet carry a "Not available yet" label; the Condorcet
+    article explains the principle only, and ID-9 completes it
+  - ID-8's criteria stay unchanged
+  - a separate readiness pull request before implementation
+- Not chosen:
+  - one `/faq` page with a section per method: a long page on a phone, and
+    anchors need scroll handling in a single-page app
+  - a hint on the results page only: too short for the explanations, and no
+    place for methods not available yet
+  - nested addresses such as `/faq/methods/borda`: a subsection pays off only
+    with its own page, and a later move is a client-side redirect away
+  - no label on methods not available yet, which would send users looking for
+    them in the app
+  - a rule in ID-8's criteria for the IRV link and label
+  - readiness and implementation in one pull request
+- Settled during readiness, open to review in this PR:
+  - the label and the results link come from one map typed over the results
+    union, so a new variant cannot ship without its article and drops its
+    label by mapping it. This closes the IRV gap without changing ID-8
+  - a ballot is not tied to a method, so the vote page links to the default
+    results method's article, Borda count
+  - the vote page's link must not discard a ranking in progress
+  - English copy and English Wikipedia articles; the IRV article states how it
+    differs from Wikipedia's
+  - one 375×667 screen per article is a target, not a hard limit
+- Implementation choices, settled in the implementation PR and its review:
+  component, file and folder names; how articles are stored and rendered; the
+  copy, summaries and link wording; where the links sit on each page; how an
+  article knows the results URL it was opened from; how the vote page's link
+  keeps the ranking, for example by opening in a new tab; test names and
+  structure; the documentation wording
+- Documentation: as listed above. No ADR: static help pages in the existing
+  router record no decision. Feature pull requests do not edit `CHANGELOG.md`;
+  Prepare release drafts it (`docs/07-process.md`)
+- No architectural or product questions remain open for ID-46.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
