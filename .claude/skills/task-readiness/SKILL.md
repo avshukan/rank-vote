@@ -130,3 +130,8 @@ may need explicit contracts, examples, failure cases and owner decisions.
 - A scope exclusion already fixed by canonical documentation, an accepted
   decision or another tracked item needs a citation, not a new owner decision.
   New product/design exclusions and owner-operated checks need owner approval.
+- Probe a dependency or toolchain change on a `git archive` copy of `main` in
+  the scratchpad (`git init` it for the install's hook); `pnpm -r --no-bail run`
+  shows every package's failures. The API's e2e runner resets the test DB: run
+  `test:unit`, compile e2e with a no-match `--testNamePattern` and a dummy
+  `DATABASE_URL`. Stop dev servers by process group; diff `dist` with `main`'s.
