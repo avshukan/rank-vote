@@ -3904,6 +3904,180 @@ Verified during readiness at `04fcb68`:
 
 ---
 
+## ID-25 Unify eslint and TS majors
+
+Developer tooling refactor. Every workspace package — root, `apps/api`,
+`apps/web` and `packages/shared` — lints with ESLint 10 and compiles with
+TypeScript 6.0, and every dev tool that two or more packages declare takes its
+version from one pnpm catalog that a test guards. Application code and compiled
+output stay unchanged. The same compiler builds `packages/shared` and the API
+inside the images, so the container checks apply. The decision is recorded in
+`docs/06-decisions.md`, Toolchain Versions.
+
+### Scope
+
+- [ ] Root, `apps/api`, `apps/web` and `packages/shared` declare `eslint` and
+      `@eslint/js` at major 10 and `typescript` at 6.0. `typescript-eslint`
+      stays at major 8, whose releases support `typescript` below 6.1
+- [ ] The lockfile resolves one version each of `eslint`, `@eslint/js`,
+      `typescript` and `typescript-eslint` for all four packages, with one peer
+      variant of `typescript-eslint`. A `typescript` 5.9 may remain only as a
+      dependency of `@nestjs/cli` 11 itself, which compiles with the project's
+      `typescript`
+- [ ] `pnpm-workspace.yaml` has a default `catalog` holding the dev tools that
+      two or more packages declare: `@eslint/js`, `eslint`, `typescript`,
+      `typescript-eslint`, `prettier`, `@types/node`, `globals` and `vitest`.
+      Every package declares them as `catalog:`, and a tool that one package
+      uses keeps a plain specifier. `prettier`, `@types/node`, `globals` and
+      `vitest` keep their current major. pnpm keeps its default catalog mode
+- [ ] A `node:test` under `scripts/`, run by `pnpm test`, fails when the
+      manifest of any workspace package, including one added later, declares a
+      cataloged tool with a specifier other than `catalog:`. The failure names
+      the package, the tool and the specifier
+- [ ] TypeScript 6.0's deprecations and changed defaults are resolved in the
+      `tsconfig` files, without `ignoreDeprecations`. The readiness probe needed
+      four changes; see Baseline
+- [ ] `apps/api` takes TypeScript 6.0's default `strict`; its explicit
+      `noImplicitAny: false` and `strictBindCallApply: false` stay
+- [ ] Unused lint packages are removed: root `@typescript-eslint/parser` and
+      `@typescript-eslint/eslint-plugin`, which `typescript-eslint` provides,
+      and `@eslint/eslintrc` in `apps/api`, which no config imports
+- [ ] No lint rule is turned off, and no `eslint-disable`, `@ts-ignore` or
+      `@ts-expect-error` is added to pass the checks. Source under `apps/*/src`
+      and `packages/shared/src` is unchanged
+- [ ] `apps/api/dist` and `packages/shared/dist`, built before and after, hold
+      identical JavaScript
+
+### Verification
+
+- [ ] **Automated (`node:test`, run by `pnpm test`):** the catalog test checks
+      the live manifests, and a case shows that a cataloged tool written with a
+      plain specifier fails it
+- [ ] **Manual, recorded in the PR:** `eslint --version` and `tsc --version`
+      print the same ESLint 10 and TypeScript 6.0 releases in all four
+      packages; `apps/api/dist` and `packages/shared/dist` (CommonJS and ESM)
+      built on `main` and on the branch differ in no JavaScript file, comparing
+      without source maps, declaration maps and build info;
+      `pnpm --filter @rank-vote/shared add -D eslint@9` makes `pnpm test` fail
+      on the catalog test; a plain `pnpm install` leaves `pnpm-lock.yaml`
+      unchanged; `make api` compiles with no errors and the API answers, and
+      root `pnpm dev` serves the web app
+- [ ] `make verify` passes; CI `checks` and `containers` are green
+
+### Documentation
+
+- [ ] `docs/06-decisions.md`, Toolchain Versions: the status drops
+      "implementation pending"
+- [ ] `docs/05-architecture.md`, Monorepo: shared dev-tool versions live in the
+      catalog in `pnpm-workspace.yaml`, guarded by the catalog test
+- [ ] `docs/11-testing-strategy.md`, Repository Tooling: the catalog test
+
+### Out of Scope (tracked separately)
+
+- TypeScript 7, which `typescript-eslint`, `ts-jest` and `@nestjs/cli` cannot
+  run yet — Issue #128
+- NestJS 12 and `@nestjs/cli` 12, which need TypeScript 6 — Issue #129
+- The API's `test:debug` script, which cannot start Jest on `main`, and the
+  `ts-node` and `tsconfig-paths` that only it uses — Issue #130. ID-25 leaves
+  them unchanged
+- Dependencies outside the catalog keep their versions; `@nestjs/cli` moves
+  within major 11 under ID-24
+
+### Baseline on `main`
+
+Verified during readiness at `ca04714`, on macOS with Node 22.22.2 and pnpm
+11.11.0:
+
+- `apps/web` resolves ESLint 10.4.0, `@eslint/js` 10.0.1 and TypeScript 6.0.3;
+  root, `apps/api` and `packages/shared` resolve ESLint and `@eslint/js` 9.39.4
+  and TypeScript 5.9.3. `typescript-eslint` 8.59.4 resolves in two peer
+  variants. The split dates from the Phase 0 scaffold of 2026-05-22
+- ESLint 9 reached end of life on 2026-08-06 (eslint.org/version-support), and
+  npm marks 9.39.4 deprecated
+- ID-25 was filed on 2026-08-20 for a local install that churned the lockfile.
+  That no longer reproduces: a plain `pnpm install` on a fresh copy of `main`
+  leaves `pnpm-lock.yaml` unchanged. CI installs with `--frozen-lockfile`
+- `prettier` (3.8.3), `@types/node` (24.12.4), `globals` (17.6.0) and `vitest`
+  (4.1.10) already resolve to one version wherever they are declared
+- TypeScript 7.0.2 has been the npm `latest` since 2026-07-08. The newest
+  `typescript-eslint`, 8.72.0, supports `typescript` below 6.1 and the newest
+  `ts-jest`, 29.4.15, below 7. The TypeScript 7 package's main entry no longer
+  exports the compiler API that `@nestjs/cli` calls
+- `@nestjs/cli` 11 loads `typescript` from the project directory first, so
+  `nest build` and `nest start` use the API's own TypeScript. The CLI's own
+  `typescript` 5.9.3 serves its webpack type-checker, which the API does not
+  use, and its schematics
+- A probe on a copy of `main` outside the repository moved root, `apps/api` and
+  `packages/shared` to ESLint 10.4.0, `@eslint/js` 10.0.1 and TypeScript 6.0.3:
+  - the install raised no peer warnings and left one `eslint` and one
+    `typescript-eslint` variant
+  - `pnpm lint` reported nothing across 38 files in `apps/api` and 8 in
+    `packages/shared`
+  - TypeScript 6.0 needed four configuration changes and no source change. In
+    `apps/api/tsconfig.json`: remove `baseUrl`, which is deprecated (TS5101)
+    and which no import relies on; add `types: ["node", "jest"]`, because 6.0
+    no longer loads every `@types` package; set `rootDir: "./"`, without which
+    ts-jest fails every file with TS5011. In `packages/shared/tsconfig.json`:
+    add `types: ["node"]` for `src/dist-exports.test.ts`
+  - TypeScript 6.0 turns `strict` on by default, and `apps/api` passes it
+    unchanged
+  - typecheck, build and the unit tests passed: 49 in `apps/api`, 6 in
+    `packages/shared`, 61 in `apps/web`. The four e2e suites, 35 tests,
+    compiled through ts-jest but did not run, because the e2e runner resets the
+    test database
+  - `apps/api/dist` and `packages/shared/dist` held the same JavaScript as the
+    TypeScript 5.9.3 build
+  - `nest start --watch` with `@nestjs/cli` 11.0.21 compiled with no errors and
+    served `GET /api/v1`
+  - a catalog of the four lint packages passed `pnpm install`, a frozen
+    reinstall and the images' filtered `--frozen-lockfile` install. In pnpm's
+    default catalog mode, `pnpm add -D eslint` wrote `catalog:`, while
+    `pnpm add -D eslint@9` and a hand-written `"eslint": "^9.0.0"` were
+    accepted with warnings only. `catalogMode: strict` refused `eslint@9` but
+    moved every newly added dependency into the catalog; `prefer` moved them
+    too and accepted `eslint@9`
+- ESLint 10 needs Node `^20.19.0 || ^22.13.0 || >=24`. CI takes the latest 22.x
+  from `.nvmrc`, both images pin `node:22.23.2`, and `apps/web` already needs it
+- ID-24 (`Ready`) also edits `apps/api/package.json` and the lockfile. The two
+  items are independent; the one that lands second regenerates the lockfile
+
+### Readiness Decisions
+
+- Accepted by the owner on 2026-10-23:
+  - every workspace package moves to ESLint 10 and TypeScript 6.0
+  - every dev tool that two or more packages declare comes from one pnpm
+    catalog: the eight listed under Scope
+  - the catalog test guards it, with pnpm's default catalog mode
+  - follow-up Issues #128 (TypeScript 7), #129 (NestJS 12) and #130
+    (`test:debug`)
+- Not chosen:
+  - ESLint 10 alone, with TypeScript left split
+  - cancelling ID-25: the lockfile churn is gone, but root, `apps/api` and
+    `packages/shared` would stay on an end-of-life ESLint
+  - moving `apps/web` back to ESLint 9 and TypeScript 5.9
+  - aligning the specifiers by hand, or cataloging only the four lint packages
+  - `catalogMode: strict`, first chosen and then dropped once the probe showed
+    that it moves every newly added dependency into the catalog; moving every
+    dependency into the catalog to suit it
+  - TypeScript 7, which the toolchain cannot run (#128)
+- Settled during readiness, open to review in this PR:
+  - `apps/api` takes TypeScript 6.0's default `strict`
+  - the three unused lint packages are removed
+  - a `typescript` 5.9 under `@nestjs/cli` 11 stays; only `@nestjs/cli` 12
+    drops it (#129)
+  - the backlog Notes state the outcome; Title, Type and Level stay
+- Implementation choices, settled in the implementation PR and its review: the
+  exact 10.x and 6.0.x releases and the catalog ranges; the catalog test's file
+  name, how it finds the workspace packages and reads `pnpm-workspace.yaml`,
+  and its wording; where the `types` lists live; the documentation wording
+- Documentation: as listed above, with the ADR added in this PR as
+  "implementation pending". No `AGENTS.md` change: `catalog:` in each manifest
+  points to the catalog, and the test names a violation. Feature pull requests
+  do not edit `CHANGELOG.md`; Prepare release drafts it (`docs/07-process.md`)
+- No architectural or product questions remain open for ID-25.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;

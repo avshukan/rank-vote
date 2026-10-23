@@ -102,6 +102,59 @@ Reason:
 
 ---
 
+## Toolchain Versions
+
+### One ESLint and TypeScript major from a guarded pnpm catalog
+
+Status:
+
+- accepted for backlog ID-25; implementation pending
+
+Chosen:
+
+- every workspace package lints with ESLint 10 and compiles with TypeScript 6.0
+- a dev tool that two or more workspace packages declare takes its version from
+  the default `catalog` in `pnpm-workspace.yaml` and is declared as `catalog:`:
+  today `@eslint/js`, `eslint`, `typescript`, `typescript-eslint`, `prettier`,
+  `@types/node`, `globals` and `vitest`. A tool joins the catalog when a second
+  package starts using it
+- a `node:test` under `scripts/` fails CI when a manifest declares a cataloged
+  tool any other way. pnpm keeps its default catalog mode: `pnpm add` of a
+  cataloged tool already writes `catalog:`, and a dependency of a single
+  package stays out of the catalog
+- TypeScript 6.0 deprecations are fixed in configuration, never silenced with
+  `ignoreDeprecations`
+
+Reason:
+
+- the split came from the Phase 0 generators: the Vite template gave `apps/web`
+  ESLint 10 and TypeScript 6, the Nest scaffold gave `apps/api` ESLint 9 and
+  TypeScript 5. ESLint 9 reached end of life on 2026-08-06
+- TypeScript 6.0 is the newest line the toolchain runs: `typescript-eslint`
+  (including the API's type-aware rules), `ts-jest` and `@nestjs/cli` need the
+  compiler's JavaScript API, which the TypeScript 7 package no longer exports
+  from its main entry. Moving to 7 is Issue #128
+- generators write their own versions, so the next package — an outside client
+  such as a bot or a mobile app (backlog ID-22) — would bring its own majors.
+  `pnpm install` accepts an out-of-catalog specifier with only a peer warning,
+  so only a test catches a generated or hand-edited manifest
+- fixing the deprecations now is the preparation TypeScript documents for 7.0
+
+Rejected:
+
+- moving `apps/web` back to ESLint 9 and TypeScript 5.9: an end-of-life linter
+- ESLint 10 alone, with TypeScript left split: two compilers with different
+  `strict` and `types` defaults, to save four configuration lines
+- aligning the specifiers by hand: nothing keeps them aligned
+- cataloging only the four lint packages: `prettier`, `@types/node`, `globals`
+  and `vitest` could still drift
+- `catalogMode: strict`, which makes `pnpm add` refuse an out-of-catalog
+  version: it also moves every newly added dependency into the catalog, even
+  one that a single package uses. `prefer` does the same and still writes an
+  out-of-catalog version
+
+---
+
 ## Shared Package Build
 
 ### Dual CommonJS + ESM output from `packages/shared`
