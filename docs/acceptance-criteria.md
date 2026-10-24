@@ -4095,8 +4095,10 @@ and nothing reads or changes production.
 
 - [ ] The owner establishes whether the value of the VPS GitHub CLI token still
       exists in a place they control — a VPS backup or snapshot, the removed
-      `~/.config/gh/hosts.yml`, or a password manager entry. The value is never
-      written to the repository, to this file or to a pull request
+      `~/.config/gh/hosts.yml`, or a password manager entry. Inspect any
+      recovered credential privately: do not expose its value in terminal
+      logs, shell history, reports or pull requests. Never write it to the
+      repository or this file
 
 ### Step 2A, value available: revoke that credential alone
 
@@ -4116,9 +4118,10 @@ The agreed path, because it meets the owner's constraint exactly.
 Evidence, required before `Done`. The first two are owner-supplied; an agent can
 observe neither, and a criterion is checked only when the record cites it:
 
-- [ ] The API's `202` response
-- [ ] The account's security log entry for the revoked credential, with its
-      timestamp
+- [ ] The API's `202 Accepted` response, recorded without the credential value;
+      acceptance alone does not prove that the target token was revoked
+- [ ] The account's security log entry confirming revocation of the intended
+      credential, with its timestamp and no token value disclosed
 - [ ] `docs/production.md` section 9, step 7 no longer describes the global
       revocation as pending work and states that the exposed credential was
       revoked on its own; the "Tag-triggered releases" ADR keeps its historical
@@ -4202,9 +4205,11 @@ Verified during readiness at `74fad19`:
   attempts, which is a post-authentication response. The secret therefore
   authenticates. That run fails on the owner's exhausted Copilot request
   allowance, not on anything this item changes
-- Nothing blocks the item: ID-42 is `Done`, and its Out of Scope, the
-  "Tag-triggered releases" ADR and `docs/production.md` section 9 all name
-  ID-44 as the deferred global revocation
+- ID-42 is `Done`, and its Out of Scope, the "Tag-triggered releases" ADR and
+  `docs/production.md` section 9 all name ID-44 as the deferred global
+  revocation. No implementation dependency remains, but the revocation path
+  still requires the owner to establish token availability or resolve the open
+  decision
 
 ### Out of Scope (tracked separately)
 
