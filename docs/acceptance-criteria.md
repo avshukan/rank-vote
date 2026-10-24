@@ -4080,69 +4080,73 @@ Verified during readiness at `ca04714`, on macOS with Node 22.22.2 and pnpm
 
 ## ID-44 Revoke legacy GH CLI OAuth
 
-Security cleanup from Issue #98. The GitHub CLI OAuth authorization on the
-owner's GitHub account is revoked, which invalidates every token issued under
-it — including the one ID-42 removed from the production VPS, because removing
-a login locally does not invalidate its token. The owner performs the
-revocation and re-authorizes the development environments; an agent performs
-neither. Repository-side this is documentation and a record only: no app, API,
-shared-package, storage or production-tooling change, and nothing reads or
-changes production.
+Security cleanup from Issue #98. The goal is to invalidate the GitHub CLI token
+that was exposed on the production VPS and that ID-42 removed locally without
+invalidating. The owner decided on 2026-10-24 that only that one credential may
+be affected; signing other environments out is not wanted. Whether that is
+achievable turns on a fact only the owner can establish — whether the token's
+value still exists anywhere — so the scope below branches, and what remains
+undecided is named under _Open owner decision_. The owner performs every
+action; an agent performs none. Repository-side this is documentation and a
+record only: no app, API, shared-package, storage or production-tooling change,
+and nothing reads or changes production.
 
-### Scope (owner-operated)
+### Step 1, owner-operated: is the token value available?
 
-- [ ] Before revoking, the owner checks what kind of token the repository
-      secret `COPILOT_GITHUB_TOKEN` holds, because a GitHub CLI OAuth token
-      (a `gho_` prefix) would be invalidated together with the grant and would
-      stop `.github/workflows/issue-triage`
-- [ ] The owner revokes the **GitHub CLI** authorization under GitHub →
-      Settings → Applications → Authorized OAuth Apps. The grant is
-      account-wide and offers no per-device revocation, so every environment
-      signed in through `gh auth login` is signed out at once
-- [ ] The owner re-runs `gh auth login` on each development environment that
-      needs one, taking the GitHub CLI default scopes. The new grant is a
-      separate authorization; the revoked tokens stay invalid
-- [ ] If `COPILOT_GITHUB_TOKEN` held a GitHub CLI OAuth token, the owner
-      replaces it with a credential the revocation does not invalidate
+- [ ] The owner establishes whether the value of the VPS GitHub CLI token still
+      exists in a place they control — a VPS backup or snapshot, the removed
+      `~/.config/gh/hosts.yml`, or a password manager entry. The value is never
+      written to the repository, to this file or to a pull request
+
+### Step 2A, value available: revoke that credential alone
+
+The agreed path, because it meets the owner's constraint exactly.
+
+- [ ] The owner submits the value to the credential revocation API,
+      `POST /credentials/revoke`, in a single unauthenticated request; an
+      authenticated request is refused with `403`
+- [ ] The GitHub CLI authorization itself stays in place. No environment is
+      signed out, no re-login happens, and `COPILOT_GITHUB_TOKEN` is untouched,
+      so the pre-check and replacement agreed for the account-wide path do not
+      apply here
 - [ ] Production is untouched: the VPS holds no GitHub credential (ID-42) and
       the release path reads public endpoints unauthenticated, so neither a
-      tagged release nor any `make prod-*` command depends on the grant
+      tagged release nor any `make prod-*` command is affected
 
-### Evidence, required before `Done`
+Evidence, required before `Done`. The first two are owner-supplied; an agent can
+observe neither, and a criterion is checked only when the record cites it:
 
-Owner-supplied, recorded in the record pull request. An agent can observe none
-of it; a criterion is checked only when the record cites its evidence.
-
-- [ ] GitHub → Settings → Applications → Authorized OAuth Apps either no longer
-      lists GitHub CLI, or lists it with an authorization date later than the
-      revocation. Both forms are accepted, because the re-login above creates a
-      fresh grant that appears in the same list
-- [ ] The account's security log entry for the revocation, with its timestamp.
-      The Applications page shows current state rather than history, so this is
-      the durable record that the revocation happened
-- [ ] `gh auth status` on each re-authorized environment, with the scopes of
-      the new token. This records that the environments work again and with
-      which rights; the old tokens are invalid by virtue of the revoked grant,
-      which the command cannot show
-- [ ] The outcome for `COPILOT_GITHUB_TOKEN`: either that it was not a GitHub
-      CLI OAuth token and was left untouched, or that it was replaced
-
-### Repository checks
-
-Agent-verifiable, after the owner re-authorizes this environment:
-
-- [ ] The `gh`-dependent tooling works: `gh pr list`, which `make prune-merged`
-      uses, `gh issue list --label backlog-sweep` from the `backlog-sweep`
-      skill, `gh pr checks` from `.claude/settings.json`, `gh workflow list`
-      and `gh extension list`
-- [ ] The new token's scopes include `workflow`, which the sweep dispatch
-      `gh workflow run backlog-sweep.yml` needs (`AGENTS.md`). The dispatch
-      itself is not run as a check, because it would request a real sweep
+- [ ] The API's `202` response
+- [ ] The account's security log entry for the revoked credential, with its
+      timestamp
 - [ ] `docs/production.md` section 9, step 7 no longer describes the global
-      revocation as pending work; the "Tag-triggered releases" ADR keeps its
-      historical record of the 2026-10-15 split
+      revocation as pending work and states that the exposed credential was
+      revoked on its own; the "Tag-triggered releases" ADR keeps its historical
+      record of the 2026-10-15 split
 - [ ] The Definition of Done gate for a documentation-only change passes and CI
       is green on the record pull request
+
+No repository check is needed on this path: no token the tooling uses changes.
+
+### Step 2B, value gone
+
+Out of scope until the owner decides; see _Open owner decision_. Nothing here
+prescribes a path, and no criteria for one are written.
+
+### Open owner decision
+
+- If the value cannot be recovered, the only remaining lever is revoking the
+  account-wide GitHub CLI authorization, which signs every environment out —
+  the outcome the owner excluded on 2026-10-24. The choice is then between
+  accepting that disruption at a moment of the owner's choosing and accepting
+  the residual risk of a live token carrying `repo` and `workflow`. Readiness
+  cannot settle this, which is why ID-44 is `Design` rather than `Ready`;
+  rerun readiness once it is decided
+- The criteria the owner approved on 2026-10-24 for the account-wide path — a
+  re-login with gh's default scopes, the `COPILOT_GITHUB_TOKEN` check with
+  replacement if needed, and the four evidence items — stay agreed for that
+  path and are kept in _Readiness Decisions_ below. They are not restated as
+  criteria, because that path is not the chosen one
 
 ### Baseline on `main`
 
@@ -4155,12 +4159,26 @@ Verified during readiness at `74fad19`:
   `workflow` scopes that the "Tag-triggered releases" ADR describes as enough
   to push to every repository of the owner and to approve a pending production
   deployment
-- Revoking that one token instead is not possible: the OAuth app token endpoint
-  authenticates with the GitHub CLI's own client secret, and the Authorized
-  OAuth Apps page offers one revocation per app
+- Revoking only that token is mechanically possible but needs its value. Since
+  2026-03-26 the credential revocation API (`POST /credentials/revoke`) accepts
+  OAuth app access tokens (`gho_`), takes credential values in the body, must
+  be called unauthenticated, and logs the revocation in the owner's security
+  log. ID-42 removed the VPS login with `gh auth logout`, which deletes the
+  local store, and its evidence records no token value, as it should not. The
+  Authorized OAuth Apps page itself offers one revocation per app, with no
+  per-device option
+- `gh auth login` requests `repo`, `read:org` and `gist`; gh 2.45.0 calls these
+  "the minimum set of scopes", which "cannot be removed". `workflow` is not part
+  of it, and gh asks for it only to write workflow files, pointing at
+  `gh auth refresh -s workflow`. Creating a workflow dispatch needs `repo`, not
+  `workflow`, and the `workflow` scope grants "the ability to add and update
+  GitHub Actions workflow files"
 - This development environment is signed in as `avshukan` with a `gho_` token
   carrying `gist`, `read:org`, `repo` and `workflow`, stored in
-  `~/.config/gh/hosts.yml`
+  `~/.config/gh/hosts.yml`. Its `workflow` scope is above gh's minimum and was
+  added by an explicit refresh; nothing in the repository's `gh` tooling needs
+  it. `gh aw compile` changes `.lock.yml` workflow files, but pushing them here
+  goes over SSH, which uses no token
 - Repository tooling that needs `gh`: `make prune-merged`, the sweep dispatch in
   `scripts/backlog-sweep.mjs` and `AGENTS.md`, `gh issue list` in the
   `backlog-sweep` skill, `gh pr checks` in `.claude/settings.json`,
@@ -4172,6 +4190,18 @@ Verified during readiness at `74fad19`:
 - The repository secret is `COPILOT_GITHUB_TOKEN`; Environment `production`
   holds `PRODUCTION_SSH_KEY`, an SSH key the revocation does not affect.
   Workflows otherwise use the Actions-provided `GITHUB_TOKEN`
+- gh-aw v0.89.21, the version in the lock file header, requires
+  `COPILOT_GITHUB_TOKEN` to be a fine-grained personal access token that can
+  authenticate Copilot CLI, with `Copilot Requests` set to `Read` and the user
+  account as resource owner, and states that the token must be a PAT rather
+  than an OAuth user token. A fine-grained token is prefixed `github_pat_`, so
+  a secret that meets the requirement cannot be a GitHub CLI token and the
+  revocation cannot invalidate it
+- In run `39941227375` the `Validate COPILOT_GITHUB_TOKEN secret` step passes
+  and Copilot CLI then answers `429 Too Many Requests` on each of four
+  attempts, which is a post-authentication response. The secret therefore
+  authenticates. That run fails on the owner's exhausted Copilot request
+  allowance, not on anything this item changes
 - Nothing blocks the item: ID-42 is `Done`, and its Out of Scope, the
   "Tag-triggered releases" ADR and `docs/production.md` section 9 all name
   ID-44 as the deferred global revocation
@@ -4188,11 +4218,18 @@ Verified during readiness at `74fad19`:
 
 ### Readiness Decisions
 
-- Accepted by the owner on 2026-10-24:
+- Accepted by the owner on 2026-10-24, after the independent review of the
+  readiness pull request: only the credential exposed on the VPS may be
+  affected. Other environments are not to be signed out, so the narrow
+  revocation of Step 2A is the chosen path wherever it is possible, and the
+  account-wide revocation is no longer the default route
+- Accepted by the owner on 2026-10-24, before that review, and still the agreed
+  shape of the account-wide path if it is ever chosen:
   - after the revocation the development environments are re-authorized with
-    `gh auth login` and the GitHub CLI default scopes. `repo`, `workflow` and
-    `read:org` are all exercised by the tooling above, so narrowing the scopes
-    would remove only `gist`
+    `gh auth login` and the GitHub CLI default scopes. Those are `repo`,
+    `read:org` and `gist`, which gh calls the minimum set and refuses to
+    narrow; `repo` is what the tooling needs, `workflow` is neither granted by
+    default nor required by it
   - replacing `COPILOT_GITHUB_TOKEN` is in scope if it holds a GitHub CLI OAuth
     token, so the revocation cannot silently break issue triage
   - wider credential hygiene for the account stays out of scope, as an Issue
@@ -4200,7 +4237,20 @@ Verified during readiness at `74fad19`:
   - this readiness pull request records the criteria; the owner then revokes,
     and a second documentation-only pull request records the evidence and moves
     ID-44 to `Done`, as ID-29 and ID-40 were recorded
-  - all four items of the evidence set above, the security log entry included
+  - all four items of the evidence set recorded in this pull request's history,
+    the security log entry included
+- Corrected by the independent review of 2026-10-24, with the facts recorded in
+  _Baseline on `main`_:
+  - the earlier criterion requiring the `workflow` scope was wrong twice:
+    `gh auth login` does not grant it, and a workflow dispatch needs `repo`.
+    No scope is added to satisfy a criterion
+  - a `gho_` prefix marks an OAuth app token of any app, so the earlier
+    prefix-based check of `COPILOT_GITHUB_TOKEN` was not sound. gh-aw's
+    documented requirement, plus the observed post-authentication `429`,
+    settles that the secret is not a GitHub CLI token
+  - the earlier claim that a single token cannot be revoked was wrong. The
+    credential revocation API accepts `gho_` values; what is missing is the
+    value, not a mechanism. This is what made Step 2A possible
 - Not chosen: a fine-grained personal access token in `GH_TOKEN` in place of the
   OAuth login (Out of Scope above), and a re-login with narrowed scopes
 - Settled during readiness, open to review in this PR:
@@ -4209,12 +4259,15 @@ Verified during readiness at `74fad19`:
   - the level stays `Medium`. The still-valid token makes `High` arguable, but a
     level change belongs to a backlog sweep, not to readiness
   - the sweep dispatch is not exercised as a repository check
+  - the item is `Design`, not `Ready`: Step 2A is fully settled, but whether it
+    applies depends on Step 1, and Step 2B has no agreed path
 - Documentation: none in this pull request. The record pull request updates
   `docs/production.md` section 9, step 7, which currently describes the
   revocation as pending, and leaves the ADR's dated record of the 2026-10-15
   split as history. Feature pull requests do not edit `CHANGELOG.md`; Prepare
   release drafts it (`docs/07-process.md`)
-- No architectural or product questions remain open for ID-44.
+- Open: the question under _Open owner decision_. No other architectural or
+  product question remains open for ID-44.
 
 ---
 

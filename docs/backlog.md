@@ -153,7 +153,7 @@ adapts to the column rather than moving the column.
 | 38  | Breakdown hover preview    | Value    | Low    | —       | Desktop hover/focus preview of score breakdown      |
 | 41  | Fix backlog lint fixture   | Ops      | Medium | Ready   | Fixture backlog; tests pass for any valid backlog   |
 | 43  | Guard prod-deploy same SHA | Ops      | High   | Ready   | Same-SHA redeploy keeps previous.env and its tag    |
-| 44  | Revoke legacy GH CLI OAuth | Ops      | Medium | Ready   | Owner-only: revoke grant, re-login, record proof    |
+| 44  | Revoke legacy GH CLI OAuth | Ops      | Medium | Design  | Revoke only VPS token if value kept; else decide    |
 | 45  | Design screens in Figma    | Quality  | High   | Design  | Redesign via Figma+AI; scope/apply open, spike next |
 | 46  | Explain voting methods     | Value    | Low    | Ready   | `/faq` + article per method; planned ones labelled  |
 | 47  | Fix drag row z-index       | Quality  | Medium | —       | Dragged row needs z-10 to stay above siblings       |
