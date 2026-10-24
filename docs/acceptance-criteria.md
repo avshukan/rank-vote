@@ -4078,6 +4078,146 @@ Verified during readiness at `ca04714`, on macOS with Node 22.22.2 and pnpm
 
 ---
 
+## ID-44 Revoke legacy GH CLI OAuth
+
+Security cleanup from Issue #98. The GitHub CLI OAuth authorization on the
+owner's GitHub account is revoked, which invalidates every token issued under
+it — including the one ID-42 removed from the production VPS, because removing
+a login locally does not invalidate its token. The owner performs the
+revocation and re-authorizes the development environments; an agent performs
+neither. Repository-side this is documentation and a record only: no app, API,
+shared-package, storage or production-tooling change, and nothing reads or
+changes production.
+
+### Scope (owner-operated)
+
+- [ ] Before revoking, the owner checks what kind of token the repository
+      secret `COPILOT_GITHUB_TOKEN` holds, because a GitHub CLI OAuth token
+      (a `gho_` prefix) would be invalidated together with the grant and would
+      stop `.github/workflows/issue-triage`
+- [ ] The owner revokes the **GitHub CLI** authorization under GitHub →
+      Settings → Applications → Authorized OAuth Apps. The grant is
+      account-wide and offers no per-device revocation, so every environment
+      signed in through `gh auth login` is signed out at once
+- [ ] The owner re-runs `gh auth login` on each development environment that
+      needs one, taking the GitHub CLI default scopes. The new grant is a
+      separate authorization; the revoked tokens stay invalid
+- [ ] If `COPILOT_GITHUB_TOKEN` held a GitHub CLI OAuth token, the owner
+      replaces it with a credential the revocation does not invalidate
+- [ ] Production is untouched: the VPS holds no GitHub credential (ID-42) and
+      the release path reads public endpoints unauthenticated, so neither a
+      tagged release nor any `make prod-*` command depends on the grant
+
+### Evidence, required before `Done`
+
+Owner-supplied, recorded in the record pull request. An agent can observe none
+of it; a criterion is checked only when the record cites its evidence.
+
+- [ ] GitHub → Settings → Applications → Authorized OAuth Apps either no longer
+      lists GitHub CLI, or lists it with an authorization date later than the
+      revocation. Both forms are accepted, because the re-login above creates a
+      fresh grant that appears in the same list
+- [ ] The account's security log entry for the revocation, with its timestamp.
+      The Applications page shows current state rather than history, so this is
+      the durable record that the revocation happened
+- [ ] `gh auth status` on each re-authorized environment, with the scopes of
+      the new token. This records that the environments work again and with
+      which rights; the old tokens are invalid by virtue of the revoked grant,
+      which the command cannot show
+- [ ] The outcome for `COPILOT_GITHUB_TOKEN`: either that it was not a GitHub
+      CLI OAuth token and was left untouched, or that it was replaced
+
+### Repository checks
+
+Agent-verifiable, after the owner re-authorizes this environment:
+
+- [ ] The `gh`-dependent tooling works: `gh pr list`, which `make prune-merged`
+      uses, `gh issue list --label backlog-sweep` from the `backlog-sweep`
+      skill, `gh pr checks` from `.claude/settings.json`, `gh workflow list`
+      and `gh extension list`
+- [ ] The new token's scopes include `workflow`, which the sweep dispatch
+      `gh workflow run backlog-sweep.yml` needs (`AGENTS.md`). The dispatch
+      itself is not run as a check, because it would request a real sweep
+- [ ] `docs/production.md` section 9, step 7 no longer describes the global
+      revocation as pending work; the "Tag-triggered releases" ADR keeps its
+      historical record of the 2026-10-15 split
+- [ ] The Definition of Done gate for a documentation-only change passes and CI
+      is green on the record pull request
+
+### Baseline on `main`
+
+Verified during readiness at `74fad19`:
+
+- `gh auth logout --help` (gh 2.45.0) states that the authentication
+  configuration is removed only locally and that the command does not
+  invalidate authentication tokens. The VPS login that ID-42 removed with
+  `gh auth logout` therefore still has a valid token, with the `repo` and
+  `workflow` scopes that the "Tag-triggered releases" ADR describes as enough
+  to push to every repository of the owner and to approve a pending production
+  deployment
+- Revoking that one token instead is not possible: the OAuth app token endpoint
+  authenticates with the GitHub CLI's own client secret, and the Authorized
+  OAuth Apps page offers one revocation per app
+- This development environment is signed in as `avshukan` with a `gho_` token
+  carrying `gist`, `read:org`, `repo` and `workflow`, stored in
+  `~/.config/gh/hosts.yml`
+- Repository tooling that needs `gh`: `make prune-merged`, the sweep dispatch in
+  `scripts/backlog-sweep.mjs` and `AGENTS.md`, `gh issue list` in the
+  `backlog-sweep` skill, `gh pr checks` in `.claude/settings.json`,
+  `gh pr view` in the release instructions of `scripts/release.mjs`, and
+  `gh aw compile` with `gh extension install` in `AGENTS.md`
+- Git itself is unaffected in this environment: `origin` is an SSH remote, and
+  the `gh auth git-credential` helper in the user's Git configuration applies
+  to HTTPS remotes only
+- The repository secret is `COPILOT_GITHUB_TOKEN`; Environment `production`
+  holds `PRODUCTION_SSH_KEY`, an SSH key the revocation does not affect.
+  Workflows otherwise use the Actions-provided `GITHUB_TOKEN`
+- Nothing blocks the item: ID-42 is `Done`, and its Out of Scope, the
+  "Tag-triggered releases" ADR and `docs/production.md` section 9 all name
+  ID-44 as the deferred global revocation
+
+### Out of Scope (tracked separately)
+
+- Reviewing the account's other authorized OAuth apps, personal access tokens
+  and SSH keys — not planned here; a separate Issue through triage if wanted
+- Replacing the GitHub CLI OAuth login with a fine-grained personal access
+  token — not chosen below; it would change how `gh` is used in every
+  repository of the owner, so it needs its own item if wanted
+- Removing the VPS-local credential and proving that the VPS holds no GitHub
+  credential → ID-42, already `Done` and recorded
+
+### Readiness Decisions
+
+- Accepted by the owner on 2026-10-24:
+  - after the revocation the development environments are re-authorized with
+    `gh auth login` and the GitHub CLI default scopes. `repo`, `workflow` and
+    `read:org` are all exercised by the tooling above, so narrowing the scopes
+    would remove only `gist`
+  - replacing `COPILOT_GITHUB_TOKEN` is in scope if it holds a GitHub CLI OAuth
+    token, so the revocation cannot silently break issue triage
+  - wider credential hygiene for the account stays out of scope, as an Issue
+    through triage if wanted
+  - this readiness pull request records the criteria; the owner then revokes,
+    and a second documentation-only pull request records the evidence and moves
+    ID-44 to `Done`, as ID-29 and ID-40 were recorded
+  - all four items of the evidence set above, the security log entry included
+- Not chosen: a fine-grained personal access token in `GH_TOKEN` in place of the
+  OAuth login (Out of Scope above), and a re-login with narrowed scopes
+- Settled during readiness, open to review in this PR:
+  - the backlog Notes name the owner-operated shape instead of repeating
+    "security cleanup"
+  - the level stays `Medium`. The still-valid token makes `High` arguable, but a
+    level change belongs to a backlog sweep, not to readiness
+  - the sweep dispatch is not exercised as a repository check
+- Documentation: none in this pull request. The record pull request updates
+  `docs/production.md` section 9, step 7, which currently describes the
+  revocation as pending, and leaves the ADR's dated record of the 2026-10-15
+  split as history. Feature pull requests do not edit `CHANGELOG.md`; Prepare
+  release drafts it (`docs/07-process.md`)
+- No architectural or product questions remain open for ID-44.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
