@@ -294,6 +294,16 @@ async function promote62(github, options = {}) {
 
 test('docs/backlog.md follows its fixed-width Format rules', () => {
   assert.deepEqual(lintBacklog(realBacklog), []);
+  // The lint reads widths and alignment from each separator row and allowed
+  // values from the Legend, so it accepts a backlog re-padded to other widths.
+  // Pin them to the fixture's, which the other tests run on.
+  const schema = ({ legend, todo, done, cancelled }) => ({
+    legend,
+    todo: todo.columns,
+    done: done.columns,
+    cancelled: cancelled.columns,
+  });
+  assert.deepEqual(schema(parseBacklog(realBacklog)), schema(parseBacklog(fixtureBacklog)));
 });
 
 test('the fixture backlog follows the same Format rules', () => {

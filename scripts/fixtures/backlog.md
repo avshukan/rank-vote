@@ -1,10 +1,11 @@
 # Backlog fixture
 
 A fixed backlog in the `docs/backlog.md` format, for
-`scripts/backlog-promotion.test.mjs`. Its Legend values and column widths match
-the real backlog; its rows are made up. The tests that need particular rows
-read this file, so moving, cancelling or rewording rows in `docs/backlog.md`
-never requires a test change.
+`scripts/backlog-promotion.test.mjs`. Its rows are made up. Its columns (names,
+widths, alignment) and Legend values must match the real backlog's; the format
+test of `docs/backlog.md` checks that, so changing either means editing both
+files. The tests that need particular rows read this file, so moving,
+cancelling or rewording rows in `docs/backlog.md` never requires a test change.
 
 ## Legend
 
