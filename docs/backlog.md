@@ -151,7 +151,6 @@ adapts to the column rather than moving the column.
 | 36  | Export results as CSV      | Value    | Low    | —       | Download scores/ranks from results page or API      |
 | 37  | Add short poll links       | Quality  | Low    | —       | Replace/alias UUID with short ID; redirect needed   |
 | 38  | Breakdown hover preview    | Value    | Low    | —       | Desktop hover/focus preview of score breakdown      |
-| 41  | Fix backlog lint fixture   | Ops      | Medium | Ready   | Fixture backlog; tests pass for any valid backlog   |
 | 43  | Guard prod-deploy same SHA | Ops      | High   | Ready   | Same-SHA redeploy keeps previous.env and its tag    |
 | 44  | Revoke legacy GH CLI OAuth | Ops      | Medium | Design  | Revoke only VPS token if value kept; else decide    |
 | 45  | Design screens in Figma    | Quality  | High   | Design  | Redesign via Figma+AI; scope/apply open, spike next |
@@ -184,6 +183,7 @@ adapts to the column rather than moving the column.
 |  19 | Explain score calculation  | Value    | Medium | Per-place Borda `breakdown`; score links to a Details view    |
 |  42 | Automate tagged releases   | Ops      | High   | v0.2.0 verified; VPS GitHub login removed; revoke → ID-44     |
 |   6 | Mobile responsive layout   | Quality  | Medium | From 320 px: long text wraps; touch drag after press and hold |
+|  41 | Fix backlog lint fixture   | Ops      | Medium | Tests use a fixture backlog; the live file is format-checked  |
 
 ---
 

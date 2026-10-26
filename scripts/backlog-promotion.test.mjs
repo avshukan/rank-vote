@@ -24,7 +24,12 @@ import {
 } from './backlog-promotion.mjs';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+// docs/backlog.md itself is read only to check its format and the triage
+// prompt's width limits. Every other test uses a fixed fixture in the same
+// format, so moving, cancelling or rewording real backlog rows needs no test
+// change.
 const realBacklog = readFileSync(join(repositoryRoot, BACKLOG_PATH), 'utf8');
+const fixtureBacklog = readFileSync(join(repositoryRoot, 'scripts/fixtures/backlog.md'), 'utf8');
 
 const REPOSITORY = 'avshukan/rank-vote';
 const BASE_SHA = 'b'.repeat(40);
@@ -87,9 +92,9 @@ function maxBacklogId(backlog) {
   );
 }
 
-// The real backlog with `cells` rows appended to its `Cancelled` table.
+// The fixture backlog with `cells` rows appended to its `Cancelled` table.
 function withCancelled(...cells) {
-  const backlog = parseBacklog(realBacklog);
+  const backlog = parseBacklog(fixtureBacklog);
   const lines = [...backlog.lines];
   const rows = cells.map((values) => renderRow(backlog.cancelled.columns, values));
   lines.splice(backlog.cancelled.end, 0, ...rows);
@@ -155,7 +160,7 @@ function fakeGitHub({
   pullFiles = {},
   branches = [],
   failures = {},
-  backlog = realBacklog,
+  backlog = fixtureBacklog,
 } = {}) {
   const state = { branches: new Set(branches), comments: [], calls: [] };
   const branchOf = (route) => route.split('/heads/')[1];
@@ -289,28 +294,45 @@ async function promote62(github, options = {}) {
 
 test('docs/backlog.md follows its fixed-width Format rules', () => {
   assert.deepEqual(lintBacklog(realBacklog), []);
+  // The lint reads widths and alignment from each separator row and allowed
+  // values from the Legend, so it accepts a backlog re-padded to other widths.
+  // Pin them to the fixture's, which the other tests run on.
+  const schema = ({ legend, todo, done, cancelled }) => ({
+    legend,
+    todo: todo.columns,
+    done: done.columns,
+    cancelled: cancelled.columns,
+  });
+  assert.deepEqual(schema(parseBacklog(realBacklog)), schema(parseBacklog(fixtureBacklog)));
+});
+
+test('the fixture backlog follows the same Format rules', () => {
+  assert.deepEqual(lintBacklog(fixtureBacklog), []);
 });
 
 test('the backlog lint reports duplicate IDs, overflow, misalignment and unknown values', () => {
-  const lines = realBacklog.split('\n');
+  const lines = fixtureBacklog.split('\n');
   const row = (id) => lines.findIndex((line) => line.startsWith(`| ${id} `));
-  lines[row(13)] = lines[row(14)];
-  lines[row(20)] = lines[row(20)].replace('Quality ', 'Feature ');
-  lines[row(8)] = lines[row(8)].replace(
-    'Instant-runoff voting',
-    'Instant-runoff voting'.padEnd(60, '!'),
+  const [copied, duplicate, unknownType, overflowing, misaligned] = [4, 9, 2, 7, 8].map(row);
+  lines[duplicate] = lines[copied];
+  lines[unknownType] = lines[unknownType].replace('| Quality ', '| Feature ');
+  lines[overflowing] = lines[overflowing].replace(
+    'Waits for ID-2',
+    'Waits for ID-2'.padEnd(60, '!'),
   );
-  lines[row(9)] = lines[row(9)].replace('| Value ', '|  Value');
-  const problems = lintBacklog(lines.join('\n')).join('\n');
+  lines[misaligned] = lines[misaligned].replace('| Value ', '|  Value');
+  const at = (index) => `Todo line ${index + 1}`;
 
-  assert.match(problems, /ID 14 is already used on line/);
-  assert.match(problems, /Type `Feature` is not a Legend value/);
-  assert.match(problems, /Notes is \d+ characters; the column fits 51/);
-  assert.match(problems, /cells are not padded to the column widths/);
+  assert.deepEqual(lintBacklog(lines.join('\n')), [
+    `${at(duplicate)}: ID 4 is already used on line ${copied + 1}`,
+    `${at(unknownType)}: Type \`Feature\` is not a Legend value`,
+    `${at(overflowing)}: Notes is 60 characters; the column fits 51`,
+    `${at(misaligned)}: cells are not padded to the column widths`,
+  ]);
 });
 
 test('Cancelled rows follow the Done format', () => {
-  const backlog = parseBacklog(realBacklog);
+  const backlog = parseBacklog(fixtureBacklog);
   assert.deepEqual(
     backlog.cancelled.columns.map((column) => column.name),
     backlog.done.columns.map((column) => column.name),
@@ -355,34 +377,29 @@ test('Cancelled rows follow the Done format', () => {
     /Cancelled: columns are ID, Title, Type, Level, Why, expected ID, Title, Type, Level, Notes/,
   );
 
-  assert.deepEqual(lintBacklog(realBacklog.replace('## Cancelled', '## Discarded')), [
+  assert.deepEqual(lintBacklog(fixtureBacklog.replace('## Cancelled', '## Discarded')), [
     'docs/backlog.md has no `## Cancelled` section',
   ]);
 });
 
 test('duplicate IDs are reported across Todo, Done and Cancelled', () => {
-  const { todo, done } = parseBacklog(realBacklog);
-  const [todoId] = todo.rows[0].cells;
-  const [doneId] = done.rows[0].cells;
+  // ID 4 is a Todo row of the fixture, ID 1 a Done row.
   const problems = lintBacklog(
     withCancelled(
-      [todoId, 'Cancelled twin of Todo', 'Value', 'Low', 'x'],
-      [doneId, 'Cancelled twin of Done', 'Value', 'Low', 'x'],
+      ['4', 'Cancelled twin of Todo', 'Value', 'Low', 'x'],
+      ['1', 'Cancelled twin of Done', 'Value', 'Low', 'x'],
       ['900', 'Cancelled twice', 'Value', 'Low', 'x'],
       ['900', 'Cancelled twice', 'Value', 'Low', 'x'],
     ),
   ).join('\n');
 
-  assert.match(problems, new RegExp(`Cancelled line \\d+: ID ${todoId} is already used on line`));
-  assert.match(problems, new RegExp(`Cancelled line \\d+: ID ${doneId} is already used on line`));
+  assert.match(problems, /Cancelled line \d+: ID 4 is already used on line/);
+  assert.match(problems, /Cancelled line \d+: ID 1 is already used on line/);
   assert.match(problems, /Cancelled line \d+: ID 900 is already used on line/);
 
-  const lines = realBacklog.split('\n');
-  const todoRow = lines.findIndex((line) => line.startsWith(`| ${todoId} `));
-  lines[todoRow] = lines[todoRow].replace(`| ${todoId.padEnd(3)} |`, `| ${doneId.padEnd(3)} |`);
   assert.match(
-    lintBacklog(lines.join('\n')).join('\n'),
-    new RegExp(`Done line \\d+: ID ${doneId} is already used on line`),
+    lintBacklog(fixtureBacklog.replace('| 4   |', '| 1   |')).join('\n'),
+    /Done line \d+: ID 1 is already used on line/,
   );
 });
 
@@ -396,7 +413,7 @@ test('the triage prompt limits Title and Notes to the Todo column widths', () =>
 });
 
 test('rows are padded to the ruler: 120 characters, Done and Cancelled IDs right-aligned', () => {
-  const backlog = parseBacklog(realBacklog);
+  const backlog = parseBacklog(fixtureBacklog);
   const actualId = nextBacklogId(backlog);
   const todo = renderRow(backlog.todo.columns, [
     String(actualId),
@@ -437,7 +454,7 @@ test('rows are padded to the ruler: 120 characters, Done and Cancelled IDs right
 });
 
 test('new rows are appended to the end of Todo and keep the format', () => {
-  const backlog = parseBacklog(realBacklog);
+  const backlog = parseBacklog(fixtureBacklog);
   const nextId = nextBacklogId(backlog);
   const entry = {
     ID: String(nextId),
@@ -447,19 +464,27 @@ test('new rows are appended to the end of Todo and keep the format', () => {
     State: '—',
     Notes: 'x',
   };
-  const { rows, text } = appendTodoRows(backlog, [entry]);
-  const lines = text.split('\n');
-  const inserted = lines.indexOf(rows[0]);
-  const previous = backlog.todo.rows.at(-1)?.cells?.[0] ?? '0';
+  // The fixture, whose last Todo row is ID 10, and the fixture with no Todo
+  // rows, where the new row goes right under the separator row.
+  const emptyTodo = [...backlog.lines];
+  emptyTodo.splice(backlog.todo.rows[0].line, backlog.todo.rows.length);
+  for (const [before, previous] of [
+    [fixtureBacklog, /^\| 10 {2}\| Fixture item 10 /],
+    [emptyTodo.join('\n'), /^\| --- \| -+ \|/],
+  ]) {
+    const { rows, text } = appendTodoRows(parseBacklog(before), [entry]);
+    const lines = text.split('\n');
+    const inserted = lines.indexOf(rows[0]);
 
-  assert.ok(lines[inserted - 1].startsWith(`| ${previous} `), 'follows the prior Todo row');
-  assert.equal(lines[inserted + 1], '');
-  assert.equal(lines.length, backlog.lines.length + 1);
-  assert.deepEqual(lintBacklog(text), []);
+    assert.match(lines[inserted - 1], previous);
+    assert.equal(lines[inserted + 1], '');
+    assert.equal(lines.length, before.split('\n').length + 1);
+    assert.deepEqual(lintBacklog(text), []);
+  }
 });
 
 test('the next ID follows a cancelled item that holds the highest ID', () => {
-  const highest = maxBacklogId(parseBacklog(realBacklog)) + 50;
+  const highest = maxBacklogId(parseBacklog(fixtureBacklog)) + 50;
   const backlog = parseBacklog(
     withCancelled([String(highest), 'Dropped idea', 'Value', 'Low', 'No longer wanted']),
   );
@@ -470,7 +495,7 @@ test('the next ID follows a cancelled item that holds the highest ID', () => {
 });
 
 test('the next ID follows the backlog and every ID an open pull request adds', () => {
-  const backlog = parseBacklog(realBacklog);
+  const backlog = parseBacklog(fixtureBacklog);
   const patch = '@@ -117,0 +118,2 @@\n+| 36  | Other item |\n+|  37 | Done item |\n-| 35 | gone |';
   const reserved = addedRowIds(patch);
   const expectedFirst = Math.max(maxBacklogId(backlog), ...reserved) + 1;
@@ -510,7 +535,7 @@ test('a recommendation is parsed as written, including a split', () => {
 });
 
 test('a valid entry passes unchanged and starts with State —', () => {
-  const backlog = parseBacklog(realBacklog);
+  const backlog = parseBacklog(fixtureBacklog);
   const { entries, problems } = validateEntries(parseTriage(triageBody()), backlog);
 
   assert.deepEqual(problems, []);
@@ -527,7 +552,7 @@ test('a valid entry passes unchanged and starts with State —', () => {
 });
 
 test('overlong values are reported with their length and limit, never shortened', () => {
-  const backlog = parseBacklog(realBacklog);
+  const backlog = parseBacklog(fixtureBacklog);
   const { problems } = validateEntries(parseTriage(ISSUE_62_TRIAGE), backlog);
 
   assert.deepEqual(problems, [
@@ -537,7 +562,7 @@ test('overlong values are reported with their length and limit, never shortened'
 });
 
 test('entries that would break the table or the process are refused', () => {
-  const backlog = parseBacklog(realBacklog);
+  const backlog = parseBacklog(fixtureBacklog);
   const entries = [
     { Title: 'A | B' },
     { Title: 'Add 🎉 support' },
@@ -604,7 +629,7 @@ test('inline code survives backticks in the value', () => {
 // The whole promotion
 
 test('an accepted Issue becomes a Todo row on a new branch and a pull request', async () => {
-  const backlog = parseBacklog(realBacklog);
+  const backlog = parseBacklog(fixtureBacklog);
   const nextId = nextBacklogId(backlog);
   const github = fakeGitHub();
   const { result, core, comment } = await promote62(github);
@@ -637,7 +662,7 @@ test('an accepted Issue becomes a Todo row on a new branch and a pull request', 
 });
 
 test('a promotion appends to Todo and leaves Cancelled rows unchanged', async () => {
-  const highest = maxBacklogId(parseBacklog(realBacklog)) + 50;
+  const highest = maxBacklogId(parseBacklog(fixtureBacklog)) + 50;
   const backlog = withCancelled(
     [String(highest - 1), 'Dropped idea', 'Value', 'Low', 'Superseded by ID-19'],
     [String(highest), 'Another dropped idea', 'Ops', 'Medium', 'No longer wanted'],
@@ -655,7 +680,7 @@ test('a promotion appends to Todo and leaves Cancelled rows unchanged', async ()
 });
 
 test('a split recommendation gets consecutive IDs and a counted title', async () => {
-  const backlog = parseBacklog(realBacklog);
+  const backlog = parseBacklog(fixtureBacklog);
   const comments = [triageComment(triageBody({ entries: [{}, { Title: 'Second item' }] }))];
   const { result } = await promote62(fakeGitHub({ comments }));
   const expected = [nextBacklogId(backlog), nextBacklogId(backlog) + 1];
@@ -668,7 +693,7 @@ test('a split recommendation gets consecutive IDs and a counted title', async ()
 });
 
 test('IDs added by open pull requests of this repository are skipped; forks are ignored', async () => {
-  const backlog = parseBacklog(realBacklog);
+  const backlog = parseBacklog(fixtureBacklog);
   const github = fakeGitHub({
     openPulls: [
       { number: 65, head: { repo: { full_name: REPOSITORY } } },
@@ -686,7 +711,7 @@ test('IDs added by open pull requests of this repository are skipped; forks are 
 });
 
 test('a dry run reads everything and writes nothing', async () => {
-  const backlog = parseBacklog(realBacklog);
+  const backlog = parseBacklog(fixtureBacklog);
   const nextId = nextBacklogId(backlog);
   const github = fakeGitHub();
   const { result, core, comment } = await promote62(github, { dryRun: true });
@@ -767,8 +792,8 @@ const refusals = [
   ],
   [
     'a backlog that already breaks its format',
-    { backlog: realBacklog.replace('| 13  |', '| 14  |') },
-    /does not follow its own `Format` rules.*\n\n- Todo line \d+: ID 14 is already used/s,
+    { backlog: fixtureBacklog.replace('| 9   |', '| 4   |') },
+    /does not follow its own `Format` rules, so a row cannot be added safely:\n\n- Todo line \d+: ID 4 is already used on line \d+\n\nNothing/,
     /Fix `docs\/backlog.md` on `main` in a docs pull request, then remove and re-apply/,
   ],
   [

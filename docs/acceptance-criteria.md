@@ -3041,37 +3041,37 @@ promotion, the workflows and the backlog `Format` stay unchanged.
 
 ### Scope
 
-- [ ] A fixed fixture backlog in the `docs/backlog.md` format (Legend, `Todo`,
+- [x] A fixed fixture backlog in the `docs/backlog.md` format (Legend, `Todo`,
       `Done` and `Cancelled` tables) is added, and a test asserts that
       `lintBacklog` reports no problems for it
-- [ ] The lint test that injects a duplicate ID, an unknown Type, an
+- [x] The lint test that injects a duplicate ID, an unknown Type, an
       overflowing Notes cell and misaligned cells builds its input from the
       fixture
-- [ ] The promotion refusal for a backlog that already breaks its format
+- [x] The promotion refusal for a backlog that already breaks its format
       builds that backlog from the fixture, and still asserts the
       `Todo line N: ID X is already used` reason, the recovery step and that
       nothing is written
-- [ ] The duplicate-IDs-across-sections test and the append-to-`Todo` test use
+- [x] The duplicate-IDs-across-sections test and the append-to-`Todo` test use
       the fixture instead of the first or last live `Todo` row
-- [ ] No test locates a row of the live `docs/backlog.md` by a literal ID or
+- [x] No test locates a row of the live `docs/backlog.md` by a literal ID or
       literal cell text
-- [ ] `docs/backlog.md follows its fixed-width Format rules` and the
+- [x] `docs/backlog.md follows its fixed-width Format rules` and the
       triage-prompt width check still read the live file
-- [ ] Everything the suite covers today stays covered, including the backlog
+- [x] Everything the suite covers today stays covered, including the backlog
       tooling tests required by ID-39
 
 ### Verification
 
-- [ ] **Manual, recorded in the PR:** on scratch copies of the repository,
+- [x] **Manual, recorded in the PR:** on scratch copies of the repository,
       `node --test scripts/backlog-promotion.test.mjs` passes after each of
       these valid edits to `docs/backlog.md`, which fail it on `main` today
       (see Baseline): (1) `Todo` rows 8, 9, 13, 14 and 20 moved to `Done` and
       rows 11 and 12 to `Cancelled`, every remaining Notes cell rewritten,
       some States changed and the `Todo` order reversed; (2) only the Notes of
       ID-8 reworded; (3) every `Todo` row moved to `Done`, leaving `Todo` empty
-- [ ] A broken `docs/backlog.md`, for example a misaligned row, still fails
+- [x] A broken `docs/backlog.md`, for example a misaligned row, still fails
       `docs/backlog.md follows its fixed-width Format rules`
-- [ ] `make verify` passes
+- [x] `make verify` passes
 
 ### Baseline on `main`
 
