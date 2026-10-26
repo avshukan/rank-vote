@@ -4276,6 +4276,119 @@ Verified during readiness at `74fad19`:
 
 ---
 
+## ID-47 Fix drag row z-index
+
+Frontend fix from Issue #118. During a drag every ballot row carries a
+`transform`, so the rows paint in DOM order: a row dragged downward slides
+under the rows after it, and the part that overlaps them disappears. The
+dragged row must stay above every other row from the start of the drag until
+it rests in the list again, including its return after a cancelled drag. No
+API, shared-package or storage change; the rest of the drag behaviour and look
+stays as it is on `main`.
+
+### Scope
+
+- [ ] While a row is dragged — with a mouse, by touch after a press and hold,
+      or with the keyboard — it is drawn above every other row, in both
+      directions and over rows of any height
+- [ ] After a cancelled drag — Escape during a mouse or keyboard drag, or a
+      cancelled touch — the row stays above the other rows until its return
+      animation has brought it back to its place
+- [ ] The dragged row keeps its current look, `opacity-60 shadow-lg`, so the
+      rows beneath show through it
+- [ ] Drops, the ranking, the sensors, the drag activator, the ↑/↓ buttons and
+      the touch behaviour from ID-6 stay as they are on `main`
+
+### Verification
+
+Chromium, as for ID-6: paint order cannot be observed in jsdom, and
+`docs/11-testing-strategy.md` keeps browser end-to-end and visual-regression
+suites out of the MVP. "Hidden" below is the share of points on the dragged
+row's vertical centre line where `document.elementFromPoint` returns another
+row.
+
+- [ ] **Data:** the `long content` poll from `make seed`, served by `make web`
+      and `make api`, or the API stubbed with the same poll
+- [ ] **Drags**, measured mid-drag on `main` and on the branch: with a mouse at
+      1280 px, "Lisbon, by the river" 90 px down and "Barcelona" 90 px up; by
+      touch at 320 px, the URL option held and dragged down over "Porto"; with
+      the keyboard at 1280 px, "Lisbon, by the river" picked up with Space and
+      moved one place down, sampled every frame of the move. Each is 0% hidden
+      on the branch
+- [ ] **Cancels**, sampled every frame for 400 ms after the cancel, on `main`
+      and on the branch: Escape after the mouse drag down above, Escape after a
+      keyboard move two places down, and a cancelled touch after the touch drag
+      above. Each is 0% hidden on the branch
+- [ ] **Evidence** in the PR description: the figures for `main` and the
+      branch, and before/after screenshots of the mouse drag at 1280 px and the
+      touch drag at 320 px
+- [ ] **Tests:** the `BallotForm dragging` suite gains a component test that a
+      dragged row is raised and the other rows are not, and that the raise
+      outlasts a cancel until the return ends, as far as jsdom can observe it.
+      jsdom neither paints nor runs CSS transitions, so the browser checks are
+      the paint-order evidence. The existing suites stay green
+- [ ] `make verify` passes
+
+### Documentation
+
+- [ ] `docs/11-testing-strategy.md` names the new check among the ballot
+      dragging component tests
+
+### Out of Scope (tracked separately)
+
+- A different look for the dragged row, an opaque one included → ID-45; the
+  owner kept the current look (see Readiness Decisions)
+- Browser end-to-end and visual-regression suites — excluded by
+  `docs/11-testing-strategy.md`
+
+### Baseline on `main`
+
+Measured during readiness at `7183bf5` against a production build of `apps/web`
+in headless Chromium (Playwright build 1228), with the API stubbed with the
+`long content` poll of `make seed`:
+
+- Mouse at 1280 px: "Lisbon, by the river" 90 px down is 44% hidden, under
+  "A cabin in the mountains"; "Barcelona" 90 px up is 0% hidden
+- Touch at 320 px: the URL option, 186 px tall, dragged down over "Porto" is 32%
+  hidden, under "A cabin in the mountains"
+- Keyboard at 1280 px: while "Lisbon, by the river" moves one place down, it is
+  up to 96% hidden under "Porto" in 13 of 43 frames. Issue #118 does not
+  mention the keyboard
+- Cancels: during the 200 ms return the row is up to 96% hidden under "Porto"
+  after the mouse drag down, up to 100% after the keyboard move and up to 92%
+  after the cancelled touch. A mouse drop is not animated: on the next frame the
+  row is in place and nothing hides it
+- Injecting `z-index: 10` on the dragged row as CSS brings every drag to 0%
+  without `position`, because the rows are flex items of the ranking list. It
+  does not change the cancels, whose return starts once the row is no longer
+  dragged. Keeping that `z-index` for the 200 ms of dnd-kit's default sortable
+  transition brings all three cancels to 0%
+- With `z-index: 10` and `opacity-60`, the row beneath shows through the dragged
+  row; at 320 px the two option texts overlap
+- Nothing in `apps/web/src` sets a `z-index` except `App.css`, which is not
+  imported
+
+### Readiness Decisions
+
+- Accepted by the owner: the dragged row keeps `opacity-60 shadow-lg`, as Issue
+  #118 proposes, and the rows beneath show through it. Not chosen: an opaque
+  dragged row
+- Accepted by the owner: the return after a cancelled drag is part of ID-47.
+  Not chosen: leaving it out, as not planned or as a follow-up Issue
+- Accepted by the owner: a separate readiness pull request, not readiness and
+  implementation in one
+- Implementation choices, settled in the implementation PR and its review: how
+  the row is raised (for example Tailwind `z-10`; `relative` is not needed);
+  how the raise outlasts the return (for example a `z-index` transition delayed
+  by dnd-kit's 200 ms and merged with the inline `transition` dnd-kit sets, or
+  component state); the form of the component test; the browser tooling
+- Settled during readiness, open to review in this PR: dnd-kit's `DragOverlay`,
+  a separate drag preview layer, is not used. It would rework the drag
+  rendering that ID-6 tuned, and its behaviour here was not checked
+- No architectural or product questions remain open for ID-47.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
