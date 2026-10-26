@@ -155,7 +155,6 @@ adapts to the column rather than moving the column.
 | 44  | Revoke legacy GH CLI OAuth | Ops      | Medium | Design  | Revoke only VPS token if value kept; else decide    |
 | 45  | Design screens in Figma    | Quality  | High   | Design  | Redesign via Figma+AI; scope/apply open, spike next |
 | 46  | Explain voting methods     | Value    | Low    | Ready   | `/faq` + article per method; planned ones labelled  |
-| 47  | Fix drag row z-index       | Quality  | Medium | Ready   | Dragged row on top, incl. its return after a cancel |
 
 ---
 
@@ -184,6 +183,7 @@ adapts to the column rather than moving the column.
 |  42 | Automate tagged releases   | Ops      | High   | v0.2.0 verified; VPS GitHub login removed; revoke → ID-44     |
 |   6 | Mobile responsive layout   | Quality  | Medium | From 320 px: long text wraps; touch drag after press and hold |
 |  41 | Fix backlog lint fixture   | Ops      | Medium | Tests use a fixture backlog; the live file is format-checked  |
+|  47 | Fix drag row z-index       | Quality  | Medium | Dragged row drawn on top, through the return after a cancel   |
 
 ---
 

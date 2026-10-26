@@ -305,4 +305,65 @@ describe('BallotForm dragging', () => {
 
     expect(rankedTexts()).toEqual(['1SushiRank 1 of 3', '2SaladRank 2 of 3', '3PizzaRank 3 of 3']);
   });
+
+  it('raises only the dragged row, lowering it only after the return of a cancel', async () => {
+    await renderLoaded();
+    const pizza = screen.getByText('Pizza');
+    const rows = screen.getAllByRole('listitem');
+
+    fireEvent.mouseDown(pizza, { clientX: 150, clientY: 20 });
+    fireEvent.mouseMove(document, { clientX: 150, clientY: 30 });
+    fireEvent.mouseMove(document, { clientX: 150, clientY: 120 });
+
+    expect(rows.map((row) => row.classList.contains('z-20'))).toEqual([true, false, false]);
+    expect(rows.map((row) => row.classList.contains('z-0'))).toEqual([false, true, true]);
+    expect(rows[0]).toHaveClass('opacity-60', 'shadow-lg');
+    // No z-index entry in the dragged row's transition: it would hold back
+    // the raise itself at the start of the next drag.
+    expect(rows[0].style.transition).not.toContain('z-index');
+
+    // Escape cancels the drag. The row is no longer dragged while dnd-kit's
+    // 200 ms sortable transition brings it back, so z-index must step down
+    // from 20 to 0 only after that long, holding 10 meanwhile. jsdom runs no
+    // CSS transitions, so it observes the declared transition; the paint
+    // order is the PR's browser check.
+    fireEvent.keyDown(document, { code: 'Escape' });
+    expect(rows[0]).not.toHaveClass('opacity-60');
+    expect(rows[0]).toHaveClass('z-0');
+    expect(rows[0].style.transition).toContain('transform 200ms ease');
+    expect(rows[0].style.transition).toContain('z-index 200ms steps(1, jump-both)');
+    expect(rankedTexts()).toEqual(['1PizzaRank 1 of 3', '2SushiRank 2 of 3', '3SaladRank 3 of 3']);
+  });
+
+  it('raises a new drag above a row still returning from a cancel', async () => {
+    await renderLoaded();
+    const rows = screen.getAllByRole('listitem');
+
+    // Sushi is dragged down over Salad and cancelled, then Pizza, above it in
+    // the DOM, is picked up within the 200 ms of Sushi's return. With equal
+    // layers the later row in the DOM paints on top and would hide Pizza.
+    fireEvent.mouseDown(screen.getByText('Sushi'), { clientX: 150, clientY: 70 });
+    fireEvent.mouseMove(document, { clientX: 150, clientY: 80 });
+    fireEvent.mouseMove(document, { clientX: 150, clientY: 120 });
+    fireEvent.keyDown(document, { code: 'Escape' });
+    act(() => vi.advanceTimersByTime(80));
+
+    fireEvent.mouseDown(screen.getByText('Pizza'), { clientX: 150, clientY: 20 });
+    fireEvent.mouseMove(document, { clientX: 150, clientY: 30 });
+    fireEvent.mouseMove(document, { clientX: 150, clientY: 70 });
+    const [pizza, sushi] = rows.map((row) => ({
+      layer: row.className.match(/\bz-\d+\b/)?.[0],
+      transition: row.style.transition,
+    }));
+    fireEvent.keyDown(document, { code: 'Escape' });
+
+    // The new drag is z-20 at once, with no transition holding it back. The
+    // returning row is z-0 on a stepped transition from 20, which holds the
+    // midpoint, 10: above the resting rows, below the new drag. Checked after
+    // the cancel, so a failure cannot leave a drag running into the next test.
+    expect(pizza.layer).toBe('z-20');
+    expect(pizza.transition).not.toContain('z-index');
+    expect(sushi.layer).toBe('z-0');
+    expect(sushi.transition).toContain('z-index 200ms steps(1, jump-both)');
+  });
 });

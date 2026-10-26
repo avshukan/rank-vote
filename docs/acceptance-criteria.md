@@ -4288,15 +4288,15 @@ stays as it is on `main`.
 
 ### Scope
 
-- [ ] While a row is dragged — with a mouse, by touch after a press and hold,
+- [x] While a row is dragged — with a mouse, by touch after a press and hold,
       or with the keyboard — it is drawn above every other row, in both
       directions and over rows of any height
-- [ ] After a cancelled drag — Escape during a mouse or keyboard drag, or a
+- [x] After a cancelled drag — Escape during a mouse or keyboard drag, or a
       cancelled touch — the row stays above the other rows until its return
       animation has brought it back to its place
-- [ ] The dragged row keeps its current look, `opacity-60 shadow-lg`, so the
+- [x] The dragged row keeps its current look, `opacity-60 shadow-lg`, so the
       rows beneath show through it
-- [ ] Drops, the ranking, the sensors, the drag activator, the ↑/↓ buttons and
+- [x] Drops, the ranking, the sensors, the drag activator, the ↑/↓ buttons and
       the touch behaviour from ID-6 stay as they are on `main`
 
 ### Verification
@@ -4307,31 +4307,31 @@ suites out of the MVP. "Hidden" below is the share of points on the dragged
 row's vertical centre line where `document.elementFromPoint` returns another
 row.
 
-- [ ] **Data:** the `long content` poll from `make seed`, served by `make web`
+- [x] **Data:** the `long content` poll from `make seed`, served by `make web`
       and `make api`, or the API stubbed with the same poll
-- [ ] **Drags**, measured mid-drag on `main` and on the branch: with a mouse at
+- [x] **Drags**, measured mid-drag on `main` and on the branch: with a mouse at
       1280 px, "Lisbon, by the river" 90 px down and "Barcelona" 90 px up; by
       touch at 320 px, the URL option held and dragged down over "Porto"; with
       the keyboard at 1280 px, "Lisbon, by the river" picked up with Space and
       moved one place down, sampled every frame of the move. Each is 0% hidden
       on the branch
-- [ ] **Cancels**, sampled every frame for 400 ms after the cancel, on `main`
+- [x] **Cancels**, sampled every frame for 400 ms after the cancel, on `main`
       and on the branch: Escape after the mouse drag down above, Escape after a
       keyboard move two places down, and a cancelled touch after the touch drag
       above. Each is 0% hidden on the branch
-- [ ] **Evidence** in the PR description: the figures for `main` and the
+- [x] **Evidence** in the PR description: the figures for `main` and the
       branch, and before/after screenshots of the mouse drag at 1280 px and the
       touch drag at 320 px
-- [ ] **Tests:** the `BallotForm dragging` suite gains a component test that a
+- [x] **Tests:** the `BallotForm dragging` suite gains a component test that a
       dragged row is raised and the other rows are not, and that the raise
       outlasts a cancel until the return ends, as far as jsdom can observe it.
       jsdom neither paints nor runs CSS transitions, so the browser checks are
       the paint-order evidence. The existing suites stay green
-- [ ] `make verify` passes
+- [x] `make verify` passes
 
 ### Documentation
 
-- [ ] `docs/11-testing-strategy.md` names the new check among the ballot
+- [x] `docs/11-testing-strategy.md` names the new check among the ballot
       dragging component tests
 
 ### Out of Scope (tracked separately)

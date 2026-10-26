@@ -127,9 +127,14 @@ Focus:
 - results page renders winner, score table and the zero-ballot state
 - loading and error/retry states of pages that fetch
 - ballot dragging: a touch swipe is left to scroll the page, a press and hold
-  starts a touch drag, a mouse drag starts after 8 px, and a dragged row keeps
-  its own height over taller and shorter rows. jsdom has no layout, so these
-  tests give each ranking row a stubbed box
+  starts a touch drag, a mouse drag starts after 8 px, a dragged row keeps
+  its own height over taller and shorter rows, and only the dragged row is
+  raised (`z-20`). After a cancel the row holds a middle layer through a
+  stepped transition until its return ends, so a drag started meanwhile is
+  still raised above it. jsdom has no layout, so these tests give each
+  ranking row a stubbed box; it paints nothing and runs no transitions, so
+  the layers are observed as the classes and the declared transition, and
+  the paint order itself is checked in the browser
 
 Framework: Vitest + React Testing Library
 
