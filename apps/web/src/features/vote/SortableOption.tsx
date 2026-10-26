@@ -2,6 +2,14 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { PollOptionDto } from '@rank-vote/shared';
 
+// After a cancelled drag the row is no longer dragged while dnd-kit's default
+// sortable transition (200 ms ease) animates it back, so the raise must come
+// down only after that return: z-index falls from 10 to 0 through a delayed
+// transition of its own, merged with the inline transition dnd-kit sets. A
+// transition runs with the after-change style, so the entry is left out while
+// the drag is active — there the delay would hold back the raise itself.
+const LOWER_AFTER_RETURN = 'z-index 0s linear 200ms';
+
 interface SortableOptionProps {
   option: PollOptionDto;
   rank: number;
@@ -24,9 +32,18 @@ export function SortableOption({ option, rank, total, onMoveUp, onMoveDown }: So
       ref={setNodeRef}
       // Translate only: dnd-kit also scales the dragged row to the size of the
       // row under it, which stretches or squashes rows of different heights.
-      style={{ transform: CSS.Translate.toString(transform), transition }}
+      style={{
+        transform: CSS.Translate.toString(transform),
+        transition: isDragging
+          ? transition
+          : [transition, LOWER_AFTER_RETURN].filter(Boolean).join(', '),
+      }}
+      // During a drag every row carries a transform, so rows paint in DOM
+      // order and a row dragged downward slides under the rows after it
+      // (#118); z-10 raises the dragged row above the rest. No `position`
+      // needed: the rows are flex items of the ranking list.
       className={`flex items-center gap-3 rounded border border-gray-300 bg-white px-3 py-2 ${
-        isDragging ? 'opacity-60 shadow-lg' : ''
+        isDragging ? 'z-10 opacity-60 shadow-lg' : 'z-0'
       }`}
     >
       <span aria-hidden="true" className="w-6 shrink-0 text-center font-semibold text-gray-500">

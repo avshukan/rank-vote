@@ -305,4 +305,30 @@ describe('BallotForm dragging', () => {
 
     expect(rankedTexts()).toEqual(['1SushiRank 1 of 3', '2SaladRank 2 of 3', '3PizzaRank 3 of 3']);
   });
+
+  it('raises only the dragged row, lowering it only after the return of a cancel', async () => {
+    await renderLoaded();
+    const pizza = screen.getByText('Pizza');
+    const rows = screen.getAllByRole('listitem');
+
+    fireEvent.mouseDown(pizza, { clientX: 150, clientY: 20 });
+    fireEvent.mouseMove(document, { clientX: 150, clientY: 30 });
+    fireEvent.mouseMove(document, { clientX: 150, clientY: 120 });
+
+    expect(rows.map((row) => row.classList.contains('z-10'))).toEqual([true, false, false]);
+    expect(rows[0]).toHaveClass('opacity-60', 'shadow-lg');
+    // No z-index entry in the dragged row's transition: its 200 ms delay
+    // would hold back the raise itself at the start of the next drag.
+    expect(rows[0].style.transition).not.toContain('z-index');
+
+    // Escape cancels the drag. The row is no longer dragged while dnd-kit's
+    // 200 ms sortable transition brings it back, so z-index must fall only
+    // after that long a delay. jsdom runs no CSS transitions, so it observes
+    // the declared delay; the paint order is the PR's browser check.
+    fireEvent.keyDown(document, { code: 'Escape' });
+    expect(rows[0]).not.toHaveClass('opacity-60');
+    expect(rows[0].style.transition).toContain('transform 200ms ease');
+    expect(rows[0].style.transition).toContain('z-index 0s linear 200ms');
+    expect(rankedTexts()).toEqual(['1PizzaRank 1 of 3', '2SushiRank 2 of 3', '3SaladRank 3 of 3']);
+  });
 });
