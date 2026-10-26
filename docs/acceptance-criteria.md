@@ -3071,7 +3071,7 @@ promotion, the workflows and the backlog `Format` stay unchanged.
       ID-8 reworded; (3) every `Todo` row moved to `Done`, leaving `Todo` empty
 - [x] A broken `docs/backlog.md`, for example a misaligned row, still fails
       `docs/backlog.md follows its fixed-width Format rules`
-- [ ] `make verify` passes
+- [x] `make verify` passes
 
 ### Baseline on `main`
 
