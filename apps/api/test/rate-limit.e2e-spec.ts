@@ -233,7 +233,7 @@ describe('Write rate limits (e2e)', () => {
     await request(server)
       .get(`/api/v1/polls/${firstPoll.id}/results`)
       .expect(200);
-    await request(server).get('/api/v1').expect(200);
+    await request(server).get('/api/v1').expect(404);
     await request(server).get('/api/v1/health').expect(200);
     await request(server)
       .options('/api/v1/polls')

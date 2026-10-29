@@ -5,7 +5,7 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { configureApp } from './../src/app.setup';
 
-describe('AppController (e2e)', () => {
+describe('AppModule (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
@@ -18,12 +18,19 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/api/v1 (GET) keeps the scaffold endpoint', () => {
-    return request(app.getHttpServer())
-      .get('/api/v1')
-      .expect(200)
-      .expect('Hello World!');
-  });
+  it.each(['/api/v1', '/api/v1/'])(
+    '%s (GET) has no root endpoint and returns the standard 404',
+    (path) => {
+      return request(app.getHttpServer())
+        .get(path)
+        .expect(404)
+        .expect({
+          message: `Cannot GET ${path}`,
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    },
+  );
 
   it('/api/v1/health (GET) returns the liveness contract', () => {
     return request(app.getHttpServer())

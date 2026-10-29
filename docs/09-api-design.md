@@ -10,6 +10,10 @@ Backlog #29 publishes this prefix at
 `https://rankvote.avshukan.com/api/v1`, where release `v0.1.0` was deployed on
 2026-09-19.
 
+The prefix has no root endpoint. `GET /api/v1` and `GET /api/v1/` answer like
+any unknown path under it, with the standard NestJS `404` (see
+[Error Response Format](#error-response-format)).
+
 ---
 
 ## Product Endpoints
@@ -397,9 +401,7 @@ not query PostgreSQL or any other dependency and therefore does not promise
 readiness. Container orchestration may use it as a liveness signal. Backlog #33
 owns dependency-aware health, external monitoring and alerting.
 
-The scaffold `GET /api/v1` endpoint is not a health contract and remains tracked
-for removal in #30. The liveness route is implemented separately from that
-scaffold and does not add a shared product DTO.
+The liveness route does not add a shared product DTO.
 
 ---
 
