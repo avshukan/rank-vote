@@ -91,7 +91,11 @@ def main():
             invalid = runner.run([*caddy_command, "reload", "--config", "-", "--adapter", "caddyfile"],
                                  input_text="{ definitely_invalid_directive }", allow_failure=True)
             require(invalid.returncode != 0, "Invalid Caddy reload unexpectedly succeeded")
-            require(request(origin + "/api/v1")[0] == 200, "Exact API prefix not routed")
+            # The API has no root endpoint, so only it answers the exact prefix with a
+            # JSON 404; web's SPA fallback would answer 200 with index.html.
+            status, text, headers = request(origin + "/api/v1")
+            json_type = any(key.lower() == "content-type" and "json" in value for key, value in headers.items())
+            require(status == 404 and json_type and json.loads(text).get("statusCode") == 404, "Exact API prefix not routed")
             require(request(origin + "/", headers={"Host": "existing.test"})[1] == "existing-site", "Existing Caddy site changed")
             proxy_probe(origin)
             # A second socket peer from a disposable container must get its own

@@ -1,8 +1,8 @@
 # @rank-vote/api
 
 The rank-vote backend: NestJS + Prisma. The product API has four documented
-endpoints under `/api/v1`; the current Nest scaffold also exposes
-`GET /api/v1` returning `Hello World!` until backlog #30 removes it. Part of the
+endpoints under `/api/v1`; the prefix itself has no root endpoint, so
+`GET /api/v1` returns the standard `404`. Part of the
 [rank-vote](../../README.md) monorepo — run it from the repository root
 (`make api`), not from here.
 
