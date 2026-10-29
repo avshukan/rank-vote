@@ -3126,44 +3126,44 @@ the shared package stay unchanged.
 
 ### Scope
 
-- [ ] `AppController`, `AppService` and their unit test
+- [x] `AppController`, `AppService` and their unit test
       `app.controller.spec.ts` are deleted, and nothing replaces them
-- [ ] `AppModule` registers no root controller or provider and keeps the
+- [x] `AppModule` registers no root controller or provider and keeps the
       `OnModuleDestroy` HTTP drain from ID-35 unchanged
-- [ ] `GET /api/v1` and `GET /api/v1/` return `404` with the standard error
+- [x] `GET /api/v1` and `GET /api/v1/` return `404` with the standard error
       shape (`statusCode: 404`, `error: "Not Found"`), like any unknown path
       under the prefix
-- [ ] `GET /api/v1/health`, the four product endpoints, `packages/shared` and
+- [x] `GET /api/v1/health`, the four product endpoints, `packages/shared` and
       the web client are unchanged
-- [ ] `deploy/Caddyfile.rank-vote` is unchanged: Caddy still routes the exact
+- [x] `deploy/Caddyfile.rank-vote` is unchanged: Caddy still routes the exact
       `/api/v1` path and all descendants to the API, as ID-29 requires. No
       owner-operated production step is added; the change reaches production
       with the next ordinary release
-- [ ] `probe.smoke()` in `scripts/production/probe.py` gets no assertion about
+- [x] `probe.smoke()` in `scripts/production/probe.py` gets no assertion about
       `GET /api/v1`. `make prod-rollback` runs it from the current tooling
       against the previous release's images, so a rollback to a release that
       still serves the scaffold, such as `v0.2.0`, still verifies
-- [ ] `docs/09-api-design.md` and `apps/api/README.md` no longer describe the
+- [x] `docs/09-api-design.md` and `apps/api/README.md` no longer describe the
       scaffold. The API design states that the `/api/v1` prefix has no root
       endpoint and that the path returns the standard `404`
 
 ### Verification
 
-- [ ] **API e2e:** `test/app.e2e-spec.ts` replaces the test that keeps the
+- [x] **API e2e:** `test/app.e2e-spec.ts` replaces the test that keeps the
       scaffold with one asserting the standard `404` from `GET /api/v1`; the
       liveness test stays
-- [ ] **API e2e:** `test/app.e2e-spec.ts` also asserts the standard NestJS
+- [x] **API e2e:** `test/app.e2e-spec.ts` also asserts the standard NestJS
       `404` from `GET /api/v1/`, the prefix with a trailing slash
-- [ ] **API e2e:** in `test/rate-limit.e2e-spec.ts`, the check of routes that
+- [x] **API e2e:** in `test/rate-limit.e2e-spec.ts`, the check of routes that
       are not rate-limited expects `404` from `GET /api/v1` once the write
       buckets are exhausted, instead of the scaffold's `200`; a `429` fails it
-- [ ] **Production smoke:** the exact-prefix check in
+- [x] **Production smoke:** the exact-prefix check in
       `scripts/production/container_smoke.py` expects the API's JSON `404`
       instead of `200`. It still fails when Caddy sends the exact path to web,
       whose SPA fallback answers `200` with `index.html`
-- [ ] `make verify`, `make prod-check` and `make prod-smoke` pass, as required
+- [x] `make verify`, `make prod-check` and `make prod-smoke` pass, as required
       for a production tooling change; CI `checks` and `containers` are green
-- [ ] **Manual:** against `make api`, `GET /api/v1` returns `404` with the JSON
+- [x] **Manual:** against `make api`, `GET /api/v1` returns `404` with the JSON
       error, `GET /api/v1/health` returns `{"status":"ok"}`, and creating a
       poll, submitting a ballot and reading its results still work
 

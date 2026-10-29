@@ -135,7 +135,6 @@ adapts to the column rather than moving the column.
 | 10  | Compare counting methods   | Value    | Medium | —       | Show different winners; needs ID-8, ID-9            |
 | 25  | Unify eslint and TS majors | Refactor | Medium | Ready   | ESLint 10 + TS 6.0 everywhere; guarded pnpm catalog |
 | 26  | Extract page fetch/retry   | Refactor | Medium | —       | BallotForm/ResultsView duplicate load/404/retry     |
-| 30  | Drop the scaffold endpoint | Refactor | Medium | Ready   | Remove scaffold `GET /api/v1`; prod smoke checks it |
 | 32  | Automate offsite backups   | Ops      | High   | Ready   | Daily dump to R2; 30d lock, 90d keep; email alerts  |
 | 33  | Add production monitoring  | Ops      | High   | Design  | Readiness, uptime, disk alerts; uptime service open |
 | 34  | Share rate-limit state     | Quality  | Low    | —       | Shared counters before API replicas >1              |
@@ -184,6 +183,7 @@ adapts to the column rather than moving the column.
 |   6 | Mobile responsive layout   | Quality  | Medium | From 320 px: long text wraps; touch drag after press and hold |
 |  41 | Fix backlog lint fixture   | Ops      | Medium | Tests use a fixture backlog; the live file is format-checked  |
 |  47 | Fix drag row z-index       | Quality  | Medium | Dragged row drawn on top, through the return after a cancel   |
+|  30 | Drop the scaffold endpoint | Refactor | Medium | Scaffold `GET /api/v1` removed; the prefix root answers `404` |
 
 ---
 
