@@ -4389,6 +4389,126 @@ in headless Chromium (Playwright build 1228), with the API stubbed with the
 
 ---
 
+## ID-49 Add manual triage dispatch
+
+The existing `.github/workflows/issue-triage.md` runs on `issues.opened`
+and posts a recommend-only comment. ID-49 adds a fresh manual AI triage run
+for an eligible existing Issue using the same workflow.
+Backlog promotion's trust checks and behaviour do not change; only its
+recovery hint does.
+
+### Scope
+
+- [ ] Keep the existing `issues.opened` trigger and its eligibility rules.
+      Add `workflow_dispatch` to the same gh-aw workflow, with required
+      `issue_number` input.
+- [ ] Any user permitted to run GitHub Actions in the repository can initiate
+      manual triage. Do not add an owner-only authorization check.
+- [ ] Manual triage reads the selected Issue's current title and body from
+      this repository. Treat Issue content as untrusted and reuse the existing
+      AI prompt, repository context checks, verdict and recommendation format.
+- [ ] On both paths the prompt names the target Issue number and excludes
+      that Issue from its duplicate search.
+- [ ] A manual target is eligible only if it is an open Issue authored by a
+      user who currently has write, maintain or admin permission (the roles
+      that gate the automatic path) and with no existing AI triage
+      recommendation. Closed Issues, pull requests, Issues by other authors
+      (including bots and deleted accounts) and already-triaged Issues are
+      ineligible.
+- [ ] An existing AI triage recommendation is a comment that
+      `findTriageComments` in `scripts/backlog-promotion.mjs` recognizes, the
+      same definition promotion uses. Eligibility reuses it rather than a
+      separate heuristic.
+- [ ] A manual-run `Keep` recommendation is recognized by `findTriageComments`
+      and parsed by `parseTriage`, so `triage: accepted` promotes it exactly
+      like an automatic one.
+- [ ] Missing, malformed, nonexistent or inaccessible Issue numbers and
+      ineligible targets fail or skip safely without invoking Copilot or
+      posting a comment to any Issue.
+- [ ] A successful manual run posts exactly one recommendation on the selected
+      Issue, never on another Issue or an unintended target.
+- [ ] Runs for the same Issue, automatic or manual, are serialized, and
+      eligibility is checked before Copilot is invoked, so a repeated or
+      concurrent dispatch finds the earlier recommendation and stops without
+      invoking AI or commenting.
+- [ ] Promotion's refusal for an Issue without a recommendation names manual
+      triage dispatch as the recovery step instead of re-running the failed
+      run; its test covers the new text.
+- [ ] Both trigger paths remain recommendation-only. Neither changes Issue
+      state or labels, accepts `triage: accepted`, nor promotes backlog items.
+      Retain the existing Copilot model, spending safeguards, threat detection,
+      and `safe-outputs` security restrictions.
+
+### Verification
+
+- [ ] Compile the gh-aw source using the repository-pinned compiler version
+      (`v0.89.21` at readiness), and commit the generated
+      `.github/workflows/issue-triage.lock.yml`.
+- [ ] Deterministic tests or checks cover the automatic and manual paths,
+      retrieval of current Issue content, correct comment targeting,
+      missing/invalid/inaccessible/closed/outside-authored/already-triaged
+      input, and repeated or concurrent dispatches. Invalid cases must not
+      invoke AI or comment.
+- [ ] The normal `issues.opened` route still produces the existing
+      recommendation format, and manual triage publishes the same format.
+- [ ] A test passes a manual-run comment fixture (body and the gh-aw markers
+      the dispatch path emits) through `findTriageComments` and `parseTriage`.
+- [ ] `make verify` and applicable gh-aw workflow checks pass.
+- [ ] **Post-merge live verification:** a user with GitHub Actions run
+      permission dispatches triage for Issue #123 and verifies that exactly
+      one AI recommendation is posted there, and `findTriageComments`
+      recognizes exactly one comment on #123 (read-only; do not apply
+      `triage: accepted`). If #123 is no longer eligible, do not bypass the
+      guard; report that the selected probe could not run.
+
+### Documentation
+
+- [ ] `docs/backlog.md` (Workflow), `docs/07-process.md` and
+      `docs/12-ai-first.md` describe manual dispatch as the way to triage an
+      eligible Issue that has no recommendation.
+- [ ] The "Automatic issue triage recommendation" ADR in
+      `docs/06-decisions.md` covers the manual path: one comment on the
+      triggering or selected Issue, and manual eligibility (decision A).
+
+### Out of Scope (tracked separately)
+
+- Owner-authored recommendations and their deterministic promotion fallback
+  are Issue #123, not ID-49.
+- Rerunning failed jobs as a recovery mechanism, additional AI providers,
+  changes to spending policy, and new workflow labels/states are not ID-49.
+
+### Baseline on `main`
+
+At readiness (`67be180`), the source workflow has only `issues.opened`.
+The generated workflow references `github.event.issue.number`, while its
+safe-output comment uses `target: triggering`. Its concurrency group is
+keyed on `github.event.issue.number || github.run_id`, so a dispatch run,
+which has no `event.issue`, would get a group of its own and could run
+alongside another run for the same Issue. Issue #139 documents a Copilot
+`429` and a subsequent job rerun failing at `Download activation
+artifact`. There is no manual dispatch for an existing Issue. Issue #123
+is open with no comments at readiness.
+
+### Readiness Decisions
+
+- **Accepted (A):** manual triage is limited to open Issues authored by a user
+  with write access and with no existing AI triage recommendation. Closed,
+  already-triaged and outside-authored Issues are excluded.
+- **Accepted (B):** every user permitted to launch GitHub Actions workflows
+  may invoke manual triage; no separate owner-only gate is required.
+- **Accepted (C):** run a live verification against Issue #123 after the
+  implementation PR is merged. The eligibility guard remains in force.
+- **Residual risk (D):** an Issue closed while the agent runs may still receive
+  the recommendation. Triage changes nothing else, and promotion refuses
+  closed Issues. Mid-run closure need not be intercepted by replacing
+  gh-aw's built-in `add-comment`; this is not a new owner approval.
+- **Implementation judgment, not an owner decision:** how gh-aw retrieves and
+  sanitizes the selected Issue, targets the correct safe-output comment,
+  serializes runs per Issue, and supports deterministic verification.
+- No product or architectural decisions remain open for ID-49.
+
+---
+
 ## Not specified yet
 
 Open backlog items with no criteria in this file. Listed so the gap is visible;
