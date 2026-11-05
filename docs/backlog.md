@@ -164,6 +164,7 @@ adapts to the column rather than moving the column.
 | 48  | Add error tracking         | Ops      | High   | —       | API+web SDK; data policy decision required          |
 | 50  | Manual triage fallback     | Ops      | Medium | —       | Extend promotion to accept owner-authored triage    |
 | 51  | Move to TypeScript 7       | Ops      | Medium | —       | Needs ID-25; ts-eslint, ts-jest, NestJS CLI TS 7    |
+| 52  | Upgrade API to NestJS 12   | Ops      | Medium | —       | Breaking changes unassessed; needs ID-25 first      |
 
 ---
 
