@@ -154,6 +154,7 @@ adapts to the column rather than moving the column.
 | 44  | Revoke legacy GH CLI OAuth | Ops      | Medium | Design  | Revoke only VPS token if value kept; else decide    |
 | 45  | Design screens in Figma    | Quality  | High   | Design  | Redesign via Figma+AI; scope/apply open, spike next |
 | 46  | Explain voting methods     | Value    | Low    | Ready   | `/faq` + article per method; planned ones labelled  |
+| 49  | Add manual triage dispatch | Ops      | Medium | —       | Add workflow_dispatch trigger to retry AI triage    |
 
 ---
 
