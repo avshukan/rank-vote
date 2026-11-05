@@ -126,10 +126,17 @@ Examples:
   the owner-authorized setting update for #29 was applied on 2026-09-16
 - Issue triage (`.github/workflows/issue-triage.md`, a GitHub Agentic Workflow
   compiled to `issue-triage.lock.yml`) posts one recommend-only comment on each
-  eligible newly opened Issue and changes nothing else. It is not a required
-  check. It needs the owner-managed `COPILOT_GITHUB_TOKEN` repository secret,
-  created as described in the gh-aw
-  [authentication docs](https://github.github.com/gh-aw/reference/auth/)
+  eligible newly opened Issue and changes nothing else. Manual triage dispatch
+  (**Run workflow** with an `issue_number`) gives an eligible Issue that has no
+  recommendation its comment, for example after a failed automatic run; anyone
+  who can run workflows may start it. On both triggers a deterministic guard,
+  `scripts/issue-triage-eligibility.mjs`, runs before Copilot and stops the run
+  unless the Issue is open, opened by someone who now has write access, and has
+  no recommendation yet; runs for one Issue queue behind each other. To recover
+  from a failed run, dispatch again: re-running only its failed jobs reuses the
+  earlier eligibility result. It is not a required check. It needs the
+  owner-managed `COPILOT_GITHUB_TOKEN` repository secret, created as described
+  in the gh-aw [authentication docs](https://github.github.com/gh-aw/reference/auth/)
 - Backlog promotion (`.github/workflows/backlog-promotion.yml`, a plain,
   deterministic workflow) runs when a repository admin applies the
   `triage: accepted` label. It turns the accepted recommendation into `Todo`

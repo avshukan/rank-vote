@@ -890,15 +890,35 @@ Chosen:
 - GitHub Agentic Workflows (`.github/workflows/issue-triage.md`) with the
   Copilot engine
 - the agent is read-only; its only write is one safe `add-comment` on the
-  triggering Issue
+  triggering Issue or, for a manual dispatch, on the selected Issue. The
+  workflow configuration fixes that target; the agent cannot choose another
 - default trigger roles, so only eligible Issues (opened by someone with write
   access) are triaged automatically
 - recommend-only: the owner decides, and backlog promotion stays a separate step
+- **Updated 2026-11-05 (ID-49):** manual triage dispatch, `workflow_dispatch`
+  with a required `issue_number`, triages an existing Issue. Eligible is an open
+  Issue of this repository whose author now has write, maintain or admin access
+  and that has no recommendation yet, as `findTriageComments` in
+  `scripts/backlog-promotion.mjs` defines one (decision A). Anyone allowed to
+  run workflows may dispatch; there is no owner-only gate (decision B). A
+  deterministic guard, `scripts/issue-triage-eligibility.mjs`, checks this in
+  gh-aw's pre-activation job on both triggers before Copilot runs, and one
+  concurrency queue per Issue serializes automatic and manual runs. A manual
+  run hands the agent the Issue's current text through gh-aw's own sanitizer.
+  Manual runs keep the per-run AI-credit caps, but gh-aw skips its daily
+  per-workflow AI-credit guardrail for every `workflow_dispatch` run
 
 Rejected:
 
 - alternatives that give the agent direct, write-capable repository access —
   rejected for a narrower trust boundary
+- re-running a failed run's jobs as the recovery step — a partial re-run reuses
+  the earlier eligibility result, and #139 shows one failing to download the
+  activation artifact
+- replacing gh-aw's built-in `add-comment` to recheck the Issue just before
+  posting — an Issue closed while the agent runs may still get its
+  recommendation; triage changes nothing else and promotion refuses closed
+  Issues, so that risk is accepted (decision D)
 
 ### Automatic backlog promotion
 

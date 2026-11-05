@@ -79,10 +79,11 @@ for independent slices.
 
 Done: eligible newly opened Issues receive an automatic, recommend-only triage
 comment from `.github/workflows/issue-triage.md` (GitHub Agentic Workflows,
-read-only agent, one safe `add-comment`). Applying the `triage: accepted` label
-then starts deterministic backlog promotion
-(`.github/workflows/backlog-promotion.yml`), which opens a pull request for the
-owner to review and merge. Backlog sweeps (ID-39) keep `Todo` current: the
+read-only agent, one safe `add-comment`); an eligible Issue that has no
+recommendation gets one through a manual dispatch of the same workflow (ID-49).
+Applying the `triage: accepted` label then starts deterministic backlog
+promotion (`.github/workflows/backlog-promotion.yml`), which opens a pull
+request for the owner to review and merge. Backlog sweeps (ID-39) keep `Todo` current: the
 `backlog-sweep` skill reviews every item and only recommends, and the
 deterministic `.github/workflows/backlog-sweep.yml` requests sweeps on one
 persistent tracker Issue — it never runs a sweep itself.
