@@ -162,6 +162,7 @@ adapts to the column rather than moving the column.
 | 45  | Design screens in Figma    | Quality  | High   | Design  | Redesign via Figma+AI; scope/apply open, spike next |
 | 46  | Explain voting methods     | Value    | Low    | Ready   | `/faq` + article per method; planned ones labelled  |
 | 48  | Add error tracking         | Ops      | High   | —       | API+web SDK; data policy decision required          |
+| 50  | Manual triage fallback     | Ops      | Medium | —       | Extend promotion to accept owner-authored triage    |
 
 ---
 
