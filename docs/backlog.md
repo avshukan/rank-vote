@@ -155,6 +155,7 @@ adapts to the column rather than moving the column.
 | 45  | Design screens in Figma    | Quality  | High   | Design  | Redesign via Figma+AI; scope/apply open, spike next |
 | 46  | Explain voting methods     | Value    | Low    | Ready   | `/faq` + article per method; planned ones labelled  |
 | 48  | Add error tracking         | Ops      | High   | —       | API+web SDK; data policy decision required          |
+| 49  | Add manual triage dispatch | Ops      | Medium | —       | Add workflow_dispatch trigger to retry AI triage    |
 
 ---
 
