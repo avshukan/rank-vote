@@ -22,6 +22,7 @@ import {
   run,
   validateEntries,
 } from './backlog-promotion.mjs';
+import { manualDispatchComment } from './fixtures/triage-comments.mjs';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // docs/backlog.md itself is read only to check its format and the triage
@@ -524,6 +525,30 @@ test('only the issue-triage workflow comment counts as the recommendation', () =
   assert.deepEqual(findTriageComments(comments, 'someone/fork'), []);
 });
 
+test('a manual-dispatch recommendation is recognized and parsed like an automatic one', () => {
+  const comment = manualDispatchComment();
+  // An automatic run's footer names the triggering Issue; a dispatch has none.
+  assert.doesNotMatch(comment.body, /\) for #\d+/);
+  assert.match(ISSUE_62_TRIAGE, /\) for #62 /);
+
+  assert.deepEqual(findTriageComments([comment], REPOSITORY), [comment]);
+  const parsed = parseTriage(comment.body);
+  assert.deepEqual(parsed.verdicts, ['Keep']);
+  assert.deepEqual(parsed.duplicates, []);
+  const { entries, problems } = validateEntries(parsed, parseBacklog(fixtureBacklog));
+  assert.deepEqual(problems, []);
+  assert.deepEqual(entries, [
+    {
+      Title: 'Add short poll links',
+      Type: 'Quality',
+      Level: 'Low',
+      State: '—',
+      Notes: 'Short IDs for poll URLs; needs a redirect',
+      dependencies: 'ID-2',
+    },
+  ]);
+});
+
 test('a recommendation is parsed as written, including a split', () => {
   const parsed = parseTriage(triageBody({ entries: [{}, { Title: 'Second item', Notes: 'Two' }] }));
 
@@ -661,6 +686,16 @@ test('an accepted Issue becomes a Todo row on a new branch and a pull request', 
   assert.deepEqual(core.notices, [`Opened https://github.com/${REPOSITORY}/pull/70`]);
 });
 
+test('triage: accepted promotes a manual-dispatch recommendation like an automatic one', async () => {
+  const github = fakeGitHub({ comments: [manualDispatchComment()] });
+  const { result, core } = await promote62(github);
+
+  assert.equal(result.outcome, 'promoted');
+  assert.equal(result.plan.comment.id, manualDispatchComment().id);
+  assert.equal(result.plan.title, 'backlog: promote #62 — Add short poll links');
+  assert.equal(core.failed, null);
+});
+
 test('a promotion appends to Todo and leaves Cancelled rows unchanged', async () => {
   const highest = maxBacklogId(parseBacklog(fixtureBacklog)) + 50;
   const backlog = withCancelled(
@@ -770,7 +805,7 @@ const refusals = [
     'an Issue without a triage recommendation',
     { comments: [triageComment(undefined, { user: { login: 'avshukan', type: 'User' } })] },
     /has no triage recommendation from the `issue-triage` workflow/,
-    /re-run it from the Actions tab, then remove and re-apply/,
+    /Request one with a manual triage dispatch: run the \*\*Issue triage recommendation\*\* workflow from the Actions tab with `issue_number: 62`\. Once it has posted, remove and re-apply the `triage: accepted` label .*Manual triage takes only an open Issue opened by someone with write access; for any other Issue, add the backlog row by hand/,
   ],
   [
     'two triage recommendations',

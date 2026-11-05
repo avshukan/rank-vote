@@ -45,6 +45,13 @@
   comment from `.github/workflows/issue-triage.md`; it changes nothing else and
   for `Keep` recommendations ends with an owner instruction to apply the
   `triage: accepted` label to accept and promote the item.
+- An eligible Issue without a recommendation — open, and opened by someone who
+  now has write access — gets one through manual triage dispatch, for example
+  after a failed automatic run: run the same workflow from the Actions tab with
+  the Issue's `issue_number`. Anyone who can run workflows may start it. Every
+  run checks eligibility before the agent starts, and runs for one Issue wait
+  for each other, so a repeated dispatch finds the earlier recommendation and
+  stops.
 - The repository owner decides. Applying the `triage: accepted` label (repository
   admins only) starts backlog promotion, `.github/workflows/backlog-promotion.yml`:
   it appends the recommendation's candidate entries, exactly as written, to the
@@ -155,7 +162,6 @@ adapts to the column rather than moving the column.
 | 45  | Design screens in Figma    | Quality  | High   | Design  | Redesign via Figma+AI; scope/apply open, spike next |
 | 46  | Explain voting methods     | Value    | Low    | Ready   | `/faq` + article per method; planned ones labelled  |
 | 48  | Add error tracking         | Ops      | High   | —       | API+web SDK; data policy decision required          |
-| 49  | Add manual triage dispatch | Ops      | Medium | Ready   | Add workflow_dispatch trigger to retry AI triage    |
 
 ---
 
@@ -186,6 +192,7 @@ adapts to the column rather than moving the column.
 |  41 | Fix backlog lint fixture   | Ops      | Medium | Tests use a fixture backlog; the live file is format-checked  |
 |  47 | Fix drag row z-index       | Quality  | Medium | Dragged row drawn on top, through the return after a cancel   |
 |  30 | Drop the scaffold endpoint | Refactor | Medium | Scaffold `GET /api/v1` removed; the prefix root answers `404` |
+|  49 | Add manual triage dispatch | Ops      | Medium | Dispatch triage by `issue_number`; guard runs before Copilot  |
 
 ---
 

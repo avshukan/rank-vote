@@ -616,9 +616,10 @@ async function planPromotion({ github, context, issueNumber }) {
   if (triage.length === 0) {
     throw refuse(
       `Issue #${issueNumber} has no triage recommendation from the \`${TRIAGE_WORKFLOW_ID}\` workflow.`,
-      'The Issue triage workflow comments only on eligible newly opened Issues. If its run for this ' +
-        `Issue failed, re-run it from the Actions tab, then ${retry} Otherwise add the backlog row ` +
-        'by hand in a docs pull request.',
+      'Request one with a manual triage dispatch: run the **Issue triage recommendation** workflow ' +
+        `from the Actions tab with \`issue_number: ${issueNumber}\`. Once it has posted, ${retry} ` +
+        'Manual triage takes only an open Issue opened by someone with write access; for any ' +
+        'other Issue, add the backlog row by hand in a docs pull request.',
     );
   }
   if (triage.length > 1) {
