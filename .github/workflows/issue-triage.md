@@ -1,9 +1,56 @@
 ---
-description: Recommend-only triage comment on eligible newly opened issues
+description: Recommend-only triage comment on an eligible Issue, when it is opened or on manual dispatch
 on:
   issues:
     types: [opened]
+  # Manual triage of an existing Issue, for example after a failed automatic
+  # run. Anyone allowed to run workflows in this repository can start it.
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: An open Issue, opened by someone with write access, with no triage recommendation yet
+        required: true
+        type: number
   reaction: none
+  # The eligibility guard, scripts/issue-triage-eligibility.mjs, runs on both
+  # triggers before Copilot is invoked: only an eligible Issue activates the
+  # agent. On `issues` events the prompt uses gh-aw's own sanitized event text;
+  # a dispatch has none, so the guard hands over the selected Issue's current
+  # text, cleaned by the same gh-aw sanitizer. One of the two is always empty.
+  permissions:
+    contents: read # check out the guard
+    issues: read # read the Issue and its comments
+  steps:
+    - name: Check out the eligibility check
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+        sparse-checkout: scripts
+    - name: Check triage eligibility
+      id: eligibility
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      with:
+        script: |
+          const path = require('path');
+          const actionsDir = path.join(process.env.RUNNER_TEMP, 'gh-aw', 'actions');
+          const { setupGlobals } = require(path.join(actionsDir, 'setup_globals.cjs'));
+          setupGlobals(core, github, context, exec, io, getOctokit);
+          const { sanitizeIncomingText } = require(path.join(actionsDir, 'sanitize_incoming_text.cjs'));
+          const { run } = await import(`${process.env.GITHUB_WORKSPACE}/scripts/issue-triage-eligibility.mjs`);
+          await run({ github, context, core, sanitize: sanitizeIncomingText });
+jobs:
+  pre-activation:
+    outputs:
+      eligible: ${{ steps.eligibility.outputs.eligible }}
+      issue_number: ${{ steps.eligibility.outputs.issue_number }}
+      issue_text: ${{ steps.eligibility.outputs.issue_text }}
+if: needs.pre_activation.outputs.eligible == 'true'
+# One run per Issue at a time, automatic or manual: a repeated dispatch starts
+# only after the earlier run has finished, and its guard then finds the comment.
+concurrency:
+  group: 'gh-aw-${{ github.workflow }}-${{ github.event.issue.number || github.event.inputs.issue_number || github.run_id }}'
+  queue: max
+  job-discriminator: ${{ github.event.issue.number || github.event.inputs.issue_number || github.run_id }}
 permissions:
   contents: read
   issues: read
@@ -20,7 +67,9 @@ tools:
 safe-outputs:
   add-comment:
     max: 1
-    target: triggering
+    # The opened Issue, or the dispatch input the guard has validated; never a
+    # number the agent supplies.
+    target: ${{ github.event.issue.number || github.event.inputs.issue_number }}
     pull-requests: false
     discussions: false
   activation-comments: false
@@ -41,16 +90,16 @@ safe-outputs:
 
 # Issue triage recommendation
 
-You triage one newly opened GitHub Issue in this repository and post exactly
-one recommendation comment on it. You only recommend: the repository owner
-makes every decision, and backlog promotion — turning a kept idea into a
+You triage one GitHub Issue of this repository, the Issue below, and post
+exactly one recommendation comment on it. You only recommend: the repository
+owner makes every decision, and backlog promotion — turning a kept idea into a
 `docs/backlog.md` row — is a separate, later step that you never perform.
 
 ## Hard limits
 
-- Your only output is one `add_comment` call on the triggering Issue. Make it
-  exactly once, even when the Issue is empty, vague or off-topic — then say so
-  in the comment.
+- Your only output is one `add_comment` call; the workflow posts it on the
+  Issue below. Make it exactly once, even when the Issue is empty, vague or
+  off-topic — then say so in the comment.
 - Do not change the Issue, the repository or anything else.
 - Do not assign, reserve or guess backlog IDs, and do not write backlog table
   rows. IDs, padding and the final row belong to backlog promotion.
@@ -78,9 +127,10 @@ recommendation, and the owner has to edit your comment by hand.
 
 ## Issue
 
-Issue #${{ github.event.issue.number }}:
+Issue #${{ needs.pre_activation.outputs.issue_number }}:
 
 ${{ steps.sanitized.outputs.text }}
+${{ needs.pre_activation.outputs.issue_text }}
 
 ## Sources of truth
 
@@ -91,7 +141,7 @@ repository checkout or with the GitHub repository contents tool.
    `Todo`, `Done` and `Cancelled` sections. Use only the Type, Level and State
    values defined there.
 2. Open Issues in this repository, read-only, to spot duplicates. Ignore
-   Issue #${{ github.event.issue.number }} itself.
+   Issue #${{ needs.pre_activation.outputs.issue_number }} itself.
 3. Only when relevant for context or dependencies: `docs/01-mvp-scope.md`,
    `docs/08-known-limitations.md`, `docs/acceptance-criteria.md` and
    `docs/06-decisions.md`.
