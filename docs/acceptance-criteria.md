@@ -4453,7 +4453,7 @@ recovery hint does.
       recommendation format, and manual triage publishes the same format.
 - [x] A test passes a manual-run comment fixture (body and the gh-aw markers
       the dispatch path emits) through `findTriageComments` and `parseTriage`.
-- [ ] `make verify` and applicable gh-aw workflow checks pass.
+- [x] `make verify` and applicable gh-aw workflow checks pass.
 - [ ] **Post-merge live verification:** a user with GitHub Actions run
       permission dispatches triage for Issue #123 and verifies that exactly
       one AI recommendation is posted there, and `findTriageComments`
