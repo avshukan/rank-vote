@@ -165,6 +165,7 @@ adapts to the column rather than moving the column.
 | 50  | Manual triage fallback     | Ops      | Medium | —       | Extend promotion to accept owner-authored triage    |
 | 51  | Move to TypeScript 7       | Ops      | Medium | —       | Needs ID-25; ts-eslint, ts-jest, NestJS CLI TS 7    |
 | 52  | Upgrade API to NestJS 12   | Ops      | Medium | —       | Breaking changes unassessed; needs ID-25 first      |
+| 53  | Fix API test:debug script  | Ops      | Low    | —       | Fix jest path; drop ts-node/tsconfig-paths deps     |
 
 ---
 
