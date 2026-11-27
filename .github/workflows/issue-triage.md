@@ -54,7 +54,11 @@ concurrency:
 permissions:
   contents: read
   issues: read
-engine: copilot
+# An explicit model instead of `auto`, which gh-aw resolves at run time from a
+# live catalog and so changes without any repository change.
+engine:
+  id: copilot
+  model: claude-haiku-5.5
 timeout-minutes: 10
 network: defaults
 tools:
@@ -174,7 +178,8 @@ repository checkout or with the GitHub repository contents tool.
    are none.
 5. **Candidate backlog entry** — only for `Keep`, one per item: Title, Type,
    Level, State `—`, Notes (one line, within the Notes limit) and
-   Dependencies / context.
+   Dependencies / context. Each entry follows the heading rule under
+   **Comment format**.
 6. **Final length check** — only for `Keep`, as the last step before
    `add_comment`, once the comment is otherwise final. For every candidate
    backlog entry:
@@ -199,6 +204,27 @@ repository checkout or with the GitHub repository contents tool.
 Use this structure. For `Discard` and `Duplicate`, leave out the candidate
 entry section and the acceptance-label instruction. For a split, repeat the
 candidate entry section once per item.
+
+Backlog promotion reads the comment mechanically, so these rules are exact:
+
+- Every candidate entry starts with a line that is exactly
+  `### Candidate backlog entry`: three `#`, one space, those three words and
+  nothing else on the line.
+- Never number a candidate entry heading or add to it: no
+  `### Candidate backlog entry 1`, `### Candidate backlog entry (2 of 3)`,
+  `### Candidate backlog entry: …` or `#### Candidate backlog entry`. A split
+  repeats the identical heading; the order of the entries is their number.
+  Backlog promotion does not see an entry under any other heading.
+- Every `Keep` comment ends with the acceptance-label instruction, the last
+  line of the template below, copied unchanged and exactly once, after the last
+  candidate entry:
+
+  ```markdown
+  _To accept and promote this item to the backlog, apply the `triage: accepted` label._
+  ```
+
+  Never leave it out of a `Keep`, and never add it to a `Discard` or
+  `Duplicate`.
 
 ```markdown
 ## Triage recommendation

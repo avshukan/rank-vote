@@ -413,6 +413,43 @@ test('the triage prompt limits Title and Notes to the Todo column widths', () =>
   }
 });
 
+test('the triage prompt template and heading rules match what promotion parses', () => {
+  const prompt = readFileSync(join(repositoryRoot, '.github/workflows/issue-triage.md'), 'utf8');
+  const section = prompt.slice(prompt.indexOf('\n## Comment format\n'));
+  const [, template] = section.match(/^```markdown\n(## Triage recommendation\n[\s\S]*?)^```$/m);
+
+  const parsed = parseTriage(template);
+  assert.equal(parsed.entries.length, 1);
+  assert.deepEqual(Object.keys(parsed.entries[0]), [
+    'Title',
+    'Type',
+    'Level',
+    'State',
+    'Notes',
+    'Dependencies / context',
+  ]);
+
+  // The prompt forbids exactly the headings promotion would not see.
+  const heading = '### Candidate backlog entry';
+  assert.ok(prompt.includes(`\`${heading}\``));
+  for (const forbidden of [`${heading} 1`, `${heading} (2 of 3)`, `${heading}: …`, `#${heading}`]) {
+    assert.ok(prompt.includes(`\`${forbidden}\``), forbidden);
+    assert.equal(parseTriage(template.replace(heading, forbidden)).entries.length, 0, forbidden);
+  }
+
+  // A split repeats the identical heading, and each copy is one entry.
+  const entry = template.slice(template.indexOf(heading), template.indexOf('_Recommendation only'));
+  assert.equal(parseTriage(template.replace(entry, entry + entry)).entries.length, 2);
+
+  // The template ends with the acceptance-label line, which the Keep rule quotes unchanged.
+  const label = template.trimEnd().split('\n').at(-1);
+  assert.equal(
+    label,
+    `_To accept and promote this item to the backlog, apply the \`${ACCEPTED_LABEL}\` label._`,
+  );
+  assert.equal(prompt.split(label).length - 1, 2);
+});
+
 test('rows are padded to the ruler: 120 characters, Done and Cancelled IDs right-aligned', () => {
   const backlog = parseBacklog(fixtureBacklog);
   const actualId = nextBacklogId(backlog);
