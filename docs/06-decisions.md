@@ -907,6 +907,18 @@ Chosen:
   run hands the agent the Issue's current text through gh-aw's own sanitizer.
   Manual runs keep the per-run AI-credit caps, but gh-aw skips its daily
   per-workflow AI-credit guardrail for every `workflow_dispatch` run
+- **Updated 2026-11-27:** the agent runs on an explicit `engine.model`,
+  `claude-haiku-5.5`, instead of `auto`, which gh-aw resolves at run time from a
+  live catalog. In 12 owner-run local Copilot CLI benchmarks on six Issues
+  (#81, #118, #147–150) it cost 5.44 AI credits against 90.92 for
+  `claude-sonnet-5.5` (−94%) with all six paired verdicts equal. gh-aw makes
+  threat detection inherit the agent model, so detection runs on it too instead
+  of the `detection` alias. Runs in GitHub Actions use the Copilot CLI that
+  gh-aw's compatibility window selects (1.0.103 at that date, not the CLI the
+  benchmarks used), so the first controlled run confirms the model there. The
+  prompt also states the exact, never numbered `### Candidate backlog entry`
+  heading backlog promotion parses and requires the acceptance-label line on
+  every `Keep`
 
 Rejected:
 

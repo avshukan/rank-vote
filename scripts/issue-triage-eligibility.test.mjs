@@ -490,8 +490,20 @@ test('the prompt names the target Issue on both triggers, also for duplicate sea
   assert.equal(BODY.match(/^## Triage recommendation$/gm).length, 1);
 });
 
+test('the agent and threat detection run on the pinned model, never the run-time auto alias', () => {
+  const metadata = JSON.parse(LOCK.match(/^# gh-aw-metadata: (.+)$/m)[1]);
+  assert.equal(metadata.agent_model, 'claude-haiku-5.5');
+  // One for the agent job, one for the detection job, which inherits it.
+  assert.deepEqual(
+    LOCK.match(/^ +COPILOT_MODEL: .*$/gm).map((line) => line.trim()),
+    ['COPILOT_MODEL: claude-haiku-5.5', 'COPILOT_MODEL: claude-haiku-5.5'],
+  );
+  assert.ok(!LOCK.includes("'auto'"));
+  assert.ok(!LOCK.includes('GH_AW_MODEL_AGENT_COPILOT'));
+});
+
 test('triage stays recommendation-only on the Copilot engine and the pinned compiler', () => {
-  assert.match(FRONTMATTER, /^engine: copilot$/m);
+  assert.match(FRONTMATTER, /^engine:\n {2}id: copilot\n {2}model: claude-haiku-5\.5$/m);
   assert.match(FRONTMATTER, /^ {2}threat-detection:\n {4}continue-on-error: false$/m);
   assert.match(FRONTMATTER, /^permissions:\n {2}contents: read\n {2}issues: read$/m);
   // Only gh-aw's own safe-output and conclusion jobs can write, and only to Issues.
